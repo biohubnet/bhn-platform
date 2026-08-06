@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Workspace · Marketing → Newsletter workshop — Sep 2026
+  {
+    title: "Workspace · Marketing — a Newsletter workshop",
+    body: "Building the monthly newsletter no longer means one person chasing everyone for copy. **Admin → Workspace → Marketing → Newsletter** gives the team four drop-boxes — **ENGAGE**, **EXPERIENCE**, **EQUIP** and **EVENTS** — and colleagues paste in whatever they have: a paragraph, some bullets, a forwarded note. No formatting rules, no template to learn. Anyone instructor-level or above can contribute.\n\nWhen the issue is full, an admin hits **Lay out with AI**. The model reads each contribution and decides its *shape* — what becomes a headline, what becomes an **At a Glance** card, what becomes a list of named awardees, whether there's a call-to-action — and the renderer turns that into the exact Mailchimp markup we already use: section ribbons in the programme colours, glance cards with deadlines in red, pill buttons, the 600px container. **Copy Mailchimp HTML** drops it straight into a Mailchimp *Code* block, and a live preview shows the finished issue before you send.\n\nThe AI is explicitly forbidden from inventing dates, names, numbers or links — if a contributor didn't write it, it doesn't appear. Buttons only ever point at the URL the contributor supplied. Contributions are stored verbatim, so a re-run always starts from what was actually submitted, and pieces nobody edited are skipped on re-layout.",
+    kind: "feature",
+    visibleTo: STAFF,
+    daysAgo: 0,
+  },
   // ── Tailor · gap analysis highlighting + example answers — Aug 2026
   {
     title: "Resume tailor · colour-coded gaps and example answers",

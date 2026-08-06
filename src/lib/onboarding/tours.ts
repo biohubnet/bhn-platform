@@ -30,9 +30,20 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.08.05b";
+export const TOUR_VERSION = "2026.09.05a";
 
 export const TOUR_STEPS: TourStep[] = [
+  // ─── Workspace · Marketing → Newsletter workshop — Sep 2026
+  {
+    id: "workspace.newsletter",
+    title: "Drop your newsletter update here",
+    body: "Workspace → Marketing → Newsletter has a box for each section — ENGAGE, EXPERIENCE, EQUIP and EVENTS. Paste in whatever you have; there's no template to follow. When the issue is full an admin runs the AI layout, which turns every contribution into the Mailchimp design we already use, ready to copy across.",
+    path: "/admin/workspace/marketing/newsletter",
+    placement: "center",
+    roles: ["instructor", "admin", "superadmin"],
+    cta: { label: "Open the workshop", href: "/admin/workspace/marketing/newsletter" },
+    since: "2026.09.05a",
+  },
   // ─── Tailor · gap highlighting + example answers — Aug 2026
   {
     id: "tailor.gap-analysis",

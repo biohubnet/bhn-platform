@@ -205,26 +205,26 @@ model User {
   createdAt              DateTime  @default(now())
   updatedAt              DateTime  @updatedAt
 
-  accounts             Account[]
-  sessions             Session[]
-  enrollments          Enrollment[]
-  courseFavorites      CourseFavorite[]
-  scormSessions        ScormSession[]
-  xapiStatements       XapiStatement[]
-  certificates         Certificate[]
+  accounts                 Account[]
+  sessions                 Session[]
+  enrollments              Enrollment[]
+  courseFavorites          CourseFavorite[]
+  scormSessions            ScormSession[]
+  xapiStatements           XapiStatement[]
+  certificates             Certificate[]
   certificationCredentials CertificationCredential[]
-  instructedCourses    Course[]            @relation("Instructor")
-  assessmentAttempts   AssessmentAttempt[]
-  creditTransactions   CreditTransaction[]
-  groupMemberships     GroupMembership[]
-  auditLogs            AuditLog[]
-  creditApplications   CreditApplication[] @relation("Applicant")
-  reviewedApplications CreditApplication[] @relation("Reviewer")
-  roleRequests         RoleChangeRequest[] @relation("RoleRequester")
-  reviewedRoleRequests RoleChangeRequest[] @relation("RoleReviewer")
-  buddiesInitiated     BuddyPair[]         @relation("InitiatorBuddies")
-  buddiesPartnered     BuddyPair[]         @relation("PartnerBuddies")
-  buddyMessages        BuddyMessage[]      @relation("BuddyMessageSender")
+  instructedCourses        Course[]                  @relation("Instructor")
+  assessmentAttempts       AssessmentAttempt[]
+  creditTransactions       CreditTransaction[]
+  groupMemberships         GroupMembership[]
+  auditLogs                AuditLog[]
+  creditApplications       CreditApplication[]       @relation("Applicant")
+  reviewedApplications     CreditApplication[]       @relation("Reviewer")
+  roleRequests             RoleChangeRequest[]       @relation("RoleRequester")
+  reviewedRoleRequests     RoleChangeRequest[]       @relation("RoleReviewer")
+  buddiesInitiated         BuddyPair[]               @relation("InitiatorBuddies")
+  buddiesPartnered         BuddyPair[]               @relation("PartnerBuddies")
+  buddyMessages            BuddyMessage[]            @relation("BuddyMessageSender")
 
   // Phase 1–5 additions
   skills                UserSkill[]
@@ -250,9 +250,9 @@ model User {
 
   /// AI Job-Tailoring module — external jobs, tailoring attempts, and
   /// the user's learned rules. See model TailoringJob.
-  tailoringJobs         TailoringJob[]        @relation("UserTailoringJobs")
-  tailoringRuns         TailoringRun[]        @relation("UserTailoringRuns")
-  tailoringRules        TailoringRule[]       @relation("UserTailoringRules")
+  tailoringJobs  TailoringJob[]  @relation("UserTailoringJobs")
+  tailoringRuns  TailoringRun[]  @relation("UserTailoringRuns")
+  tailoringRules TailoringRule[] @relation("UserTailoringRules")
 
   // Loyalty / merch rewards. `merchRewards` is the trainee's own
   // claimed/unclaimed reward records; `fulfilledMerch` is the queue
@@ -1834,12 +1834,12 @@ model CertificationLevel {
 /// automatic (see lib/certifications/progress.ts) once every course in the
 /// tier is completed and the previous tier is already held.
 model CertificationCredential {
-  id               String    @id @default(cuid())
+  id               String               @id @default(cuid())
   userId           String
   programId        String
   levelId          String
-  credentialNumber String    @unique
-  earnedAt         DateTime  @default(now())
+  credentialNumber String               @unique
+  earnedAt         DateTime             @default(now())
   revokedAt        DateTime?
   user             User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
   program          CertificationProgram @relation(fields: [programId], references: [id], onDelete: Cascade)
@@ -2148,7 +2148,7 @@ model ElectronicSignature {
 /// Audit + cost log for every AI call (chat, embed, summarize, search,
 /// tutor). Powers the AI section of the analytics dashboard.
 model AIInteraction {
-  id               String   @id @default(cuid())
+  id               String    @id @default(cuid())
   userId           String?
   kind             String // chat | embed | summarize | search | tutor | classify  (also the feature label)
   provider         String // cloudflare | gemini
@@ -2168,7 +2168,7 @@ model AIInteraction {
   /// answer is flagged for human review.
   confidence       Float?
   /// Flagged for human review (thumbs-down or low confidence).
-  flaggedForReview Boolean  @default(false)
+  flaggedForReview Boolean   @default(false)
   /// open | resolved | escalated (null = not in the review queue).
   reviewStatus     String?
   reviewNote       String?
@@ -2181,9 +2181,9 @@ model AIInteraction {
   /// the agent skips rows already stamped).
   agentTriagedAt   DateTime?
   latencyMs        Int?
-  success          Boolean  @default(true)
+  success          Boolean   @default(true)
   errorMessage     String?
-  createdAt        DateTime @default(now())
+  createdAt        DateTime  @default(now())
 
   @@index([createdAt])
   @@index([kind, createdAt])
@@ -4476,11 +4476,11 @@ model MasterBullet {
   /// anchorSubtitle + anchorDateRange are derived from these for display
   /// and stay populated for back-compat. anchorStart/anchorEnd are free
   /// "Mon YYYY" strings; anchorCurrent marks "currently here".
-  anchorCompany   String?
-  anchorLocation  String?
-  anchorStart     String?
-  anchorEnd       String?
-  anchorCurrent   Boolean @default(false)
+  anchorCompany  String?
+  anchorLocation String?
+  anchorStart    String?
+  anchorEnd      String?
+  anchorCurrent  Boolean @default(false)
 
   /// Current bullet text.
   body String
@@ -4490,17 +4490,17 @@ model MasterBullet {
   /// every claim and NEVER invent a metric (rule 1). All optional —
   /// legacy bullets keep working with just `body`.
   /// The quantified result, verbatim (e.g. "$2.3M ARR", "14 flasks").
-  metric String?
+  metric            String?
   /// HOW the result was achieved (e.g. "via a 6-week A/B test").
-  mechanism String?
+  mechanism         String?
   /// The canonical, approved wording to preserve when tailoring — the
   /// drafter may reframe around it but must not contradict it.
   canonicalPhrasing String?
   /// 0..1 confidence the fact is accurate / verified. Low-confidence
   /// facts are surfaced for review and never used to fill a hard gap.
-  confidence Float?
+  confidence        Float?
   /// Free-text provenance (where this fact comes from / how verified).
-  sourceNote String?
+  sourceNote        String?
 
   /// User- or AI-applied tags. Used by the AI picker to short-list
   /// relevant bullets before LLM re-ranking.
@@ -4613,7 +4613,7 @@ model TailoringJob {
   niceToHaves      String[]
   responsibilities String[]
   /// The full raw JD text, kept for re-analysis + audit.
-  rawJD String @default("")
+  rawJD            String   @default("")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -4666,7 +4666,7 @@ model TailoringRule {
   user   User?   @relation("UserTailoringRules", fields: [userId], references: [id], onDelete: Cascade)
 
   /// global | roleType | ats | company
-  scope String @default("global")
+  scope    String @default("global")
   /// What activates this rule (a roleType, an ats host, a company, or "*").
   trigger  String @default("*")
   ruleText String
@@ -4911,7 +4911,7 @@ model ShowcaseSubmission {
   /// for "which showcases this person belongs to". One row is `isHome`
   /// (mirrors `programSlug`, the public URL + R2 path anchor); the rest
   /// are extra cohorts an admin added without re-uploading a photo.
-  memberships      ShowcaseMembership[]
+  memberships ShowcaseMembership[]
 
   @@index([programSlug, createdAt])
   @@index([programSlug, userId])
@@ -4960,7 +4960,7 @@ model ShowcaseGroup {
 
   /// Structured membership rows for people in this group/cohort (the
   /// single source of truth; supersedes the loose programSlug match).
-  memberships      ShowcaseMembership[]
+  memberships ShowcaseMembership[]
 
   @@index([createdAt])
   @@index([pathwayId])
@@ -4984,8 +4984,8 @@ model ShowcaseMembership {
   createdById  String?
   createdAt    DateTime @default(now())
 
-  submission   ShowcaseSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
-  group        ShowcaseGroup      @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  submission ShowcaseSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  group      ShowcaseGroup      @relation(fields: [groupId], references: [id], onDelete: Cascade)
 
   @@unique([submissionId, groupId])
   @@index([groupId])
@@ -5257,9 +5257,9 @@ model ScriptRevision {
 }
 
 model ScriptComment {
-  id              String   @id @default(cuid())
+  id              String    @id @default(cuid())
   scriptId        String
-  script          Script   @relation(fields: [scriptId], references: [id], onDelete: Cascade)
+  script          Script    @relation(fields: [scriptId], references: [id], onDelete: Cascade)
   /// Section this comment is anchored to (NULL = whole-script).
   anchorSectionId String?
   /// Optional text-range anchor within the section/doc.
@@ -5268,17 +5268,17 @@ model ScriptComment {
   /// Thread parent (NULL = top-level comment).
   parentId        String?
   authorUserId    String?
-  authorName      String   @default("Someone")
-  authorKind      String   @default("anon")
+  authorName      String    @default("Someone")
+  authorKind      String    @default("anon")
   body            String
   /// open | resolved
-  status          String   @default("open")
+  status          String    @default("open")
   /// Edit tracking — how many times the body was edited + when last edited.
-  editCount       Int      @default(0)
+  editCount       Int       @default(0)
   editedAt        DateTime?
   /// Snapshot of the anchored text, for re-locating the highlight after edits.
   anchorQuote     String?
-  createdAt       DateTime @default(now())
+  createdAt       DateTime  @default(now())
 
   @@index([scriptId, createdAt])
   @@index([parentId])
@@ -5377,19 +5377,19 @@ model OutreachList {
 }
 
 model OutreachContact {
-  id          String   @id @default(cuid())
+  id          String       @id @default(cuid())
   listId      String
   list        OutreachList @relation(fields: [listId], references: [id], onDelete: Cascade)
   /// Cell values keyed by the list's column keys.
   values      Json
-  order       Int      @default(0)
+  order       Int          @default(0)
   /// Attribution — who added this contact. Plain User.id (no FK) + a
   /// denormalised display name so seeded/legacy rows can carry names
   /// like "Roshni" without a platform account.
   addedById   String?
-  addedByName String   @default("BHN team")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  addedByName String       @default("BHN team")
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
 
   @@index([listId, order])
 }
@@ -5404,13 +5404,13 @@ model OutreachContact {
 // rows are migrated into people+memberships at runtime, then removed.
 
 model OutreachPerson {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   /// Shared field values keyed by the global person-column keys.
   values      Json
   addedById   String?
-  addedByName String   @default("BHN team")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  addedByName String    @default("BHN team")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
   /// When the introduction email was sent. null = net-new contact that still
   /// needs an intro; set = they already know us (gets the returning/thank-you
   /// campaign copy). Backfilled to createdAt for everyone predating this field.
@@ -5421,17 +5421,17 @@ model OutreachPerson {
 }
 
 model OutreachMembership {
-  id          String   @id @default(cuid())
+  id          String         @id @default(cuid())
   listId      String
   list        OutreachList   @relation(fields: [listId], references: [id], onDelete: Cascade)
   personId    String
   person      OutreachPerson @relation(fields: [personId], references: [id], onDelete: Cascade)
   /// Per-list field values keyed by the list's column keys.
   values      Json
-  order       Int      @default(0)
+  order       Int            @default(0)
   addedById   String?
-  addedByName String   @default("BHN team")
-  createdAt   DateTime @default(now())
+  addedByName String         @default("BHN team")
+  createdAt   DateTime       @default(now())
 
   @@unique([listId, personId])
   @@index([listId, order])
@@ -5442,15 +5442,15 @@ model OutreachMembership {
 /// account needed; they give a name first (OutreachCollaborator) so
 /// attribution holds. Mirrors ScriptShareToken.
 model OutreachShareToken {
-  id          String    @id @default(cuid())
+  id          String       @id @default(cuid())
   listId      String
   list        OutreachList @relation(fields: [listId], references: [id], onDelete: Cascade)
-  token       String    @unique
+  token       String       @unique
   label       String?
-  canEdit     Boolean   @default(true)
+  canEdit     Boolean      @default(true)
   expiresAt   DateTime?
   createdById String?
-  createdAt   DateTime  @default(now())
+  createdAt   DateTime     @default(now())
 
   @@index([listId, createdAt])
 }
@@ -5458,12 +5458,12 @@ model OutreachShareToken {
 /// Named anonymous editor on a shared outreach list. The row id lives in an
 /// httpOnly per-list cookie; contacts they add carry their name.
 model OutreachCollaborator {
-  id         String   @id @default(cuid())
-  listId     String
-  list       OutreachList @relation(fields: [listId], references: [id], onDelete: Cascade)
-  name       String
-  firstSeenAt DateTime @default(now())
-  lastSeenAt  DateTime @default(now())
+  id          String       @id @default(cuid())
+  listId      String
+  list        OutreachList @relation(fields: [listId], references: [id], onDelete: Cascade)
+  name        String
+  firstSeenAt DateTime     @default(now())
+  lastSeenAt  DateTime     @default(now())
 
   @@index([listId, lastSeenAt])
 }
@@ -5473,18 +5473,18 @@ model OutreachCollaborator {
 /// was made for; survives list deletion (SetNull) so the person's history
 /// stays complete.
 model OutreachTouch {
-  id         String   @id @default(cuid())
+  id         String         @id @default(cuid())
   personId   String
   person     OutreachPerson @relation(fields: [personId], references: [id], onDelete: Cascade)
   listId     String?
   list       OutreachList?  @relation(fields: [listId], references: [id], onDelete: SetNull)
   /// email | call | meeting | linkedin | event | other
-  kind       String   @default("email")
-  note       String   @default("")
-  happenedAt DateTime @default(now())
+  kind       String         @default("email")
+  note       String         @default("")
+  happenedAt DateTime       @default(now())
   byId       String?
-  byName     String   @default("BHN team")
-  createdAt  DateTime @default(now())
+  byName     String         @default("BHN team")
+  createdAt  DateTime       @default(now())
 
   @@index([personId, happenedAt])
 }
@@ -5496,29 +5496,29 @@ model OutreachTouch {
 /// campaign-level template fields (program / event / deadline / link) that fill
 /// the {{placeholders}}; per-contact name/org/email come from the person.
 model OutreachCampaign {
-  id            String   @id @default(cuid())
-  name          String
+  id                  String        @id @default(cuid())
+  name                String
   /// Target list; null = everyone in the directory.
-  listId        String?
-  list          OutreachList? @relation(fields: [listId], references: [id], onDelete: SetNull)
+  listId              String?
+  list                OutreachList? @relation(fields: [listId], references: [id], onDelete: SetNull)
   /// Email template id from the outreach templates library — the INTRO version,
   /// used for contacts who haven't been introduced yet (introSentAt null).
-  templateId    String
+  templateId          String
   /// Optional second template for contacts who already know us (introSentAt
   /// set) — opens by thanking them for their earlier support instead of
   /// introducing BHN. Null = use the intro template for everyone.
   returningTemplateId String?
   /// Campaign-level template variables keyed by token (programName, deadline…).
-  vars          Json
+  vars                Json
   /// personIds already reached in this campaign (drives progress).
-  sentPersonIds Json
+  sentPersonIds       Json
   /// draft | active | done
-  status        String   @default("draft")
-  notes         String   @default("")
-  createdById   String?
-  createdByName String   @default("BHN team")
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  status              String        @default("draft")
+  notes               String        @default("")
+  createdById         String?
+  createdByName       String        @default("BHN team")
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
 
   @@index([createdAt])
 }
@@ -5540,30 +5540,30 @@ model MockInterview {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  answers      MockInterviewAnswer[]
+  answers MockInterviewAnswer[]
 
   @@index([userId, createdAt])
 }
 
 model MockInterviewAnswer {
-  id           String   @id @default(cuid())
+  id           String        @id @default(cuid())
   interviewId  String
   interview    MockInterview @relation(fields: [interviewId], references: [id], onDelete: Cascade)
   order        Int
   question     String
   /// behavioral | technical | situational | motivation
-  questionKind String   @default("behavioral")
-  transcript   String   @default("")
-  inputMode    String   @default("text") // voice | text
-  score        Int?                       // 0–100 (content)
-  feedback     String   @default("")
-  strengths    Json     @default("[]")
-  improvements Json     @default("[]")
+  questionKind String        @default("behavioral")
+  transcript   String        @default("")
+  inputMode    String        @default("text") // voice | text
+  score        Int? // 0–100 (content)
+  feedback     String        @default("")
+  strengths    Json          @default("[]")
+  improvements Json          @default("[]")
   /// Voice-confidence read (0–100) + delivery metrics from the recording.
   confidence   Int?
   wpm          Int?
   fillerCount  Int?
-  deliveryNote String   @default("")
+  deliveryNote String        @default("")
   /// AI coaching for THIS question — how to approach it + what employers
   /// really want to hear. Generated on demand, cached here.
   /// { intent, approach, wantToHear[], avoid[], modelOutline[] }
@@ -5573,7 +5573,7 @@ model MockInterviewAnswer {
   voice        Json?
   stumbleCount Int?
   answeredAt   DateTime?
-  createdAt    DateTime @default(now())
+  createdAt    DateTime      @default(now())
 
   @@index([interviewId, order])
 }
@@ -5601,4 +5601,67 @@ model EquipReportShareToken {
   createdAt   DateTime  @default(now())
 
   @@index([createdAt])
+}
+
+// ── Newsletter workshop ─────────────────────────────────────────
+// Colleagues drop raw contributions into an issue; the AI normalises
+// each into structured fields and a deterministic renderer emits the
+// Mailchimp-safe HTML. Sections mirror the programme vocabulary
+// (ENGAGE / EXPERIENCE / EQUIP) plus a per-issue events block.
+
+/// One month's newsletter. Holds the pieces plus the last render.
+model NewsletterIssue {
+  id           String    @id @default(cuid())
+  /// Display title, e.g. "August 2026".
+  title        String
+  /// Right-aligned dateline printed in the masthead ("August 2026").
+  dateline     String
+  /// Optional preheader — the hidden preview line email clients show.
+  preheader    String?
+  /// draft | generated | sent
+  status       String    @default("draft")
+  /// Last AI-composed Mailchimp HTML. Null until first generate.
+  renderedHtml String?
+  /// When renderedHtml was last produced, so the UI can warn that
+  /// pieces changed since the last render.
+  renderedAt   DateTime?
+  createdById  String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  pieces NewsletterPiece[]
+
+  @@index([status, createdAt])
+}
+
+/// One contribution. `rawBody` is exactly what the colleague pasted;
+/// everything below it is what the AI derived, so a re-run can always
+/// start from the original submission.
+model NewsletterPiece {
+  id         String   @id @default(cuid())
+  issueId    String
+  /// engage | experience | equip | event
+  section    String
+  /// Sort order within its section. Lower renders first.
+  position   Int      @default(0)
+  /// Verbatim submission — never overwritten by the AI.
+  rawBody    String
+  /// Optional link the contributor wants the CTA to point at.
+  sourceUrl  String?
+  /// Who dropped it in. Plain column: the piece outlives the account.
+  authorName String?
+  authorId   String?
+  /// submitted | normalised | excluded
+  status     String   @default("submitted")
+  /// AI-derived layout fields. Shape:
+  ///   { headline, subhead, body, glance: [{label,value,accent?}],
+  ///     ctaLabel, ctaUrl, people: [{name,detail,org}] }
+  /// Null until the piece has been normalised.
+  layout     Json?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  issue NewsletterIssue @relation(fields: [issueId], references: [id], onDelete: Cascade)
+
+  @@index([issueId, section, position])
 }

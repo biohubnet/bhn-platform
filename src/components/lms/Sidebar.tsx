@@ -326,6 +326,18 @@ const workspaceSponsorshipItem: NavItem = {
     "The sponsorship offer for the Annual Symposium — why sponsor, event details, tier grid, and how to confirm. Editable in place, with shareable links for prospective sponsors.",
 };
 
+// WORKSPACE → Marketing → Newsletter. Colleagues drop their section's
+// update into ENGAGE / EXPERIENCE / EQUIP / EVENTS; the AI lays the issue
+// out into the Mailchimp template and the editor copies the HTML across.
+const workspaceNewsletterItem: NavItem = {
+  label: "Newsletter",
+  href: "/admin/workspace/marketing/newsletter",
+  icon: Mail,
+  minRole: "instructor",
+  description:
+    "Collect newsletter contributions from the team by section, then let the AI lay the issue out into the Mailchimp template — paste-ready HTML, no formatting rules for contributors.",
+};
+
 // WORKSPACE → Outreach. Sibling of Marketing and File Sharing. Two views:
 // Contacts (the directory + lists) and Campaigns (tracked cross-promotion
 // pushes), shown as sub-items under the Outreach subgroup.
@@ -1695,6 +1707,7 @@ export function Sidebar({
               <NavLink item={workspaceVideoItem} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
               <NavLink item={workspaceSymposiumItem} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
               <NavLink item={workspaceSponsorshipItem} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
+              <NavLink item={workspaceNewsletterItem} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
             </AdminSubgroup>
             <AdminSubgroup tone={ADMIN_SUBGROUP_TONES.experience} label="Outreach">
               <NavLink item={workspaceOutreachContactsItem} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
