@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Plus } from "lucide-react";
+import { normalizeReviewUrl } from "@/lib/page-review/access";
 
 export function NewPageReviewForm() {
   const router = useRouter();
@@ -13,9 +14,17 @@ export function NewPageReviewForm() {
   async function create() {
     setBusy(true); setError(null);
     try {
+      let normalizedUrl: string;
+      try {
+        normalizedUrl = normalizeReviewUrl(url);
+        setUrl(normalizedUrl);
+      } catch {
+        setError("Enter a valid website address.");
+        return;
+      }
       const r = await fetch("/api/workspace/page-review", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: url.trim() }),
+        body: JSON.stringify({ url: normalizedUrl }),
       });
       const j = await r.json().catch(() => ({}));
       if (!r.ok || !j?.ok) { setError(j?.error ?? "Couldn't open that review."); return; }
@@ -29,8 +38,17 @@ export function NewPageReviewForm() {
     <section className="rounded-2xl border border-line bg-card p-4">
       <div className="flex gap-2 flex-wrap items-start">
         <input
-          value={url} onChange={(e) => setUrl(e.target.value)}
-          placeholder="https://biohubnet.ca/engage/regulatory-affairs/"
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          onBlur={() => {
+            if (!url.trim()) return;
+            try { setUrl(normalizeReviewUrl(url)); } catch { /* Validate on submit. */ }
+          }}
+          placeholder="biohubnet.ca/engage/regulatory-affairs/"
+          inputMode="url"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
           className="flex-1 min-w-[240px] text-sm bg-card border border-line rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500/40"
         />
         <button

@@ -17,7 +17,7 @@ import { normalizeReviewUrl, pageNameFromReviewUrl } from "@/lib/page-review/acc
 export const dynamic = "force-dynamic";
 
 const CreateSchema = z.object({
-  url: z.string().trim().url("Give a full URL, including https://").max(500),
+  url: z.string().trim().min(1, "Enter a website address.").max(500),
 });
 
 export async function GET() {
@@ -48,7 +48,15 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const url = normalizeReviewUrl(parsed.data.url);
+  let url: string;
+  try {
+    url = normalizeReviewUrl(parsed.data.url);
+  } catch {
+    return NextResponse.json(
+      { error: "Enter a valid website address." },
+      { status: 400 },
+    );
+  }
   const activeReviews = await prisma.pageReview.findMany({
     where: { status: { not: "closed" } },
     orderBy: { updatedAt: "desc" },

@@ -4,7 +4,14 @@ export const PAGE_REVIEW_HASH_KEY = "bhn-review";
 
 /** Canonical form used to avoid opening duplicate sessions for the same page. */
 export function normalizeReviewUrl(value: string): string {
-  const target = new URL(value);
+  const trimmed = value.trim();
+  const input = /^[a-z][a-z\d+.-]*:\/\//i.test(trimmed)
+    ? trimmed
+    : `https://${trimmed}`;
+  const target = new URL(input);
+  if (target.protocol !== "http:" && target.protocol !== "https:") {
+    throw new TypeError("Only web URLs can be reviewed.");
+  }
   target.hash = "";
   if (target.hostname.toLowerCase() === "www.biohubnet.ca") {
     target.hostname = "biohubnet.ca";

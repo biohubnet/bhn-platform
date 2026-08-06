@@ -125,6 +125,11 @@ test("review URLs normalize duplicate BioHubNet page variants", () => {
     normalizeReviewUrl("https://biohubnet.ca/engage///#courses"),
     "https://biohubnet.ca/engage",
   );
+  assert.equal(
+    normalizeReviewUrl("  biohubnet.ca/engage/regulatory-affairs/  "),
+    "https://biohubnet.ca/engage/regulatory-affairs",
+  );
+  assert.throws(() => normalizeReviewUrl("ftp://biohubnet.ca/file"));
 });
 
 test("review page names are derived from the URL", () => {
