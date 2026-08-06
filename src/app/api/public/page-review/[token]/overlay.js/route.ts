@@ -24,7 +24,7 @@ import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(_req: Request, ctx: { params: Promise<{ token: string }> }) {
+export async function GET(req: Request, ctx: { params: Promise<{ token: string }> }) {
   const { token } = await ctx.params;
 
   const review = await prisma.pageReview.findUnique({
@@ -35,7 +35,9 @@ export async function GET(_req: Request, ctx: { params: Promise<{ token: string 
   const headers = {
     "Content-Type": "application/javascript; charset=utf-8",
     "Access-Control-Allow-Origin": "*",
+    "Cross-Origin-Resource-Policy": "cross-origin",
     "Cache-Control": "no-store",
+    "X-Content-Type-Options": "nosniff",
   };
 
   if (!review || review.status === "closed") {
@@ -45,8 +47,8 @@ export async function GET(_req: Request, ctx: { params: Promise<{ token: string 
     );
   }
 
-  const origin = process.env.NEXTAUTH_URL ?? "https://app.biohubnet.ca";
-  const endpoint = `${origin}/api/public/page-review/${token}`;
+  const origin = new URL(req.url).origin;
+  const endpoint = `${origin}/api/public/page-review/${encodeURIComponent(token)}`;
 
   return new NextResponse(overlaySource(endpoint, review.title), { headers });
 }

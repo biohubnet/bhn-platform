@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { loaderSource } from "../../src/app/api/public/page-review/loader.js/route";
 import { overlaySource } from "../../src/app/api/public/page-review/[token]/overlay.js/route";
 import { snippetFor } from "../../src/components/workspace/BookmarkletPanel";
+import { PAGE_REVIEW_HASH_KEY, reviewLinkFor } from "../../src/lib/page-review/access";
 import { buildBrief, type BriefComment } from "../../src/lib/page-review/brief";
 
 const baseComment: BriefComment = {
@@ -86,4 +88,50 @@ test("bookmarklet code follows the current review token", () => {
   assert.match(first, /first-token\/overlay\.js/);
   assert.match(second, /second-token\/overlay\.js/);
   assert.doesNotMatch(second, /first-token/);
+});
+
+test("direct review links keep the credential in a BioHubNet URL fragment", () => {
+  const link = reviewLinkFor(
+    "https://biohubnet.ca/engage/regulatory-affairs/?view=full#old-section",
+    "review-token-123456789012345",
+  );
+
+  assert.ok(link);
+  const parsed = new URL(link);
+  assert.equal(parsed.origin, "https://biohubnet.ca");
+  assert.equal(parsed.search, "?view=full");
+  assert.equal(new URLSearchParams(parsed.hash.slice(1)).get(PAGE_REVIEW_HASH_KEY), "review-token-123456789012345");
+  assert.equal(reviewLinkFor("https://example.com/page", "review-token-123456789012345"), null);
+  assert.equal(reviewLinkFor("http://biohubnet.ca/page", "review-token-123456789012345"), null);
+});
+
+test("loader removes the token from the address and injects the matching overlay", () => {
+  const source = loaderSource("https://bhn-training-platform.vercel.app/");
+  let cleanUrl = "";
+  let appended: Record<string, unknown> | null = null;
+  const windowStub = {
+    location: {
+      hash: "#bhn-review=review-token-123456789012345",
+      pathname: "/engage/",
+      search: "?view=full",
+    },
+    history: {
+      state: { from: "test" },
+      replaceState(_state: unknown, _title: string, url: string) { cleanUrl = url; },
+    },
+  };
+  const documentStub = {
+    getElementById() { return null; },
+    createElement() { return {} as Record<string, unknown>; },
+    head: { appendChild(node: Record<string, unknown>) { appended = node; } },
+    body: null,
+  };
+
+  new Function("window", "document", source)(windowStub, documentStub);
+
+  assert.equal(cleanUrl, "/engage/?view=full");
+  assert.ok(appended);
+  assert.match(String(appended.src), /review-token-123456789012345\/overlay\.js\?t=/);
+  assert.equal(appended.referrerPolicy, "no-referrer");
+  assert.doesNotThrow(() => new Function(source));
 });
