@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Workspace · Website Review — Sep 2026
+  {
+    title: "Workspace · Website Review — comment on biohubnet.ca, export a revision brief",
+    body: "**Admin → Workspace → Website Review** replaces the round of emailed screenshots. Open a review on any URL, then leave **comments anchored to the exact text on the page**. Colleagues **reply to each other**, **edit** their own, **delete**, and **resolve** a thread once the fix lands — edits are stamped so you can see a comment was changed and when.\n\nWhen a round is done, **Export brief** turns every *open* thread into Markdown written for an AI coding agent: the quoted text, the element, and — for WPBakery pages — which `vc_raw_html` block it sits in, so the change lands where you meant it. Paste it into Claude Code or Codex. Exporting **bumps the round**, so later comments are attributed to the next revision and the history stays readable.\n\nAnchors are stored at four decreasing precisions (quoted text, element key, selector, WPBakery block). If a later capture can't find one, the comment is flagged **anchor not found** rather than silently re-attached to the wrong element.",
+    kind: "feature",
+    visibleTo: STAFF,
+    daysAgo: 0,
+  },
   // ── Workspace · Marketing → Newsletter workshop — Sep 2026
   {
     title: "Workspace · Marketing — a Newsletter workshop",

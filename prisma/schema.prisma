@@ -5665,3 +5665,79 @@ model NewsletterPiece {
 
   @@index([issueId, section, position])
 }
+
+// ── Website review ──────────────────────────────────────────────
+// Colleagues leave threaded comments on elements of a live page
+// (biohubnet.ca or anything else). The collected thread exports as a
+// Markdown brief for Claude Code / Codex, and each export is stamped as
+// a round so the revision history is reconstructable.
+
+/// One page under review. Rounds increment each time a brief is exported,
+/// so comments can be attributed to the revision they informed.
+model PageReview {
+  id           String    @id @default(cuid())
+  /// Full URL under review.
+  url          String
+  /// Human label — "ENGAGE · Regulatory Affairs".
+  title        String
+  /// open | exported | closed
+  status       String    @default("open")
+  /// Current round. Bumped on export; comments record the round they
+  /// were filed under.
+  round        Int       @default(1)
+  /// Optional HTML snapshot captured when the review opened — the
+  /// "before" for diffing a later revision.
+  snapshotHtml String?
+  snapshotAt   DateTime?
+  /// Share token letting colleagues comment without a platform account
+  /// (the bookmarklet carries it). Null disables anonymous commenting.
+  shareToken   String?   @unique
+  createdById  String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  comments PageComment[]
+
+  @@index([status, updatedAt])
+}
+
+/// One comment. Threading via parentId; anchors are stored at four
+/// decreasing precisions so a comment survives the page being edited.
+model PageComment {
+  id       String  @id @default(cuid())
+  reviewId String
+  /// Thread parent. NULL = top-level.
+  parentId String?
+  /// Round this was filed under.
+  round    Int     @default(1)
+
+  // ── Anchors, most reliable first ──
+  /// Text content of the element when the comment was made. The primary
+  /// re-locator — survives class and structure changes.
+  anchorQuote String?
+  /// Nearest stable id/class, e.g. "#hero" or ".vc_custom_heading_5f3a".
+  anchorKey   String?
+  /// Full CSS selector path from the capture script.
+  anchorPath  String?
+  /// Which WPBakery raw-HTML block the element sat in, when known — the
+  /// rendered selector doesn't map to source without it.
+  anchorBlock String?
+  /// found | orphaned — set when a later capture can't re-locate it.
+  anchorState String  @default("found")
+
+  authorUserId String?
+  authorName   String    @default("Someone")
+  /// user | anon — anon comments arrive via the share token.
+  authorKind   String    @default("user")
+  body         String
+  /// open | resolved | wontfix
+  status       String    @default("open")
+  editCount    Int       @default(0)
+  editedAt     DateTime?
+  createdAt    DateTime  @default(now())
+
+  review PageReview @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+
+  @@index([reviewId, createdAt])
+  @@index([parentId])
+}

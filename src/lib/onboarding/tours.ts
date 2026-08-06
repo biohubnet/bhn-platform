@@ -30,9 +30,20 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.09.05a";
+export const TOUR_VERSION = "2026.09.06a";
 
 export const TOUR_STEPS: TourStep[] = [
+  // ─── Workspace · Website Review — Sep 2026
+  {
+    id: "workspace.website-review",
+    title: "Review the website together",
+    body: "Workspace → Website Review collects feedback on biohubnet.ca in one place. Quote the text you're commenting on, reply to each other, and resolve threads as fixes land. Admins export the open threads as a brief for Claude Code or Codex — no more emailed screenshots.",
+    path: "/admin/workspace/website-review",
+    placement: "center",
+    roles: ["instructor", "admin", "superadmin"],
+    cta: { label: "Open Website Review", href: "/admin/workspace/website-review" },
+    since: "2026.09.06a",
+  },
   // ─── Workspace · Marketing → Newsletter workshop — Sep 2026
   {
     id: "workspace.newsletter",

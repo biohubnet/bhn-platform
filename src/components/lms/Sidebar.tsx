@@ -68,8 +68,7 @@ import {
   Clapperboard,
   BookUser,
   Radar,
-  CalendarClock,
-} from "lucide-react";
+  CalendarClock, MessageSquareText} from "lucide-react";
 import { NotificationBell } from "@/components/ui/NotificationInbox";
 import { AdminGlobalSearch } from "@/components/admin/AdminGlobalSearch";
 
@@ -336,6 +335,19 @@ const workspaceNewsletterItem: NavItem = {
   minRole: "instructor",
   description:
     "Collect newsletter contributions from the team by section, then let the AI lay the issue out into the Mailchimp template — paste-ready HTML, no formatting rules for contributors.",
+};
+
+// WORKSPACE → Website Review. Its own subgroup, not under Marketing: the
+// subject is the public website, not a campaign. Colleagues comment on a
+// live page, threads resolve, and the open ones export as a brief for an
+// AI coding agent.
+const workspaceWebsiteReviewItem: NavItem = {
+  label: "Website Review",
+  href: "/admin/workspace/website-review",
+  icon: MessageSquareText,
+  minRole: "instructor",
+  description:
+    "Comment on any page of biohubnet.ca, reply to each other, resolve as fixes land — then export the open threads as a revision brief for Claude Code or Codex, anchored to the exact text on the page.",
 };
 
 // WORKSPACE → Outreach. Sibling of Marketing and File Sharing. Two views:
@@ -1708,6 +1720,9 @@ export function Sidebar({
               <NavLink item={workspaceSymposiumItem} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
               <NavLink item={workspaceSponsorshipItem} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
               <NavLink item={workspaceNewsletterItem} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
+            </AdminSubgroup>
+            <AdminSubgroup tone={ADMIN_SUBGROUP_TONES.engage} label="Website">
+              <NavLink item={workspaceWebsiteReviewItem} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
             </AdminSubgroup>
             <AdminSubgroup tone={ADMIN_SUBGROUP_TONES.experience} label="Outreach">
               <NavLink item={workspaceOutreachContactsItem} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
