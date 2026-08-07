@@ -193,7 +193,10 @@ test("brief exports only open comments from the current revision round", () => {
 test("loader removes the token from the address and injects the matching overlay", () => {
   const source = loaderSource("https://bhn-training-platform.vercel.app/");
   let cleanUrl = "";
-  let appended: Record<string, unknown> | null = null;
+  // Held on an object, not a `let`: the assignment happens inside the
+  // appendChild callback, which flow analysis doesn't track, so a bare
+  // `let` stays `null` here and assert.ok() narrows it to `never`.
+  const captured: { node: Record<string, unknown> | null } = { node: null };
   const windowStub = {
     location: {
       hash: "#bhn-review=review-token-123456789012345&bhn-reviewer=signed-viewer-token",
@@ -208,13 +211,14 @@ test("loader removes the token from the address and injects the matching overlay
   const documentStub = {
     getElementById() { return null; },
     createElement() { return { dataset: {} } as Record<string, unknown>; },
-    head: { appendChild(node: Record<string, unknown>) { appended = node; } },
+    head: { appendChild(node: Record<string, unknown>) { captured.node = node; } },
     body: null,
   };
 
   new Function("window", "document", source)(windowStub, documentStub);
 
   assert.equal(cleanUrl, "/engage/?view=full");
+  const appended = captured.node;
   assert.ok(appended);
   assert.match(String(appended.src), /review-token-123456789012345\/overlay\.js\?t=/);
   assert.equal((appended.dataset as Record<string, unknown>)["viewer"], "signed-viewer-token");

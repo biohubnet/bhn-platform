@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Workspace · Website Review → live collaborative review — Sep 2026
+  {
+    title: "Website Review — comment on biohubnet.ca together, in the page itself",
+    body: "Reviewing a page no longer means describing where you are. Open a review and hit **Launch** — you get a link straight to that page on biohubnet.ca with the review already running on it. Click any element and the comment attaches itself; the quote, the element and the WPBakery block are recorded for you.\n\nIt's a **shared workspace, not a private notepad**. Everyone on the link sees the same threads, numbered markers sit on the elements they refer to, and replies and resolutions show up for the others as they happen. The panel folds down to a rail when you want the page back, and works on a phone.\n\n**Your name is now proven, not typed.** Launching while signed in carries a signed token, so your comments are attributed to your actual account. Anything filed without one is labelled **guest** in the thread and *(unverified guest)* in the exported brief — so nobody can put words in a colleague's mouth.\n\nAlso: page names are derived from the URL so you don't have to invent one, `www` / trailing-slash / query-order variants of the same page no longer open duplicate reviews, admins can delete a review session, and each export moves the review to the next round so old items stay in their own revision.",
+    kind: "feature",
+    visibleTo: STAFF,
+    daysAgo: 0,
+  },
   // ── Workspace · Website Review — Sep 2026
   {
     title: "Workspace · Website Review — comment on biohubnet.ca, export a revision brief",
