@@ -171,8 +171,16 @@ async function main() {
     assert.deepEqual(flashAnimation, {
       name: "bhn-review-flash",
       iterations: "5",
-      duration: "0.14s",
+      duration: "0.16s",
     });
+    await priyaThread.evaluate((card) => {
+      card.dispatchEvent(new MouseEvent("mouseleave"));
+      card.dispatchEvent(new MouseEvent("mousemove", { bubbles: true }));
+    });
+    assert.equal(
+      await alex.locator(".bhn-review-highlight").evaluate((node) => node.classList.contains("bhn-review-highlight-flash")),
+      true,
+    );
     const headingBox = await alex.locator("#review-heading").boundingBox();
     const highlightBox = await alex.locator(".bhn-review-highlight").boundingBox();
     assert.ok(headingBox && highlightBox);
