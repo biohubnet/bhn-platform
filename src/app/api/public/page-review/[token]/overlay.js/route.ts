@@ -59,6 +59,9 @@ export function overlaySource(endpoint: string, title: string): string {
     draft: "",
     replyTo: null,
     replyDraft: "",
+    editingId: null,
+    editDraft: "",
+    deletingId: null,
     error: "",
     loading: true,
     saving: false,
@@ -85,10 +88,10 @@ export function overlaySource(endpoint: string, title: string): string {
     ".bhn-icon-btn{display:grid;height:26px;min-width:26px;flex:0 0 auto;place-items:center;border:0;border-radius:5px;background:rgba(255,255,255,.11);padding:0 6px;color:#fff;font-weight:800;line-height:1;}.bhn-icon-btn:hover{background:rgba(255,255,255,.2);}.bhn-close{font-size:17px;}.bhn-collapse{font-size:11px;}.bhn-shell-collapsed .bhn-head{padding:5px;}.bhn-shell-collapsed .bhn-head-copy,.bhn-shell-collapsed .bhn-body{display:none;}",
     ".bhn-body{overflow:auto;padding:6px;overscroll-behavior:contain;}.bhn-notice{padding:7px;border:1px solid #d8e0e5;border-radius:5px;background:rgba(255,255,255,.84);color:#4a5864;font-size:11px;}.bhn-error{border-color:#f0b7b7;background:rgba(255,243,243,.9);color:#8c2020;}",
     ".bhn-compose{margin-bottom:6px;padding:7px;border:1px solid #9bc6d2;border-radius:6px;background:rgba(237,248,250,.88);}.bhn-compose-label{font-size:10px;font-weight:800;color:#245866;}.bhn-quote{max-height:44px;overflow:hidden;margin:4px 0 6px;padding-left:6px;border-left:2px solid #2c7587;color:#41515c;font-size:10px;line-height:1.3;}.bhn-textarea{display:block;width:100%;min-height:58px;resize:vertical;border:1px solid #b9c5cc;border-radius:5px;background:rgba(255,255,255,.92);padding:6px;color:#17212b;outline:none;}.bhn-textarea:focus{border-color:#2c7587;box-shadow:0 0 0 2px rgba(44,117,135,.14);}",
-    ".bhn-actions{display:flex;align-items:center;justify-content:flex-end;gap:5px;margin-top:5px;}.bhn-btn{min-height:27px;border:1px solid #c6d0d6;border-radius:5px;background:rgba(255,255,255,.88);padding:4px 8px;color:#34434e;font-size:10px;font-weight:750;}.bhn-btn:hover{background:#f0f4f6;}.bhn-btn-primary{border-color:#176879;background:#176879;color:#fff;}.bhn-btn-primary:hover{background:#105565;}.bhn-btn:disabled{cursor:not-allowed;opacity:.55;}",
+    ".bhn-actions{display:flex;align-items:center;justify-content:flex-end;gap:5px;margin-top:5px;}.bhn-btn{min-height:27px;border:1px solid #c6d0d6;border-radius:5px;background:rgba(255,255,255,.88);padding:4px 8px;color:#34434e;font-size:10px;font-weight:750;}.bhn-btn:hover{background:#f0f4f6;}.bhn-btn-primary{border-color:#176879;background:#176879;color:#fff;}.bhn-btn-primary:hover{background:#105565;}.bhn-btn-danger{border-color:#b64a4a;background:#a53b3b;color:#fff;}.bhn-btn-danger:hover{background:#8d2f2f;}.bhn-btn:disabled{cursor:not-allowed;opacity:.55;}",
     ".bhn-list{display:grid;gap:5px;}.bhn-empty{padding:11px 7px;text-align:center;color:#667580;font-size:10px;}.bhn-thread{border:1px solid rgba(189,201,209,.85);border-radius:6px;background:rgba(255,255,255,.84);overflow:hidden;}.bhn-thread-active{border-color:#2c7587;box-shadow:0 0 0 2px rgba(44,117,135,.12);}.bhn-thread-toggle{display:grid;width:100%;grid-template-columns:20px minmax(0,1fr) auto;align-items:start;gap:6px;border:0;background:transparent;padding:6px;text-align:left;color:#17212b;}.bhn-thread-toggle:hover{background:rgba(227,239,243,.72);}.bhn-number{display:grid;width:20px;height:20px;place-items:center;border-radius:50%;background:#176879;color:#fff;font-size:9px;font-weight:800;}.bhn-thread-main{min-width:0;}.bhn-thread-line{display:flex;min-width:0;align-items:center;gap:5px;}.bhn-author{min-width:0;overflow:hidden;flex:1;color:#1c2b35;font-size:10px;font-weight:800;text-overflow:ellipsis;white-space:nowrap;}.bhn-time{color:#84919a;font-size:8px;font-weight:550;white-space:nowrap;}.bhn-status{border-radius:999px;background:#e9f6ed;padding:1px 4px;color:#2e6f42;font-size:8px;font-weight:800;text-transform:uppercase;}.bhn-status-resolved{background:#eef1f3;color:#64717a;}.bhn-thread-preview{overflow:hidden;margin-top:2px;color:#3b4b55;font-size:10px;text-overflow:ellipsis;white-space:nowrap;}.bhn-disclosure{padding-top:2px;color:#71808a;font-size:12px;}",
-    ".bhn-thread-details{border-top:1px solid rgba(220,228,232,.8);padding-top:6px;}.bhn-thread-body{padding:0 7px 6px;white-space:pre-wrap;color:#2f3e48;font-size:11px;}.bhn-thread-quote{max-height:46px;overflow:hidden;margin:0 7px 6px;padding:4px 6px;border-left:2px solid #b7c8d1;background:rgba(245,248,249,.82);color:#60707b;font-size:9px;}.bhn-thread-tools{display:flex;justify-content:flex-end;padding:0 7px 5px;}.bhn-link-btn{border:0;background:transparent;padding:2px 4px;color:#176879;font-size:10px;font-weight:800;}.bhn-link-btn:hover{text-decoration:underline;}",
-    ".bhn-replies{margin:0 7px 6px 28px;border-left:2px solid #dce4e8;padding-left:6px;}.bhn-reply{padding:4px 0;border-top:1px solid #edf0f2;}.bhn-reply:first-child{border-top:0;}.bhn-reply-meta{color:#6c7982;font-size:9px;font-weight:750;}.bhn-reply-body{margin-top:1px;white-space:pre-wrap;color:#34434e;font-size:10px;}.bhn-reply-compose{margin:0 7px 6px 28px;}",
+    ".bhn-thread-details{border-top:1px solid rgba(220,228,232,.8);padding-top:6px;}.bhn-thread-body{padding:0 7px 6px;white-space:pre-wrap;color:#2f3e48;font-size:11px;}.bhn-thread-quote{max-height:46px;overflow:hidden;margin:0 7px 6px;padding:4px 6px;border-left:2px solid #b7c8d1;background:rgba(245,248,249,.82);color:#60707b;font-size:9px;}.bhn-thread-tools{display:flex;justify-content:flex-end;gap:2px;padding:0 7px 5px;}.bhn-link-btn{border:0;background:transparent;padding:2px 4px;color:#176879;font-size:10px;font-weight:800;}.bhn-link-btn:hover{text-decoration:underline;}.bhn-link-btn-danger{color:#9b3030;}.bhn-edit-compose{margin:0 7px 6px;}.bhn-delete-confirm{margin:0 7px 6px;border-top:1px solid #ead4d4;padding-top:5px;}.bhn-delete-copy{color:#7d3030;font-size:10px;}",
+    ".bhn-replies{margin:0 7px 6px 28px;border-left:2px solid #dce4e8;padding-left:6px;}.bhn-reply{padding:4px 0;border-top:1px solid #edf0f2;}.bhn-reply:first-child{border-top:0;}.bhn-reply-head{display:flex;align-items:center;gap:4px;}.bhn-reply-meta{min-width:0;flex:1;color:#6c7982;font-size:9px;font-weight:750;}.bhn-reply-tools{display:flex;flex:0 0 auto;}.bhn-reply-body{margin-top:1px;white-space:pre-wrap;color:#34434e;font-size:10px;}.bhn-reply .bhn-edit-compose,.bhn-reply .bhn-delete-confirm{margin:4px 0 0;}.bhn-reply-compose{margin:0 7px 6px 28px;}",
     ".bhn-review-highlight{position:fixed;z-index:2147483645;display:none;pointer-events:none;border:2px solid #2c7587;border-radius:3px;background:rgba(44,117,135,.12);}.bhn-review-highlight-flash{animation:bhn-review-flash .14s linear 5;}@keyframes bhn-review-flash{0%,100%{opacity:1}50%{opacity:.08}}",
     ".bhn-review-marker{position:fixed;z-index:2147483646;display:grid;width:25px;height:25px;place-items:center;border:2px solid #fff;border-radius:50%;background:#176879;color:#fff;box-shadow:0 2px 8px rgba(0,0,0,.28);font:800 11px/1 -apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;}.bhn-review-marker:hover{transform:scale(1.08);}.bhn-review-marker-resolved{background:#74818a;}",
     "@media(max-width:540px){#" + ID + "{right:8px;bottom:8px;max-height:calc(100vh - 16px);}.bhn-shell{max-height:calc(100vh - 16px);}}"
@@ -147,7 +150,9 @@ export function overlaySource(endpoint: string, title: string): string {
     if (escapedId) return "#" + escapedId;
     var classes = classTokens(node).map(cssIdent).filter(Boolean);
     var pick = classes.filter(function(value){ return value.length > 6; })[0] || classes[0];
-    return pick ? node.tagName.toLowerCase() + "." + pick : node.tagName.toLowerCase();
+    var selector = pick ? node.tagName.toLowerCase() + "." + pick : node.tagName.toLowerCase();
+    try { return document.querySelectorAll(selector).length === 1 ? selector : null; }
+    catch (_) { return null; }
   }
 
   function blockOf(node) {
@@ -175,26 +180,34 @@ export function overlaySource(endpoint: string, title: string): string {
     };
   }
 
-  function safeQuery(selector) {
+  function anchorTextMatches(node, quote) {
+    if (!quote) return true;
+    var text = cleanText(node.innerText || node.textContent);
+    return text === quote || (quote.length > 20 && text.indexOf(quote) > -1);
+  }
+
+  function safeQuery(selector, quote) {
     if (!selector) return null;
     try {
-      var node = document.querySelector(selector);
-      return node && !inOverlay(node) ? node : null;
+      var nodes = Array.prototype.slice.call(document.querySelectorAll(selector)).filter(function(node){ return !inOverlay(node); });
+      for (var i = 0; i < nodes.length; i++) {
+        if (anchorTextMatches(nodes[i], quote)) return nodes[i];
+      }
+      return !quote && nodes.length === 1 ? nodes[0] : null;
     } catch (_) { return null; }
   }
 
   function findAnchor(comment) {
-    var node = safeQuery(comment.anchorKey) || safeQuery(comment.anchorPath);
-    if (node) return node;
     var quote = cleanText(comment.anchorQuote);
-    if (!quote) return null;
-    var candidates = document.querySelectorAll("h1,h2,h3,h4,h5,p,a,button,li,label,blockquote,figcaption");
-    for (var i = 0; i < candidates.length; i++) {
-      if (inOverlay(candidates[i])) continue;
-      var text = cleanText(candidates[i].innerText || candidates[i].textContent);
-      if (text === quote || (quote.length > 20 && text.indexOf(quote) > -1)) return candidates[i];
+    var node = safeQuery(comment.anchorPath, quote) || safeQuery(comment.anchorKey, quote);
+    if (node) return node;
+    if (quote) {
+      var candidates = document.querySelectorAll("h1,h2,h3,h4,h5,p,a,button,li,label,blockquote,figcaption");
+      for (var i = 0; i < candidates.length; i++) {
+        if (!inOverlay(candidates[i]) && anchorTextMatches(candidates[i], quote)) return candidates[i];
+      }
     }
-    return null;
+    return safeQuery(comment.anchorPath, "") || safeQuery(comment.anchorKey, "");
   }
 
   function showHighlight(node) {
@@ -282,10 +295,71 @@ export function overlaySource(endpoint: string, title: string): string {
     window.setTimeout(function(){ textarea.focus(); }, 0);
   }
 
+  function beginEdit(comment) {
+    state.editingId = comment.id;
+    state.editDraft = comment.body;
+    state.deletingId = null;
+    state.replyTo = null;
+    state.replyDraft = "";
+    state.expandedThreads[comment.parentId || comment.id] = true;
+    render();
+  }
+
+  function beginDelete(comment) {
+    state.deletingId = comment.id;
+    state.editingId = null;
+    state.editDraft = "";
+    state.replyTo = null;
+    state.replyDraft = "";
+    state.expandedThreads[comment.parentId || comment.id] = true;
+    render();
+  }
+
+  function appendOwnerTools(container, comment) {
+    if (!comment.canEdit) return;
+    var edit = addButton("Edit", "bhn-link-btn", function(){ beginEdit(comment); });
+    edit.setAttribute("aria-label", "Edit " + (comment.parentId ? "reply" : "comment") + " by " + comment.authorName);
+    container.appendChild(edit);
+    var remove = addButton("Delete", "bhn-link-btn bhn-link-btn-danger", function(){ beginDelete(comment); });
+    remove.setAttribute("aria-label", "Delete " + (comment.parentId ? "reply" : "comment") + " by " + comment.authorName);
+    container.appendChild(remove);
+  }
+
+  function renderEditComposer(container, comment) {
+    if (state.editingId !== comment.id) return;
+    var wrap = make("div", "bhn-edit-compose");
+    var textarea = make("textarea", "bhn-textarea");
+    textarea.setAttribute("aria-label", "Edit " + (comment.parentId ? "reply" : "comment") + " by " + comment.authorName);
+    textarea.value = state.editDraft;
+    textarea.addEventListener("input", function(){ state.editDraft = textarea.value; });
+    wrap.appendChild(textarea);
+    var actions = make("div", "bhn-actions");
+    actions.appendChild(addButton("Cancel", "bhn-btn", function(){ state.editingId = null; state.editDraft = ""; render(); }));
+    var save = addButton(state.saving ? "Saving..." : "Save", "bhn-btn bhn-btn-primary", function(){ updateComment(comment.id, textarea.value); });
+    save.disabled = state.saving;
+    actions.appendChild(save);
+    wrap.appendChild(actions);
+    container.appendChild(wrap);
+    window.setTimeout(function(){ textarea.focus(); textarea.setSelectionRange(textarea.value.length, textarea.value.length); }, 0);
+  }
+
+  function renderDeleteConfirmation(container, comment) {
+    if (state.deletingId !== comment.id) return;
+    var wrap = make("div", "bhn-delete-confirm");
+    wrap.appendChild(make("div", "bhn-delete-copy", comment.parentId ? "Delete this reply?" : "Delete this thread and its replies?"));
+    var actions = make("div", "bhn-actions");
+    actions.appendChild(addButton("Cancel", "bhn-btn", function(){ state.deletingId = null; render(); }));
+    var remove = addButton(state.saving ? "Deleting..." : "Delete", "bhn-btn bhn-btn-danger", function(){ deleteComment(comment); });
+    remove.disabled = state.saving;
+    actions.appendChild(remove);
+    wrap.appendChild(actions);
+    container.appendChild(wrap);
+  }
+
   function renderThread(comment, index) {
     var card = make("article", "bhn-thread");
     card.setAttribute("data-thread-id", comment.id);
-    var expanded = !!state.expandedThreads[comment.id] || state.replyTo === comment.id;
+    var expanded = !!state.expandedThreads[comment.id] || state.replyTo === comment.id || state.editingId === comment.id || state.deletingId === comment.id;
     var toggle = make("button", "bhn-thread-toggle");
     toggle.setAttribute("type", "button");
     toggle.setAttribute("aria-expanded", String(expanded));
@@ -294,7 +368,7 @@ export function overlaySource(endpoint: string, title: string): string {
     var main = make("span", "bhn-thread-main");
     var line = make("span", "bhn-thread-line");
     line.appendChild(make("span", "bhn-author", comment.authorName));
-    line.appendChild(make("span", "bhn-time", formatTime(comment.createdAt)));
+    line.appendChild(make("span", "bhn-time", formatTime(comment.createdAt) + (comment.editedAt ? " · edited" : "")));
     line.appendChild(make("span", "bhn-status" + (comment.status === "open" ? "" : " bhn-status-resolved"), comment.status));
     main.appendChild(line);
     if (!expanded) main.appendChild(make("span", "bhn-thread-preview", cleanText(comment.body).slice(0, 100)));
@@ -312,7 +386,8 @@ export function overlaySource(endpoint: string, title: string): string {
 
     if (expanded) {
       var details = make("div", "bhn-thread-details");
-      details.appendChild(make("div", "bhn-thread-body", comment.body));
+      if (state.editingId === comment.id) renderEditComposer(details, comment);
+      else details.appendChild(make("div", "bhn-thread-body", comment.body));
       if (comment.anchorQuote) details.appendChild(make("div", "bhn-thread-quote", comment.anchorQuote.slice(0, 180)));
 
       var replies = repliesFor(comment.id);
@@ -320,8 +395,17 @@ export function overlaySource(endpoint: string, title: string): string {
         var replyList = make("div", "bhn-replies");
         replies.forEach(function(reply){
           var row = make("div", "bhn-reply");
-          row.appendChild(make("div", "bhn-reply-meta", reply.authorName + " · " + formatTime(reply.createdAt)));
-          row.appendChild(make("div", "bhn-reply-body", reply.body));
+          var replyHead = make("div", "bhn-reply-head");
+          replyHead.appendChild(make("div", "bhn-reply-meta", reply.authorName + " · " + formatTime(reply.createdAt) + (reply.editedAt ? " · edited" : "")));
+          if (reply.canEdit) {
+            var replyTools = make("div", "bhn-reply-tools");
+            appendOwnerTools(replyTools, reply);
+            replyHead.appendChild(replyTools);
+          }
+          row.appendChild(replyHead);
+          if (state.editingId === reply.id) renderEditComposer(row, reply);
+          else row.appendChild(make("div", "bhn-reply-body", reply.body));
+          renderDeleteConfirmation(row, reply);
           replyList.appendChild(row);
         });
         details.appendChild(replyList);
@@ -334,7 +418,9 @@ export function overlaySource(endpoint: string, title: string): string {
         state.expandedThreads[comment.id] = true;
         render();
       }));
+      appendOwnerTools(tools, comment);
       details.appendChild(tools);
+      renderDeleteConfirmation(details, comment);
       renderReplyComposer(details, comment);
       card.appendChild(details);
     }
@@ -474,6 +560,55 @@ export function overlaySource(endpoint: string, title: string): string {
     } catch (error) {
       state.saving = false;
       state.error = error && error.message ? error.message : "Could not save the comment.";
+      render();
+    }
+  }
+
+  async function updateComment(commentId, value) {
+    var body = String(value || "").trim();
+    if (body.length < 2 || state.saving) return;
+    state.saving = true;
+    state.error = "";
+    render();
+    try {
+      var response = await fetch(endpoint, {
+        method: "PATCH",
+        headers: { "Authorization": "Bearer " + credential, "Content-Type": "application/json" },
+        body: JSON.stringify({ id: commentId, body: body })
+      });
+      var data = await response.json().catch(function(){ return {}; });
+      if (!response.ok || !data.ok) throw new Error(data.error || "Could not update the comment.");
+      state.editingId = null;
+      state.editDraft = "";
+      state.saving = false;
+      await loadComments(false);
+    } catch (error) {
+      state.saving = false;
+      state.error = error && error.message ? error.message : "Could not update the comment.";
+      render();
+    }
+  }
+
+  async function deleteComment(comment) {
+    if (!comment || state.saving) return;
+    state.saving = true;
+    state.error = "";
+    render();
+    try {
+      var response = await fetch(endpoint, {
+        method: "DELETE",
+        headers: { "Authorization": "Bearer " + credential, "Content-Type": "application/json" },
+        body: JSON.stringify({ id: comment.id })
+      });
+      var data = await response.json().catch(function(){ return {}; });
+      if (!response.ok || !data.ok) throw new Error(data.error || "Could not delete the comment.");
+      if (!comment.parentId) delete state.expandedThreads[comment.id];
+      state.deletingId = null;
+      state.saving = false;
+      await loadComments(false);
+    } catch (error) {
+      state.saving = false;
+      state.error = error && error.message ? error.message : "Could not delete the comment.";
       render();
     }
   }

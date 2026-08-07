@@ -17,7 +17,7 @@ export const dynamic = "force-dynamic";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Methods": "GET, POST, PATCH, DELETE, OPTIONS",
   "Access-Control-Allow-Headers": "Authorization, Content-Type",
   "Access-Control-Max-Age": "86400",
   "Cache-Control": "private, no-store",
@@ -44,6 +44,15 @@ const CommentSchema = z.object({
   anchorBlock: oneLine(200).optional().nullable(),
 });
 
+const UpdateCommentSchema = z.object({
+  id: z.string().min(1).max(64),
+  body: z.string().trim().min(2, "Say a little more.").max(4000),
+});
+
+const DeleteCommentSchema = z.object({
+  id: z.string().min(1).max(64),
+});
+
 const COMMENT_SELECT = {
   id: true,
   parentId: true,
@@ -53,6 +62,7 @@ const COMMENT_SELECT = {
   anchorPath: true,
   anchorBlock: true,
   anchorState: true,
+  authorUserId: true,
   authorName: true,
   authorKind: true,
   body: true,
@@ -60,6 +70,11 @@ const COMMENT_SELECT = {
   editedAt: true,
   createdAt: true,
 } as const;
+
+function commentForViewer<T extends { authorUserId: string | null }>(comment: T, viewerUserId: string) {
+  const { authorUserId, ...publicComment } = comment;
+  return { ...publicComment, canEdit: authorUserId === viewerUserId };
+}
 
 function json(data: unknown, status = 200) {
   return NextResponse.json(data, { status, headers: CORS });
@@ -101,7 +116,7 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ token: stri
     ok: true,
     review: { title: review.title, round: review.round, status: review.status },
     viewer: { id: viewer.userId, name: viewer.name },
-    comments,
+    comments: comments.map((comment) => commentForViewer(comment, viewer.userId)),
   });
 }
 
@@ -188,5 +203,85 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ token: str
   });
   await prisma.pageReview.update({ where: { id: review.id }, data: { updatedAt: new Date() } });
 
-  return json({ ok: true, comment });
+  return json({ ok: true, comment: commentForViewer(comment, viewer.userId) });
+}
+
+export async function PATCH(req: NextRequest, ctx: { params: Promise<{ token: string }> }) {
+  const { token } = await ctx.params;
+  const review = await prisma.pageReview.findUnique({
+    where: { shareToken: token },
+    select: { id: true, round: true, status: true },
+  });
+  if (!review) return json({ error: "This review link is no longer active." }, 404);
+  if (review.status === "closed") return json({ error: "This review is closed." }, 409);
+
+  const viewer = await viewerFor(req, review.id);
+  if (!viewer) {
+    return json({ error: "Open this review from the training platform to join as yourself." }, 401);
+  }
+
+  const parsed = UpdateCommentSchema.safeParse(await req.json().catch(() => ({})));
+  if (!parsed.success) {
+    return json({ error: parsed.error.issues[0]?.message ?? "Check the comment." }, 400);
+  }
+
+  const existing = await prisma.pageComment.findFirst({
+    where: { id: parsed.data.id, reviewId: review.id, round: review.round },
+    select: { id: true, authorUserId: true },
+  });
+  if (!existing) return json({ error: "That comment is gone." }, 404);
+  if (existing.authorUserId !== viewer.userId) {
+    return json({ error: "You can only edit your own comments." }, 403);
+  }
+
+  const comment = await prisma.pageComment.update({
+    where: { id: existing.id },
+    data: {
+      body: parsed.data.body,
+      editCount: { increment: 1 },
+      editedAt: new Date(),
+    },
+    select: COMMENT_SELECT,
+  });
+  await prisma.pageReview.update({ where: { id: review.id }, data: { updatedAt: new Date() } });
+
+  return json({ ok: true, comment: commentForViewer(comment, viewer.userId) });
+}
+
+export async function DELETE(req: NextRequest, ctx: { params: Promise<{ token: string }> }) {
+  const { token } = await ctx.params;
+  const review = await prisma.pageReview.findUnique({
+    where: { shareToken: token },
+    select: { id: true, round: true, status: true },
+  });
+  if (!review) return json({ error: "This review link is no longer active." }, 404);
+  if (review.status === "closed") return json({ error: "This review is closed." }, 409);
+
+  const viewer = await viewerFor(req, review.id);
+  if (!viewer) {
+    return json({ error: "Open this review from the training platform to join as yourself." }, 401);
+  }
+
+  const parsed = DeleteCommentSchema.safeParse(await req.json().catch(() => ({})));
+  if (!parsed.success) return json({ error: "Choose a comment to delete." }, 400);
+
+  const existing = await prisma.pageComment.findFirst({
+    where: { id: parsed.data.id, reviewId: review.id, round: review.round },
+    select: { id: true, parentId: true, authorUserId: true },
+  });
+  if (!existing) return json({ error: "That comment is gone." }, 404);
+  if (existing.authorUserId !== viewer.userId) {
+    return json({ error: "You can only delete your own comments." }, 403);
+  }
+
+  const deleted = await prisma.pageComment.deleteMany({
+    where: {
+      reviewId: review.id,
+      round: review.round,
+      OR: [{ id: existing.id }, { parentId: existing.id }],
+    },
+  });
+  await prisma.pageReview.update({ where: { id: review.id }, data: { updatedAt: new Date() } });
+
+  return json({ ok: true, deletedCount: deleted.count, deletedThread: existing.parentId === null });
 }

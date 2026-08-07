@@ -3,6 +3,7 @@ import test from "node:test";
 import { NextRequest } from "next/server";
 import { loaderSource } from "../../src/app/api/public/page-review/loader.js/route";
 import { overlaySource } from "../../src/app/api/public/page-review/[token]/overlay.js/route";
+import { OPTIONS as pageCommentOptions } from "../../src/app/api/public/page-review/[token]/route";
 import { DELETE as deleteReview } from "../../src/app/api/workspace/page-review/[id]/route";
 import { GET as launchReview } from "../../src/app/api/workspace/page-review/[id]/launch/route";
 import { snippetFor } from "../../src/components/workspace/BookmarkletPanel";
@@ -89,7 +90,7 @@ test("overlay writes review titles as text and handles SVG class lists", () => {
   );
 
   assert.doesNotMatch(source, /innerHTML/);
-  assert.doesNotMatch(source, /window\.prompt|window\.alert/);
+  assert.doesNotMatch(source, /window\.prompt|window\.alert|window\.confirm/);
   assert.match(source, /bhn-review-marker/);
   assert.match(source, /bhn-root-collapsed/);
   assert.match(source, /threadHighlight/);
@@ -97,12 +98,23 @@ test("overlay writes review titles as text and handles SVG class lists", () => {
   assert.match(source, /bhn-review-highlight\{position:fixed/);
   assert.match(source, /bhn-review-marker\{position:fixed/);
   assert.doesNotMatch(source, /rect\.(?:top|left|right) \+ window\.scroll/);
+  assert.match(source, /method: "PATCH"/);
+  assert.match(source, /method: "DELETE"/);
+  assert.match(source, /safeQuery\(comment\.anchorPath, quote\) \|\| safeQuery\(comment\.anchorKey, quote\)/);
   assert.match(source, /background:rgba\(247,249,250,\.8\)/);
   assert.match(source, /Reply to this thread/);
   assert.match(source, /Authorization/);
   assert.match(source, /classList/);
   assert.doesNotMatch(source, /className/);
   assert.doesNotThrow(() => new Function(source));
+});
+
+test("page comment preflight allows owner edit and delete mutations", async () => {
+  const response = await pageCommentOptions();
+  const methods = response.headers.get("Access-Control-Allow-Methods") ?? "";
+
+  assert.match(methods, /PATCH/);
+  assert.match(methods, /DELETE/);
 });
 
 test("bookmarklet code follows the current review token", () => {
