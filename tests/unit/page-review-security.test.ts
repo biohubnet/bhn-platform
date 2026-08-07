@@ -91,6 +91,9 @@ test("overlay writes review titles as text and handles SVG class lists", () => {
   assert.doesNotMatch(source, /innerHTML/);
   assert.doesNotMatch(source, /window\.prompt|window\.alert/);
   assert.match(source, /bhn-review-marker/);
+  assert.match(source, /bhn-root-collapsed/);
+  assert.match(source, /threadHighlight/);
+  assert.match(source, /background:rgba\(247,249,250,\.8\)/);
   assert.match(source, /Reply to this thread/);
   assert.match(source, /Authorization/);
   assert.match(source, /classList/);

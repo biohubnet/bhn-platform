@@ -67,7 +67,7 @@ async function mockPage(page: Page, credential: string) {
       const parent = data.parentId
         ? comments.find((comment) => comment.id === data.parentId)
         : null;
-      comments.push({
+      const comment: Comment = {
         id: `comment-${comments.length + 1}`,
         parentId: parent?.parentId ?? parent?.id ?? null,
         round: 1,
@@ -82,8 +82,9 @@ async function mockPage(page: Page, credential: string) {
         status: "open",
         editedAt: null,
         createdAt: new Date().toISOString(),
-      });
-      await route.fulfill({ status: 200, headers: cors, body: JSON.stringify({ ok: true }) });
+      };
+      comments.push(comment);
+      await route.fulfill({ status: 200, headers: cors, body: JSON.stringify({ ok: true, comment }) });
       return;
     }
     await route.fulfill({
@@ -118,6 +119,22 @@ async function main() {
     await mockPage(alex, "viewer-alex");
     await alex.getByText("Could this headline be more specific?").waitFor();
     assert.equal(await alex.locator(".bhn-review-marker").count(), 1);
+    const initialPanel = await alex.locator("#bhn-review-overlay").boundingBox();
+    assert.ok(initialPanel && initialPanel.width <= 304);
+    assert.match(
+      await alex.locator(".bhn-shell").evaluate((shell) => getComputedStyle(shell).backgroundColor),
+      /0\.8\)/,
+    );
+
+    const priyaThread = alex.locator("article", { hasText: "Could this headline be more specific?" });
+    await priyaThread.hover();
+    const headingBox = await alex.locator("#review-heading").boundingBox();
+    const highlightBox = await alex.locator(".bhn-review-highlight").boundingBox();
+    assert.ok(headingBox && highlightBox);
+    assert.ok(Math.abs(headingBox.width - highlightBox.width) <= 4);
+    assert.ok(Math.abs(headingBox.height - highlightBox.height) <= 4);
+    assert.ok(Math.abs(headingBox.x - highlightBox.x) < 1);
+    assert.ok(Math.abs(headingBox.y - highlightBox.y) < 1);
 
     await alex.locator("#review-heading").click();
     await alex.getByLabel("New review comment").fill("Add the national scope to this headline.");
@@ -127,6 +144,9 @@ async function main() {
     const jordan = await browser.newPage({ viewport: { width: 390, height: 844 } });
     await mockPage(jordan, "viewer-jordan");
     const alexThread = jordan.locator("article", { hasText: "Add the national scope to this headline." });
+    await alexThread.hover();
+    assert.equal(await jordan.locator(".bhn-review-highlight").evaluate((node) => getComputedStyle(node).display), "block");
+    await alexThread.getByRole("button", { name: "Expand comment 2" }).click();
     await alexThread.getByRole("button", { name: "Reply" }).click();
     await jordan.getByLabel("Reply to Alex Reviewer").fill("Agreed. I would mention Canada directly.");
     await jordan.getByRole("button", { name: "Reply", exact: true }).last().click();
@@ -142,6 +162,14 @@ async function main() {
     assert.ok(mobilePanel.x >= 0 && mobilePanel.x + mobilePanel.width <= 390);
     assert.ok(mobilePanel.y >= 0 && mobilePanel.y + mobilePanel.height <= 844);
 
+    await jordan.getByRole("button", { name: "Collapse comments" }).click();
+    await jordan.waitForTimeout(250);
+    const collapsedPanel = await jordan.locator("#bhn-review-overlay").boundingBox();
+    assert.ok(collapsedPanel && collapsedPanel.width <= 76);
+    assert.equal(await jordan.locator(".bhn-body").isVisible(), false);
+    await jordan.getByRole("button", { name: "Expand 2 comments" }).click();
+    assert.equal(await jordan.locator(".bhn-body").isVisible(), true);
+
     await alex.screenshot({ path: "/tmp/bhn-review-overlay-desktop.png", fullPage: true });
     await jordan.screenshot({ path: "/tmp/bhn-review-overlay-mobile.png", fullPage: true });
     console.log(JSON.stringify({
@@ -149,6 +177,9 @@ async function main() {
       desktopMarkers: await alex.locator(".bhn-review-marker").count(),
       mobileThreads: await jordan.locator(".bhn-thread").count(),
       sharedReplyVisible: true,
+      threadHoverHighlightsAnchor: true,
+      compactTranslucentPanel: true,
+      collapsedRailWidth: collapsedPanel.width,
       mobilePanelWithinViewport: true,
     }));
   } finally {
