@@ -192,6 +192,21 @@ async function main() {
     assert.ok(markerBox);
     assert.ok(Math.abs(markerBox.x + markerBox.width / 2 - (headingBox.x + headingBox.width)) < 1);
     assert.ok(Math.abs(markerBox.y + markerBox.height / 2 - headingBox.y) < 1);
+
+    await alex.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+    await alex.waitForTimeout(100);
+    const bottomScroll = await alex.evaluate(() => window.scrollY);
+    const hiddenHeadingBox = await alex.locator("#review-heading").boundingBox();
+    assert.ok(hiddenHeadingBox && hiddenHeadingBox.y < 0);
+    await priyaThread.getByRole("button", { name: "Show comment 1 on page" }).click();
+    await alex.waitForTimeout(1100);
+    const locatedScroll = await alex.evaluate(() => window.scrollY);
+    const locatedHeadingBox = await alex.locator("#review-heading").boundingBox();
+    assert.ok(locatedScroll < bottomScroll);
+    assert.ok(locatedHeadingBox && locatedHeadingBox.y >= 0 && locatedHeadingBox.y + locatedHeadingBox.height <= 900);
+    assert.equal(await alex.evaluate(() => document.activeElement?.id), "review-heading");
+    assert.equal(await alex.locator(".bhn-review-highlight").evaluate((node) => getComputedStyle(node).display), "block");
+
     await priyaThread.getByRole("button", { name: "Expand comment 1" }).click();
     assert.equal(await priyaThread.getByRole("button", { name: "Edit comment by Priya Shah" }).count(), 0);
     assert.equal(await priyaThread.getByRole("button", { name: "Delete comment by Priya Shah" }).count(), 0);
@@ -260,6 +275,7 @@ async function main() {
       markers.map((marker) => (marker as HTMLElement).style.left),
     );
     assert.equal(new Set(markerPositions).size, markerPositions.length);
+    assert.equal(await alex.getByRole("button", { name: /^Show comment \d+ on page$/ }).count(), 2);
     const mobilePanel = await jordan.locator("#bhn-review-overlay").boundingBox();
     assert.ok(mobilePanel);
     assert.ok(mobilePanel.x >= 0 && mobilePanel.x + mobilePanel.width <= 390);
@@ -287,6 +303,7 @@ async function main() {
     assert.ok(collapsedPanel && collapsedPanel.width <= 76);
     assert.equal(await jordan.locator(".bhn-body").isVisible(), false);
     await jordan.getByRole("button", { name: "Expand 2 comments" }).click();
+    await jordan.waitForTimeout(250);
     assert.equal(await jordan.locator(".bhn-body").isVisible(), true);
     const restoredPanel = await jordan.locator("#bhn-review-overlay").boundingBox();
     assert.ok(restoredPanel);
@@ -303,6 +320,7 @@ async function main() {
       ownedReplyEditedAndDeleted: true,
       repeatedButtonAnchorResolved: true,
       threadHoverHighlightsAnchor: true,
+      showMeNavigation: true,
       compactTranslucentPanel: true,
       closeDisabled: true,
       draggablePanel: true,

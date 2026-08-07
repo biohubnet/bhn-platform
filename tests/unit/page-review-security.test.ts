@@ -94,6 +94,9 @@ test("overlay writes review titles as text and handles SVG class lists", () => {
   assert.match(source, /bhn-review-marker/);
   assert.match(source, /bhn-root-collapsed/);
   assert.match(source, /bhn-drag-handle/);
+  assert.match(source, /Show me/);
+  assert.match(source, /scrollIntoView\(\{ behavior: "smooth", block: "center", inline: "nearest" \}\)/);
+  assert.match(source, /focus\(\{ preventScroll: true \}\)/);
   assert.match(source, /addEventListener\("pointerdown", startPanelDrag\)/);
   assert.match(source, /addEventListener\("pointermove", movePanel/);
   assert.doesNotMatch(source, /Close website review/);
