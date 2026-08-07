@@ -74,6 +74,8 @@ export function overlaySource(endpoint: string, title: string): string {
   var positionFrame = null;
   var threadHighlight = null;
   var highlightedNode = null;
+  var panelPosition = null;
+  var panelDrag = null;
 
   var style = document.createElement("style");
   style.id = ID + "-styles";
@@ -84,8 +86,8 @@ export function overlaySource(endpoint: string, title: string): string {
     "#" + ID + " button,#" + ID + " textarea{font:inherit;}",
     "#" + ID + " button{cursor:pointer;}",
     ".bhn-shell{display:flex;max-height:calc(100vh - 20px);flex-direction:column;overflow:hidden;border:1px solid rgba(151,166,176,.72);border-radius:7px;background:rgba(247,249,250,.8);box-shadow:0 12px 34px rgba(7,27,39,.2);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);}",
-    ".bhn-head{display:flex;align-items:center;gap:5px;padding:7px;background:rgba(11,53,88,.88);color:#fff;}.bhn-head-copy{min-width:0;flex:1;}.bhn-kicker{font-size:8px;font-weight:800;text-transform:uppercase;opacity:.68;}.bhn-title{overflow:hidden;font-size:12px;font-weight:780;text-overflow:ellipsis;white-space:nowrap;}.bhn-meta{overflow:hidden;margin-top:1px;font-size:9px;opacity:.76;text-overflow:ellipsis;white-space:nowrap;}",
-    ".bhn-icon-btn{display:grid;height:26px;min-width:26px;flex:0 0 auto;place-items:center;border:0;border-radius:5px;background:rgba(255,255,255,.11);padding:0 6px;color:#fff;font-weight:800;line-height:1;}.bhn-icon-btn:hover{background:rgba(255,255,255,.2);}.bhn-close{font-size:17px;}.bhn-collapse{font-size:11px;}.bhn-shell-collapsed .bhn-head{padding:5px;}.bhn-shell-collapsed .bhn-head-copy,.bhn-shell-collapsed .bhn-body{display:none;}",
+    ".bhn-head{display:flex;align-items:center;gap:5px;padding:7px;background:rgba(11,53,88,.88);color:#fff;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;}.bhn-root-dragging .bhn-head{cursor:grabbing;}.bhn-drag-handle{width:10px;height:14px;flex:0 0 auto;background:radial-gradient(circle,rgba(255,255,255,.72) 1px,transparent 1.5px) 0 0/4px 4px;opacity:.8;}.bhn-head-copy{min-width:0;flex:1;}.bhn-kicker{font-size:8px;font-weight:800;text-transform:uppercase;opacity:.68;}.bhn-title{overflow:hidden;font-size:12px;font-weight:780;text-overflow:ellipsis;white-space:nowrap;}.bhn-meta{overflow:hidden;margin-top:1px;font-size:9px;opacity:.76;text-overflow:ellipsis;white-space:nowrap;}",
+    ".bhn-icon-btn{display:grid;height:26px;min-width:26px;flex:0 0 auto;place-items:center;border:0;border-radius:5px;background:rgba(255,255,255,.11);padding:0 6px;color:#fff;font-weight:800;line-height:1;}.bhn-icon-btn:hover{background:rgba(255,255,255,.2);}.bhn-collapse{font-size:11px;}.bhn-shell-collapsed .bhn-head{padding:5px;}.bhn-shell-collapsed .bhn-head-copy,.bhn-shell-collapsed .bhn-body{display:none;}",
     ".bhn-body{overflow:auto;padding:6px;overscroll-behavior:contain;}.bhn-notice{padding:7px;border:1px solid #d8e0e5;border-radius:5px;background:rgba(255,255,255,.84);color:#4a5864;font-size:11px;}.bhn-error{border-color:#f0b7b7;background:rgba(255,243,243,.9);color:#8c2020;}",
     ".bhn-compose{margin-bottom:6px;padding:7px;border:1px solid #9bc6d2;border-radius:6px;background:rgba(237,248,250,.88);}.bhn-compose-label{font-size:10px;font-weight:800;color:#245866;}.bhn-quote{max-height:44px;overflow:hidden;margin:4px 0 6px;padding-left:6px;border-left:2px solid #2c7587;color:#41515c;font-size:10px;line-height:1.3;}.bhn-textarea{display:block;width:100%;min-height:58px;resize:vertical;border:1px solid #b9c5cc;border-radius:5px;background:rgba(255,255,255,.92);padding:6px;color:#17212b;outline:none;}.bhn-textarea:focus{border-color:#2c7587;box-shadow:0 0 0 2px rgba(44,117,135,.14);}",
     ".bhn-actions{display:flex;align-items:center;justify-content:flex-end;gap:5px;margin-top:5px;}.bhn-btn{min-height:27px;border:1px solid #c6d0d6;border-radius:5px;background:rgba(255,255,255,.88);padding:4px 8px;color:#34434e;font-size:10px;font-weight:750;}.bhn-btn:hover{background:#f0f4f6;}.bhn-btn-primary{border-color:#176879;background:#176879;color:#fff;}.bhn-btn-primary:hover{background:#105565;}.bhn-btn-danger{border-color:#b64a4a;background:#a53b3b;color:#fff;}.bhn-btn-danger:hover{background:#8d2f2f;}.bhn-btn:disabled{cursor:not-allowed;opacity:.55;}",
@@ -112,6 +114,56 @@ export function overlaySource(endpoint: string, title: string): string {
     if (classValue) node.setAttribute("class", classValue);
     if (typeof text === "string") node.textContent = text;
     return node;
+  }
+
+  function constrainPanel() {
+    if (!panelPosition) return;
+    var margin = window.innerWidth <= 540 ? 8 : 10;
+    var targetWidth = state.panelCollapsed ? Math.min(76, window.innerWidth - (margin * 2)) : Math.min(304, window.innerWidth - (margin * 2));
+    var rect = root.getBoundingClientRect();
+    var maxLeft = Math.max(margin, window.innerWidth - targetWidth - margin);
+    var maxTop = Math.max(margin, window.innerHeight - rect.height - margin);
+    panelPosition.left = Math.min(Math.max(margin, panelPosition.left), maxLeft);
+    panelPosition.top = Math.min(Math.max(margin, panelPosition.top), maxTop);
+    root.style.right = "auto";
+    root.style.bottom = "auto";
+    root.style.left = panelPosition.left + "px";
+    root.style.top = panelPosition.top + "px";
+  }
+
+  function movePanel(event) {
+    if (!panelDrag || event.pointerId !== panelDrag.pointerId) return;
+    panelPosition.left = event.clientX - panelDrag.offsetX;
+    panelPosition.top = event.clientY - panelDrag.offsetY;
+    constrainPanel();
+    event.preventDefault();
+  }
+
+  function stopPanelDrag(event) {
+    if (!panelDrag || (event && event.pointerId !== panelDrag.pointerId)) return;
+    window.removeEventListener("pointermove", movePanel);
+    window.removeEventListener("pointerup", stopPanelDrag);
+    window.removeEventListener("pointercancel", stopPanelDrag);
+    panelDrag = null;
+    root.classList.remove("bhn-root-dragging");
+  }
+
+  function startPanelDrag(event) {
+    if (event.button !== undefined && event.button !== 0) return;
+    if (event.target && event.target.closest && event.target.closest("button")) return;
+    var rect = root.getBoundingClientRect();
+    panelPosition = { left: rect.left, top: rect.top };
+    panelDrag = {
+      pointerId: event.pointerId,
+      offsetX: event.clientX - rect.left,
+      offsetY: event.clientY - rect.top
+    };
+    root.classList.add("bhn-root-dragging");
+    constrainPanel();
+    window.addEventListener("pointermove", movePanel, { passive: false });
+    window.addEventListener("pointerup", stopPanelDrag);
+    window.addEventListener("pointercancel", stopPanelDrag);
+    event.preventDefault();
   }
 
   function cleanText(value) {
@@ -452,9 +504,14 @@ export function overlaySource(endpoint: string, title: string): string {
 
   function render() {
     root.textContent = "";
-    root.setAttribute("class", state.panelCollapsed ? "bhn-root-collapsed" : "");
+    root.setAttribute("class", (state.panelCollapsed ? "bhn-root-collapsed" : "") + (panelDrag ? " bhn-root-dragging" : ""));
     var shell = make("div", "bhn-shell" + (state.panelCollapsed ? " bhn-shell-collapsed" : ""));
     var head = make("header", "bhn-head");
+    head.setAttribute("title", "Drag review panel");
+    head.addEventListener("pointerdown", startPanelDrag);
+    var dragHandle = make("span", "bhn-drag-handle");
+    dragHandle.setAttribute("aria-hidden", "true");
+    head.appendChild(dragHandle);
     var copy = make("div", "bhn-head-copy");
     copy.appendChild(make("div", "bhn-kicker", "BioHubNet review"));
     copy.appendChild(make("div", "bhn-title", state.review.title || initialTitle));
@@ -472,10 +529,6 @@ export function overlaySource(endpoint: string, title: string): string {
     collapse.setAttribute("aria-label", collapseLabel);
     collapse.setAttribute("title", collapseLabel);
     head.appendChild(collapse);
-    var close = addButton("×", "bhn-icon-btn bhn-close", cleanup);
-    close.setAttribute("aria-label", "Close website review");
-    close.setAttribute("title", "Close website review");
-    head.appendChild(close);
     shell.appendChild(head);
 
     var body = make("div", "bhn-body");
@@ -494,6 +547,7 @@ export function overlaySource(endpoint: string, title: string): string {
     }
     shell.appendChild(body);
     root.appendChild(shell);
+    constrainPanel();
     syncMarkers();
   }
 
@@ -686,19 +740,16 @@ export function overlaySource(endpoint: string, title: string): string {
     render();
   }
 
-  function onKey(event) {
-    if (event.key === "Escape") cleanup();
-  }
-
   function onPositionChange() {
+    constrainPanel();
     if (highlightedNode) showHighlight(highlightedNode);
     syncMarkers();
   }
 
   function cleanup() {
+    stopPanelDrag();
     document.removeEventListener("mousemove", onMove, true);
     document.removeEventListener("click", onClick, true);
-    document.removeEventListener("keydown", onKey, true);
     window.removeEventListener("scroll", onPositionChange, true);
     window.removeEventListener("resize", onPositionChange);
     if (pollTimer) window.clearInterval(pollTimer);
@@ -713,7 +764,6 @@ export function overlaySource(endpoint: string, title: string): string {
   window.__bhnReviewCleanup = cleanup;
   document.addEventListener("mousemove", onMove, true);
   document.addEventListener("click", onClick, true);
-  document.addEventListener("keydown", onKey, true);
   window.addEventListener("scroll", onPositionChange, true);
   window.addEventListener("resize", onPositionChange);
   pollTimer = window.setInterval(function(){ loadComments(true); }, 5000);

@@ -93,6 +93,11 @@ test("overlay writes review titles as text and handles SVG class lists", () => {
   assert.doesNotMatch(source, /window\.prompt|window\.alert|window\.confirm/);
   assert.match(source, /bhn-review-marker/);
   assert.match(source, /bhn-root-collapsed/);
+  assert.match(source, /bhn-drag-handle/);
+  assert.match(source, /addEventListener\("pointerdown", startPanelDrag\)/);
+  assert.match(source, /addEventListener\("pointermove", movePanel/);
+  assert.doesNotMatch(source, /Close website review/);
+  assert.doesNotMatch(source, /addEventListener\("keydown"/);
   assert.match(source, /threadHighlight/);
   assert.match(source, /bhn-review-flash \.16s linear 5/);
   assert.match(source, /border-color:#eea636/);

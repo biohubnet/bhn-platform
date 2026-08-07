@@ -264,6 +264,22 @@ async function main() {
     assert.ok(mobilePanel);
     assert.ok(mobilePanel.x >= 0 && mobilePanel.x + mobilePanel.width <= 390);
     assert.ok(mobilePanel.y >= 0 && mobilePanel.y + mobilePanel.height <= 844);
+    assert.equal(await jordan.getByRole("button", { name: "Close website review" }).count(), 0);
+    await jordan.keyboard.press("Escape");
+    assert.equal(await jordan.locator("#bhn-review-overlay").count(), 1);
+
+    const dragHandle = await jordan.locator(".bhn-drag-handle").boundingBox();
+    assert.ok(dragHandle);
+    await jordan.mouse.move(dragHandle.x + dragHandle.width / 2, dragHandle.y + dragHandle.height / 2);
+    await jordan.mouse.down();
+    await jordan.mouse.move(30, 120, { steps: 8 });
+    await jordan.mouse.up();
+    await jordan.waitForTimeout(50);
+    const draggedPanel = await jordan.locator("#bhn-review-overlay").boundingBox();
+    assert.ok(draggedPanel);
+    assert.ok(Math.abs(draggedPanel.x - mobilePanel.x) > 20 || Math.abs(draggedPanel.y - mobilePanel.y) > 20);
+    assert.ok(draggedPanel.x >= 8 && draggedPanel.x + draggedPanel.width <= 382);
+    assert.ok(draggedPanel.y >= 8 && draggedPanel.y + draggedPanel.height <= 836);
 
     await jordan.getByRole("button", { name: "Collapse comments" }).click();
     await jordan.waitForTimeout(250);
@@ -272,6 +288,10 @@ async function main() {
     assert.equal(await jordan.locator(".bhn-body").isVisible(), false);
     await jordan.getByRole("button", { name: "Expand 2 comments" }).click();
     assert.equal(await jordan.locator(".bhn-body").isVisible(), true);
+    const restoredPanel = await jordan.locator("#bhn-review-overlay").boundingBox();
+    assert.ok(restoredPanel);
+    assert.ok(Math.abs(restoredPanel.x - draggedPanel.x) < 1);
+    assert.ok(Math.abs(restoredPanel.y - draggedPanel.y) < 1);
 
     await alex.screenshot({ path: "/tmp/bhn-review-overlay-desktop.png", fullPage: true });
     await jordan.screenshot({ path: "/tmp/bhn-review-overlay-mobile.png", fullPage: true });
@@ -284,6 +304,8 @@ async function main() {
       repeatedButtonAnchorResolved: true,
       threadHoverHighlightsAnchor: true,
       compactTranslucentPanel: true,
+      closeDisabled: true,
+      draggablePanel: true,
       collapsedRailWidth: collapsedPanel.width,
       mobilePanelWithinViewport: true,
     }));
