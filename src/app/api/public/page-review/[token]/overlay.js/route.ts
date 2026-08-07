@@ -88,7 +88,7 @@ export function overlaySource(endpoint: string, title: string): string {
     ".bhn-list{display:grid;gap:5px;}.bhn-empty{padding:11px 7px;text-align:center;color:#667580;font-size:10px;}.bhn-thread{border:1px solid rgba(189,201,209,.85);border-radius:6px;background:rgba(255,255,255,.84);overflow:hidden;}.bhn-thread-active{border-color:#2c7587;box-shadow:0 0 0 2px rgba(44,117,135,.12);}.bhn-thread-toggle{display:grid;width:100%;grid-template-columns:20px minmax(0,1fr) auto;align-items:start;gap:6px;border:0;background:transparent;padding:6px;text-align:left;color:#17212b;}.bhn-thread-toggle:hover{background:rgba(227,239,243,.72);}.bhn-number{display:grid;width:20px;height:20px;place-items:center;border-radius:50%;background:#176879;color:#fff;font-size:9px;font-weight:800;}.bhn-thread-main{min-width:0;}.bhn-thread-line{display:flex;min-width:0;align-items:center;gap:5px;}.bhn-author{min-width:0;overflow:hidden;flex:1;color:#1c2b35;font-size:10px;font-weight:800;text-overflow:ellipsis;white-space:nowrap;}.bhn-time{color:#84919a;font-size:8px;font-weight:550;white-space:nowrap;}.bhn-status{border-radius:999px;background:#e9f6ed;padding:1px 4px;color:#2e6f42;font-size:8px;font-weight:800;text-transform:uppercase;}.bhn-status-resolved{background:#eef1f3;color:#64717a;}.bhn-thread-preview{overflow:hidden;margin-top:2px;color:#3b4b55;font-size:10px;text-overflow:ellipsis;white-space:nowrap;}.bhn-disclosure{padding-top:2px;color:#71808a;font-size:12px;}",
     ".bhn-thread-details{border-top:1px solid rgba(220,228,232,.8);padding-top:6px;}.bhn-thread-body{padding:0 7px 6px;white-space:pre-wrap;color:#2f3e48;font-size:11px;}.bhn-thread-quote{max-height:46px;overflow:hidden;margin:0 7px 6px;padding:4px 6px;border-left:2px solid #b7c8d1;background:rgba(245,248,249,.82);color:#60707b;font-size:9px;}.bhn-thread-tools{display:flex;justify-content:flex-end;padding:0 7px 5px;}.bhn-link-btn{border:0;background:transparent;padding:2px 4px;color:#176879;font-size:10px;font-weight:800;}.bhn-link-btn:hover{text-decoration:underline;}",
     ".bhn-replies{margin:0 7px 6px 28px;border-left:2px solid #dce4e8;padding-left:6px;}.bhn-reply{padding:4px 0;border-top:1px solid #edf0f2;}.bhn-reply:first-child{border-top:0;}.bhn-reply-meta{color:#6c7982;font-size:9px;font-weight:750;}.bhn-reply-body{margin-top:1px;white-space:pre-wrap;color:#34434e;font-size:10px;}.bhn-reply-compose{margin:0 7px 6px 28px;}",
-    ".bhn-review-highlight{position:absolute;z-index:2147483645;display:none;pointer-events:none;border:2px solid #2c7587;border-radius:3px;background:rgba(44,117,135,.12);}",
+    ".bhn-review-highlight{position:absolute;z-index:2147483645;display:none;pointer-events:none;border:2px solid #2c7587;border-radius:3px;background:rgba(44,117,135,.12);}.bhn-review-highlight-flash{animation:bhn-review-flash .14s linear 5;}@keyframes bhn-review-flash{0%,100%{opacity:1}50%{opacity:.08}}",
     ".bhn-review-marker{position:absolute;z-index:2147483646;display:grid;width:25px;height:25px;place-items:center;border:2px solid #fff;border-radius:50%;background:#176879;color:#fff;box-shadow:0 2px 8px rgba(0,0,0,.28);font:800 11px/1 -apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;}.bhn-review-marker:hover{transform:scale(1.08);}.bhn-review-marker-resolved{background:#74818a;}",
     "@media(max-width:540px){#" + ID + "{right:8px;bottom:8px;max-height:calc(100vh - 16px);}.bhn-shell{max-height:calc(100vh - 16px);}}"
   ].join("");
@@ -204,6 +204,14 @@ export function overlaySource(endpoint: string, title: string): string {
     highlight.style.left = (rect.left + window.scrollX) + "px";
     highlight.style.width = rect.width + "px";
     highlight.style.height = rect.height + "px";
+  }
+
+  function flashHighlight(node) {
+    if (!node) return;
+    showHighlight(node);
+    highlight.classList.remove("bhn-review-highlight-flash");
+    void highlight.offsetWidth;
+    highlight.classList.add("bhn-review-highlight-flash");
   }
 
   function topComments() {
@@ -329,10 +337,14 @@ export function overlaySource(endpoint: string, title: string): string {
       threadHighlight = findAnchor(comment);
       showHighlight(threadHighlight);
     }
-    card.addEventListener("mouseenter", highlightCommentAnchor);
+    card.addEventListener("mouseenter", function(){
+      threadHighlight = findAnchor(comment);
+      flashHighlight(threadHighlight);
+    });
     card.addEventListener("mousemove", highlightCommentAnchor);
     card.addEventListener("mouseleave", function(){
       threadHighlight = null;
+      highlight.classList.remove("bhn-review-highlight-flash");
       highlight.style.display = "none";
     });
     return card;

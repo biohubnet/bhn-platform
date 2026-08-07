@@ -128,6 +128,16 @@ async function main() {
 
     const priyaThread = alex.locator("article", { hasText: "Could this headline be more specific?" });
     await priyaThread.hover();
+    const flashAnimation = await alex.locator(".bhn-review-highlight").evaluate((node) => ({
+      name: getComputedStyle(node).animationName,
+      iterations: getComputedStyle(node).animationIterationCount,
+      duration: getComputedStyle(node).animationDuration,
+    }));
+    assert.deepEqual(flashAnimation, {
+      name: "bhn-review-flash",
+      iterations: "5",
+      duration: "0.14s",
+    });
     const headingBox = await alex.locator("#review-heading").boundingBox();
     const highlightBox = await alex.locator(".bhn-review-highlight").boundingBox();
     assert.ok(headingBox && highlightBox);
