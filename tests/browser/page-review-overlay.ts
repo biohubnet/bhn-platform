@@ -54,7 +54,7 @@ async function mockPage(page: Page, credential: string) {
   await page.route("https://site.test/", (route) => route.fulfill({
     status: 200,
     contentType: "text/html",
-    body: "<!doctype html><html><head><title>Review fixture</title></head><body><main><h1 id=\"review-heading\">A national network for biomanufacturing talent</h1><p>Supporting teams across Canada.</p></main></body></html>",
+    body: "<!doctype html><html><head><title>Review fixture</title><style>html{margin-top:32px}body{position:relative;min-height:1800px}main{padding-top:700px}</style></head><body><main><h1 id=\"review-heading\">A national network for biomanufacturing talent</h1><p>Supporting teams across Canada.</p></main></body></html>",
   }));
   await page.route(endpoint, async (route) => {
     const request = route.request();
@@ -118,6 +118,8 @@ async function main() {
     const alex = await browser.newPage({ viewport: { width: 1440, height: 900 } });
     await mockPage(alex, "viewer-alex");
     await alex.getByText("Could this headline be more specific?").waitFor();
+    await alex.evaluate(() => window.scrollTo(0, 500));
+    await alex.waitForTimeout(50);
     assert.equal(await alex.locator(".bhn-review-marker").count(), 1);
     const initialPanel = await alex.locator("#bhn-review-overlay").boundingBox();
     assert.ok(initialPanel && initialPanel.width <= 304);
@@ -145,6 +147,10 @@ async function main() {
     assert.ok(Math.abs(headingBox.height - highlightBox.height) <= 4);
     assert.ok(Math.abs(headingBox.x - highlightBox.x) < 1);
     assert.ok(Math.abs(headingBox.y - highlightBox.y) < 1);
+    const markerBox = await alex.locator(".bhn-review-marker").boundingBox();
+    assert.ok(markerBox);
+    assert.ok(Math.abs(markerBox.x + markerBox.width / 2 - (headingBox.x + headingBox.width)) < 1);
+    assert.ok(Math.abs(markerBox.y + markerBox.height / 2 - headingBox.y) < 1);
 
     await alex.locator("#review-heading").click();
     await alex.getByLabel("New review comment").fill("Add the national scope to this headline.");
