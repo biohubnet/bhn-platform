@@ -411,11 +411,15 @@ export function overlaySource(endpoint: string, title: string): string {
     render();
   }
 
-  function appendOwnerTools(container, comment) {
-    if (!comment.canEdit) return;
-    var edit = addButton("Edit", "bhn-link-btn", function(){ beginEdit(comment); });
-    edit.setAttribute("aria-label", "Edit " + (comment.parentId ? "reply" : "comment") + " by " + comment.authorName);
-    container.appendChild(edit);
+  // Edit is the author's alone; Delete is open to every reviewer, because a
+  // review is a shared workspace. Removing a comment is tidying up, whereas
+  // rewording someone else's puts words in their mouth.
+  function appendCommentTools(container, comment) {
+    if (comment.canEdit) {
+      var edit = addButton("Edit", "bhn-link-btn", function(){ beginEdit(comment); });
+      edit.setAttribute("aria-label", "Edit " + (comment.parentId ? "reply" : "comment") + " by " + comment.authorName);
+      container.appendChild(edit);
+    }
     var remove = addButton("Delete", "bhn-link-btn bhn-link-btn-danger", function(){ beginDelete(comment); });
     remove.setAttribute("aria-label", "Delete " + (comment.parentId ? "reply" : "comment") + " by " + comment.authorName);
     container.appendChild(remove);
@@ -442,7 +446,13 @@ export function overlaySource(endpoint: string, title: string): string {
   function renderDeleteConfirmation(container, comment) {
     if (state.deletingId !== comment.id) return;
     var wrap = make("div", "bhn-delete-confirm");
-    wrap.appendChild(make("div", "bhn-delete-copy", comment.parentId ? "Delete this reply?" : "Delete this thread and its replies?"));
+    // canEdit is true only on your own comments, so it doubles as "is mine"
+    // — name the author when you're about to remove someone else's.
+    var whose = comment.canEdit ? "this" : comment.authorName + "'s";
+    wrap.appendChild(make("div", "bhn-delete-copy",
+      comment.parentId
+        ? "Delete " + whose + " reply?"
+        : "Delete " + whose + " thread and its replies?"));
     var actions = make("div", "bhn-actions");
     actions.appendChild(addButton("Cancel", "bhn-btn", function(){ state.deletingId = null; render(); }));
     var remove = addButton(state.saving ? "Deleting..." : "Delete", "bhn-btn bhn-btn-danger", function(){ deleteComment(comment); });
@@ -511,11 +521,9 @@ export function overlaySource(endpoint: string, title: string): string {
           var row = make("div", "bhn-reply");
           var replyHead = make("div", "bhn-reply-head");
           replyHead.appendChild(make("div", "bhn-reply-meta", reply.authorName + " · " + formatTime(reply.createdAt) + (reply.editedAt ? " · edited" : "")));
-          if (reply.canEdit) {
-            var replyTools = make("div", "bhn-reply-tools");
-            appendOwnerTools(replyTools, reply);
-            replyHead.appendChild(replyTools);
-          }
+          var replyTools = make("div", "bhn-reply-tools");
+          appendCommentTools(replyTools, reply);
+          replyHead.appendChild(replyTools);
           row.appendChild(replyHead);
           if (state.editingId === reply.id) renderEditComposer(row, reply);
           else row.appendChild(make("div", "bhn-reply-body", reply.body));
@@ -532,7 +540,7 @@ export function overlaySource(endpoint: string, title: string): string {
         state.expandedThreads[comment.id] = true;
         render();
       }));
-      appendOwnerTools(tools, comment);
+      appendCommentTools(tools, comment);
       details.appendChild(tools);
       renderDeleteConfirmation(details, comment);
       renderReplyComposer(details, comment);

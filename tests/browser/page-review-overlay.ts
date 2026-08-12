@@ -208,8 +208,11 @@ async function main() {
     assert.equal(await alex.locator(".bhn-review-highlight").evaluate((node) => getComputedStyle(node).display), "block");
 
     await priyaThread.getByRole("button", { name: "Expand comment 1" }).click();
+    // Alex is not the author: no Edit — rewording someone else's comment
+    // would put words in their mouth — but Delete is available to every
+    // reviewer, because a review is a shared workspace.
     assert.equal(await priyaThread.getByRole("button", { name: "Edit comment by Priya Shah" }).count(), 0);
-    assert.equal(await priyaThread.getByRole("button", { name: "Delete comment by Priya Shah" }).count(), 0);
+    assert.equal(await priyaThread.getByRole("button", { name: "Delete comment by Priya Shah" }).count(), 1);
 
     await alex.locator("#review-heading").click();
     await alex.getByLabel("New review comment").fill("Add the national scope to this headline.");

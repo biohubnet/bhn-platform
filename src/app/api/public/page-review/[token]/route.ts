@@ -270,9 +270,11 @@ export async function DELETE(req: NextRequest, ctx: { params: Promise<{ token: s
     select: { id: true, parentId: true, authorUserId: true },
   });
   if (!existing) return json({ error: "That comment is gone." }, 404);
-  if (existing.authorUserId !== viewer.userId) {
-    return json({ error: "You can only delete your own comments." }, 403);
-  }
+  // No ownership check — a review is a shared workspace and any reviewer can
+  // clear out any comment, matching the platform page. The signed viewer
+  // credential is still required, so this is not open to a bare share token.
+  // Editing stays author-only above: tidying up is not the same as rewording
+  // someone else's point.
 
   const deleted = await prisma.pageComment.deleteMany({
     where: {

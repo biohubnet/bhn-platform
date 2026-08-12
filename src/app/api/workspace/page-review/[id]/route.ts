@@ -6,7 +6,7 @@
  *
  *     addComment    (instructor+) — new thread, or a reply via parentId
  *     editComment   (author, or admin)
- *     deleteComment (author, or admin) — cascades to its replies
+ *     deleteComment (any instructor+) — cascades to its replies
  *     setStatus     (instructor+) — open | resolved | wontfix
  *     export        (admin)       — build the current round's brief
  *     startNextRound (admin)      — resolve current items and advance
@@ -137,9 +137,12 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
       select: { id: true, authorUserId: true },
     });
     if (!c) return NextResponse.json({ error: "No such comment." }, { status: 404 });
-    if (!isAdmin && c.authorUserId !== meId) {
-      return NextResponse.json({ error: "You can only delete your own comments." }, { status: 403 });
-    }
+    // Deliberately no ownership check: a review is a shared workspace, and
+    // anyone reviewing the page can clear out a comment — their own, a
+    // colleague's, or a guest's. Reaching here already required
+    // instructor+, so this is not open to the public capture endpoint,
+    // which stays strictly append-only.
+    //
     // Replies have no FK to their parent (parentId is a plain column), so
     // remove them explicitly or they'd be stranded as orphan threads.
     await prisma.$transaction([

@@ -71,6 +71,28 @@ export function PageReviewClient({
     if (j) setNewC({ quote: "", body: "" });
   }
 
+  /**
+   * Any reviewer can delete any comment. Deleting your own is unremarkable,
+   * so it goes straight through; deleting someone else's asks first, and
+   * says whose it is and how many replies go with it — a top-level comment
+   * takes its whole thread, which may be other people's words.
+   */
+  async function removeComment(
+    commentId: string,
+    authorName: string,
+    mine: boolean,
+    replyCount: number,
+  ) {
+    if (!mine) {
+      const thread =
+        replyCount > 0
+          ? ` and ${replyCount} ${replyCount === 1 ? "reply" : "replies"} under it`
+          : "";
+      if (!confirm(`Delete ${authorName}'s comment${thread}? This can't be undone.`)) return;
+    }
+    await post({ action: "deleteComment", commentId }, commentId);
+  }
+
   async function copyBrief() {
     if (!brief) return;
     try {
@@ -237,14 +259,15 @@ export function PageReviewClient({
                           </span>
                         )}
                         {r.editCount > 0 && <span className="text-[10px] text-subtle">· edited</span>}
-                        {(isAdmin || r.authorUserId === meId) && (
-                          <span className="ml-auto inline-flex gap-1">
+                        <span className="ml-auto inline-flex gap-1">
+                          {(isAdmin || r.authorUserId === meId) && (
                             <button aria-label="Edit reply" onClick={() => { setEditing(r.id); setEditBody(r.body); }}
                               className="p-1 rounded hover:bg-raised"><Pencil size={10} /></button>
-                            <button aria-label="Delete reply" onClick={() => post({ action: "deleteComment", commentId: r.id }, r.id)}
-                              className="p-1 rounded hover:bg-rose-50 text-rose-600"><Trash2 size={10} /></button>
-                          </span>
-                        )}
+                          )}
+                          <button aria-label="Delete reply"
+                            onClick={() => removeComment(r.id, r.authorName, r.authorUserId === meId, 0)}
+                            className="p-1 rounded hover:bg-rose-50 text-rose-600"><Trash2 size={10} /></button>
+                        </span>
                       </div>
                       {editing === r.id ? (
                         <div className="mt-1">
@@ -290,13 +313,19 @@ export function PageReviewClient({
                         className="text-xs text-subtle hover:text-fg">Reopen</button>
                     )}
                     {(isAdmin || mine) && (
-                      <>
-                        <button onClick={() => { setEditing(c.id); setEditBody(c.body); }}
-                          className="text-xs text-subtle hover:text-fg inline-flex items-center gap-1"><Pencil size={11} /> Edit</button>
-                        <button onClick={() => post({ action: "deleteComment", commentId: c.id }, c.id)}
-                          className="text-xs text-rose-600 hover:text-rose-800 inline-flex items-center gap-1"><Trash2 size={11} /> Delete</button>
-                      </>
+                      <button onClick={() => { setEditing(c.id); setEditBody(c.body); }}
+                        className="text-xs text-subtle hover:text-fg inline-flex items-center gap-1"><Pencil size={11} /> Edit</button>
                     )}
+                    {/* Delete is open to every reviewer, not just the author —
+                        a review is a shared workspace. Edit stays author-only:
+                        removing a comment is tidying, rewording someone else's
+                        puts words in their mouth. */}
+                    <button
+                      onClick={() => removeComment(c.id, c.authorName, !!mine, repliesOf(c.id).length)}
+                      className="text-xs text-rose-600 hover:text-rose-800 inline-flex items-center gap-1"
+                    >
+                      <Trash2 size={11} /> Delete
+                    </button>
                   </div>
                 </div>
               </article>

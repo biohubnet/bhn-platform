@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Workspace · Website Review — anyone can delete a comment
+  {
+    title: "Website Review — anyone on a review can delete any comment",
+    body: "Clearing out a comment is no longer limited to whoever wrote it. Any reviewer can delete any comment or reply, so a thread that's been answered, duplicated or filed on the wrong element can be tidied by whoever spots it — you don't have to chase the author.\n\n**Editing is still author-only.** Removing a comment is housekeeping; rewording someone else's would put words in their mouth, and the export brief is built from those words.\n\nDeleting your own goes straight through. Deleting someone else's asks first, and tells you whose it is and how many replies go with it — deleting a top-level comment takes its whole thread, which may include other people's replies. There's no undo, so the confirmation is the safety net.\n\nThe same rule now applies in both places you can review from: the workspace page and the on-page bookmarklet.",
+    kind: "improvement",
+    visibleTo: STAFF,
+    daysAgo: 0,
+  },
   // ── Workspace · Website Review → live collaborative review — Sep 2026
   {
     title: "Website Review — comment on biohubnet.ca together, in the page itself",

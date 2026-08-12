@@ -30,9 +30,20 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.09.08a";
+export const TOUR_VERSION = "2026.09.09a";
 
 export const TOUR_STEPS: TourStep[] = [
+  // ─── Workspace · Website Review → shared deletion — Sep 2026
+  {
+    id: "workspace.website-review.shared-delete",
+    title: "Tidy up anyone's comment",
+    body: "Any reviewer can now delete any comment or reply, not just their own — so answered, duplicated or misfiled threads can be cleared by whoever notices. Editing stays with the author. Deleting someone else's asks first and tells you how many replies go with it, because there's no undo.",
+    path: "/admin/workspace/website-review",
+    placement: "center",
+    roles: ["instructor", "admin", "superadmin"],
+    cta: { label: "Open Website Review", href: "/admin/workspace/website-review" },
+    since: "2026.09.09a",
+  },
   // ─── Workspace · Website Review → launch a live review — Sep 2026
   {
     id: "workspace.website-review.launch",
