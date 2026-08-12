@@ -1,18 +1,24 @@
 /**
- * Workspace → Website Review. Pick a page under review (or open one), then
- * leave threaded comments anchored to what's on it. Admins export the open
- * threads as a Markdown brief for Claude Code / Codex.
+ * Workspace → Website Review.
+ *
+ * Two levels. With no ?r= you get the index: every page under review, led by
+ * the number of items still open in its current round — the same set an
+ * export would produce. Pick one and you get that review's threads.
+ *
+ * It used to drop you straight into the most recently touched review, which
+ * meant there was no way to see across them at all.
  */
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import Link from "next/link";
-import { MessageSquareText, ExternalLink } from "lucide-react";
+import { MessageSquareText, ArrowLeft, ExternalLink } from "lucide-react";
 import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PageHero } from "@/components/ui/PageHero";
 import { PageReviewClient } from "@/components/workspace/PageReviewClient";
 import { NewPageReviewForm } from "@/components/workspace/NewPageReviewForm";
 import { BookmarkletPanel } from "@/components/workspace/BookmarkletPanel";
+import { ReviewIndex, ReviewIndexEmpty, type ReviewSummary } from "@/components/workspace/ReviewIndex";
 import { PAGE_REVIEW_COMMENT_LIMIT } from "@/lib/page-review/limits";
 import { createPageReviewViewerToken } from "@/lib/page-review/viewer";
 
@@ -49,15 +55,41 @@ export default async function WebsiteReviewPage({
     orderBy: { updatedAt: "desc" },
     take: 50,
     select: {
-      id: true, url: true, title: true, status: true, round: true,
+      id: true, url: true, title: true, status: true, round: true, updatedAt: true,
       _count: { select: { comments: true } },
     },
   });
 
-  const activeId = r ?? reviews[0]?.id ?? null;
-  const active = activeId
+  // Per-review counts for the CURRENT round only, and threads rather than
+  // individual replies — so the headline number matches "Open items" in the
+  // exported brief instead of a running total across every round.
+  const threadCounts = reviews.length
+    ? await prisma.pageComment.groupBy({
+        by: ["reviewId", "round", "status"],
+        where: { reviewId: { in: reviews.map((rv) => rv.id) }, parentId: null },
+        _count: { _all: true },
+      })
+    : [];
+
+  const summaries: ReviewSummary[] = reviews.map((rv) => {
+    let openCount = 0;
+    let settledCount = 0;
+    for (const g of threadCounts) {
+      if (g.reviewId !== rv.id || g.round !== rv.round) continue;
+      if (g.status === "open") openCount += g._count._all;
+      else settledCount += g._count._all;
+    }
+    return {
+      id: rv.id, url: rv.url, title: rv.title, status: rv.status, round: rv.round,
+      updatedAt: rv.updatedAt.toISOString(),
+      openCount, settledCount, totalComments: rv._count.comments,
+    };
+  });
+
+  // No ?r= means the index. Nothing is auto-selected.
+  const active = r
     ? await prisma.pageReview.findUnique({
-        where: { id: activeId },
+        where: { id: r },
         include: {
           comments: {
             orderBy: { createdAt: "asc" },
@@ -78,76 +110,65 @@ export default async function WebsiteReviewPage({
         description="Leave comments on a live page, reply to each other, and resolve them as they land. When a round is done, export the open threads as a brief for Claude Code or Codex — anchored to the exact text on the page so the change lands where you meant it."
       />
 
-      {isAdmin && <NewPageReviewForm />}
-
-      {reviews.length > 0 && (
-        <nav className="flex flex-wrap gap-2">
-          {reviews.map((rv) => (
-            <Link
-              key={rv.id}
-              href={`/admin/workspace/website-review?r=${rv.id}`}
-              className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold ring-1 ring-inset transition-colors ${
-                rv.id === activeId
-                  ? "bg-brand-600 text-white ring-brand-600"
-                  : "bg-card text-muted ring-line hover:text-fg hover:bg-elevated"
-              }`}
-            >
-              {rv.title}
-              <span className="font-mono tabular-nums opacity-70">R{rv.round}</span>
-              <span className="font-mono tabular-nums opacity-70">{rv._count.comments}</span>
-            </Link>
-          ))}
-        </nav>
-      )}
-
-      {/* shareToken is nullable in the schema; every review the app creates has one. */}
-      {active && active.status !== "closed" && active.shareToken && viewerCredential && (
-        <BookmarkletPanel
-          shareToken={active.shareToken}
-          reviewId={active.id}
-          url={active.url}
-          appOrigin={appOrigin}
-          viewerCredential={viewerCredential}
-        />
-      )}
-
       {active ? (
-        <PageReviewClient
-          initialReview={{
-            id: active.id, url: active.url, title: active.title,
-            status: active.status, round: active.round,
-            comments: active.comments.map((c) => ({
-              id: c.id, parentId: c.parentId, round: c.round,
-              anchorQuote: c.anchorQuote, anchorKey: c.anchorKey,
-              anchorPath: c.anchorPath, anchorBlock: c.anchorBlock,
-              anchorState: c.anchorState, authorUserId: c.authorUserId,
-              authorName: c.authorName, authorKind: c.authorKind,
-              body: c.body, status: c.status,
-              editCount: c.editCount,
-              editedAt: c.editedAt ? c.editedAt.toISOString() : null,
-              createdAt: c.createdAt.toISOString(),
-            })),
-          }}
-          meId={meId}
-          isAdmin={isAdmin}
-        />
+        <>
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <Link
+              href="/admin/workspace/website-review"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted hover:text-fg"
+            >
+              <ArrowLeft size={13} /> All pages
+            </Link>
+            <a
+              href={active.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 font-mono text-[11px] text-subtle hover:text-fg"
+            >
+              {active.url} <ExternalLink size={10} />
+            </a>
+          </div>
+
+          {/* shareToken is nullable in the schema; every review the app creates has one. */}
+          {active.status !== "closed" && active.shareToken && viewerCredential && (
+            <BookmarkletPanel
+              shareToken={active.shareToken}
+              reviewId={active.id}
+              url={active.url}
+              appOrigin={appOrigin}
+              viewerCredential={viewerCredential}
+            />
+          )}
+
+          <PageReviewClient
+            initialReview={{
+              id: active.id, url: active.url, title: active.title,
+              status: active.status, round: active.round,
+              comments: active.comments.map((c) => ({
+                id: c.id, parentId: c.parentId, round: c.round,
+                anchorQuote: c.anchorQuote, anchorKey: c.anchorKey,
+                anchorPath: c.anchorPath, anchorBlock: c.anchorBlock,
+                anchorState: c.anchorState, authorUserId: c.authorUserId,
+                authorName: c.authorName, authorKind: c.authorKind,
+                body: c.body, status: c.status,
+                editCount: c.editCount,
+                editedAt: c.editedAt ? c.editedAt.toISOString() : null,
+                createdAt: c.createdAt.toISOString(),
+              })),
+            }}
+            meId={meId}
+            isAdmin={isAdmin}
+          />
+        </>
       ) : (
-        <section className="rounded-2xl border border-line bg-card p-8 text-center">
-          <p className="text-sm font-medium text-muted">No pages under review yet.</p>
-          <p className="text-xs text-subtle mt-1">
-            {isAdmin
-              ? "Add a URL above to open the first one."
-              : "An admin needs to open a review before you can comment."}
-          </p>
-          <a
-            href="https://biohubnet.ca"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 text-xs text-brand-700 hover:text-brand-900 mt-3"
-          >
-            Open biohubnet.ca <ExternalLink size={10} />
-          </a>
-        </section>
+        <>
+          {isAdmin && <NewPageReviewForm />}
+          {summaries.length > 0 ? (
+            <ReviewIndex reviews={summaries} activeId={null} />
+          ) : (
+            <ReviewIndexEmpty isAdmin={isAdmin} />
+          )}
+        </>
       )}
     </div>
   );

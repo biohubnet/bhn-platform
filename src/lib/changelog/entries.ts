@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Workspace · Website Review — a real home page
+  {
+    title: "Website Review — see every page at a glance",
+    body: "Website Review now opens on an overview instead of dropping you into whichever page was touched last. Every page under review gets a card leading on the number that matters: **how many items are still open in its current round** — the exact set an export would pick up.\n\nThe old picker was a row of pills showing two bare numbers with no labels, and the count included resolved comments from every past round, so it couldn't tell you what was outstanding.\n\nCards sort themselves so the work surfaces first: pages with open items, then quiet ones, then closed. Each shows the round, what's been settled, when it last moved, and the page URL. Past five pages you get a filter box. Pick a card to open its threads; **All pages** takes you back.",
+    kind: "improvement",
+    visibleTo: STAFF,
+    daysAgo: 0,
+  },
   // ── Workspace · Website Review — anyone can delete a comment
   {
     title: "Website Review — anyone on a review can delete any comment",

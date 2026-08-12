@@ -30,9 +30,20 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.09.09a";
+export const TOUR_VERSION = "2026.09.10a";
 
 export const TOUR_STEPS: TourStep[] = [
+  // ─── Workspace · Website Review → overview home — Sep 2026
+  {
+    id: "workspace.website-review.index",
+    title: "Every page under review, at a glance",
+    body: "Website Review now opens on an overview. Each card leads with how many items are still open in that page's current round — the same set an export would pick up — so you can see where the work is without opening anything. Pages needing attention sort to the top; closed ones drop to the bottom.",
+    path: "/admin/workspace/website-review",
+    placement: "center",
+    roles: ["instructor", "admin", "superadmin"],
+    cta: { label: "Open Website Review", href: "/admin/workspace/website-review" },
+    since: "2026.09.10a",
+  },
   // ─── Workspace · Website Review → shared deletion — Sep 2026
   {
     id: "workspace.website-review.shared-delete",
