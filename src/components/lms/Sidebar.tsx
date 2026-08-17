@@ -1860,7 +1860,8 @@ export function Sidebar({
        */}
 
       {/* Credits chip */}
-      {!isStaff && credits !== undefined && (
+      {/* Credit balance is hidden from trainees. */}
+      {!isStaff && !traineeOnly && credits !== undefined && (
         <div className="px-3 py-1.5 border-t border-line">
           <div className="flex items-center gap-1.5 bg-amber-50 rounded-md px-2 py-1">
             <Coins size={11} className="text-amber-500 shrink-0" />

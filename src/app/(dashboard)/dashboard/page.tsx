@@ -8,7 +8,6 @@ import { InstructorDashboard } from "@/components/dashboards/InstructorDashboard
 import { AdminDashboard } from "@/components/dashboards/AdminDashboard";
 import { TodaysReviewsCard, type ReviewQuestion } from "@/components/adaptive/TodaysReviewsCard";
 import { UpcomingEventBanner } from "@/components/events/UpcomingEventBanner";
-import { ExpiringCreditsBanner } from "@/components/credits/ExpiringCreditsBanner";
 import { CommitteeBadgeStrip } from "@/components/lms/CommitteeBadgeStrip";
 import { LogoMark } from "@/components/ui/Logo";
 import { CreditUsageScoreboard } from "@/components/dashboards/CreditUsageScoreboard";
@@ -633,7 +632,7 @@ export default async function DashboardPage() {
             <aside className="hidden lg:block self-stretch pl-8 border-l border-white/15">
               <div className="space-y-4">
                 <HeroStat label="In progress" value={inProgress.toLocaleString()} />
-                <HeroStat label="Credits" value={(user?.credits ?? 0).toLocaleString()} />
+                {/* Credits stat hidden — trainees do not see credit balances. */}
                 <HeroStat label="Certificates" value={certsCount.toLocaleString()} />
               </div>
             </aside>
@@ -940,7 +939,7 @@ export default async function DashboardPage() {
           <SectionEyebrow tone="amber">Reminders</SectionEyebrow>
           <div className="mt-3 divide-y divide-line border-y border-amber-200/40">
             <div className="py-2"><UpcomingEventBanner userId={userId} /></div>
-            <div className="py-2"><ExpiringCreditsBanner userId={userId} /></div>
+            {/* Expiring-credits banner hidden alongside the balance. */}
             <div className="py-2"><TodaysReviewsCard initial={reviewQueue} /></div>
             {expiringSavedPostings.length > 0 && (
               <Link
@@ -1015,7 +1014,7 @@ export default async function DashboardPage() {
         </div>
       </section>
 
-      <ExploreLinks credits={user?.credits ?? 0} />
+      <ExploreLinks />
     </div>
   );
 }
@@ -1459,7 +1458,8 @@ function PrimaryNextCard({
  * the page already answers the primary question. Anything else is
  * just a list of inline links — no boxes, no badges.
  */
-function ExploreLinks({ credits }: { credits: number }) {
+/** Credits link removed — trainees do not see credit balances. */
+function ExploreLinks() {
   return (
     <p className="text-xs text-muted flex flex-wrap items-center gap-x-3 gap-y-2">
       {/* Real (non-canceled) padding + a real row gap — a negative-margin
@@ -1472,7 +1472,6 @@ function ExploreLinks({ credits }: { credits: number }) {
       <Link href="/courses"      className="hover:text-fg hover:underline inline-block px-1 py-2.5">Browse courses</Link>
       <Link href="/pathways"     className="hover:text-fg hover:underline inline-block px-1 py-2.5">Pathways</Link>
       <Link href="/certificates" className="hover:text-fg hover:underline inline-block px-1 py-2.5">Certificates</Link>
-      <Link href="/credits"      className="hover:text-fg hover:underline inline-block px-1 py-2.5">{credits.toLocaleString()} credits</Link>
       <Link href="/experience"   className="hover:text-fg hover:underline inline-block px-1 py-2.5">How the program works</Link>
     </p>
   );
