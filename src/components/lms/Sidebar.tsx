@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
+import { isTraineeOnlyView } from "@/lib/trainee-view";
 import { LogoMark } from "@/components/ui/Logo";
 import { ThemePicker } from "@/components/ui/ThemePicker";
 import { RoleSwitcher } from "@/components/admin/RoleSwitcher";
@@ -135,6 +136,12 @@ const engageItems: (NavItem & { labelKey: string })[] = [
     featureId: "engage-events",
     description: "BHN Annual Symposium & Training Week. Workshops, agenda, speakers. Register here." },
 ];
+
+/** The Events entry, pulled out by href so the trainee-only sidebar
+ *  can render it standalone. Derived rather than duplicated: edit the
+ *  entry in engageItems above and this follows automatically. */
+const eventsItem = engageItems.find((i) => i.href === "/events");
+
 
 // MY PROFILE section retired from the sidebar — it carried a single
 // link to /profile that duplicated the avatar at the bottom-left of
@@ -1315,7 +1322,12 @@ export function Sidebar({
   const isEmployer = effectiveRole === "employer";
   // Employer accounts only see ENGAGE / EXPERIENCE / Buddies if an
   // admin has flipped allowPlatformContent on for them.
-  const showLearnerNav = !isEmployer || allowPlatformContent;
+  // Trainees get a deliberately minimal sidebar: the Events tab only.
+  // Folding this into showLearnerNav switches off ENGAGE / EXPERIENCE /
+  // EQUIP / misc in one place rather than gating each SectionGroup —
+  // fewer edits, and a new learner section cannot forget to opt in.
+  const traineeOnly = isTraineeOnlyView(effectiveRole);
+  const showLearnerNav = (!isEmployer || allowPlatformContent) && !traineeOnly;
 
   // Mobile off-canvas drawer. The shell renders on every viewport;
   // <md the desktop shell collapses behind a hamburger. State lives
@@ -1488,8 +1500,15 @@ export function Sidebar({
             identity row + action queue. Hiding the Dashboard link
             for employers keeps the sidebar honest (no link → a
             page that just redirects them back out). */}
-        {!isEmployer && (
+        {!isEmployer && !traineeOnly && (
           <NavLink item={{ ...dashboardItem, label: t(dashboardItem.labelKey) }} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
+        )}
+
+        {/* Trainee view: Events is the only tab. It normally lives
+            inside the ENGAGE group, which is switched off above, so it
+            is rendered standalone here rather than left orphaned. */}
+        {traineeOnly && eventsItem && (
+          <NavLink item={{ ...eventsItem, label: t(eventsItem.labelKey) }} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
         )}
 
         {isEmployer && (
@@ -1613,7 +1632,7 @@ export function Sidebar({
             members spot the shortcut immediately on first paint;
             primary roles still see ENGAGE / EXPERIENCE / EQUIP /
             ADMINISTRATION as before. */}
-        {visibleCommittees.length > 0 && (
+        {!traineeOnly && visibleCommittees.length > 0 && (
           <SectionGroup
             title="COMMITTEES"
             description="Your committee surfaces. Equip Review members can claim + decide on funding apps; HQP members coordinate via the HQP dashboard."
@@ -1865,19 +1884,24 @@ export function Sidebar({
           in here — staff-only — so the user pill row below stays a
           clean two-line identity card without the chip eating space. */}
       <div className="px-2 py-1 border-t border-line flex items-center gap-1">
-        <button
-          type="button"
-          onClick={() => {
-            if (typeof window !== "undefined") {
-              window.dispatchEvent(new CustomEvent("bhn:start-tour"));
-            }
-          }}
-          className="flex-1 min-w-0 flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-medium text-muted hover:bg-raised hover:text-fg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/60"
-          title={t("nav.tour")}
-        >
-          <Compass size={13} className="shrink-0" />
-          <span className="truncate">{t("nav.tour")}</span>
-        </button>
+        {/* "Take the tour" relaunches the product tour, so it is hidden
+            from trainees alongside the tour itself — leaving it would
+            be a button that starts the thing we just suppressed. */}
+        {!traineeOnly && (
+          <button
+            type="button"
+            onClick={() => {
+              if (typeof window !== "undefined") {
+                window.dispatchEvent(new CustomEvent("bhn:start-tour"));
+              }
+            }}
+            className="flex-1 min-w-0 flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-medium text-muted hover:bg-raised hover:text-fg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/60"
+            title={t("nav.tour")}
+          >
+            <Compass size={13} className="shrink-0" />
+            <span className="truncate">{t("nav.tour")}</span>
+          </button>
+        )}
         <ThemePicker compact />
         {isStaff && process.env.NEXT_PUBLIC_COMMIT_SHA && (
           <code

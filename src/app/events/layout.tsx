@@ -2,6 +2,7 @@ import Link from "next/link";
 import { LogoMark } from "@/components/ui/Logo";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { isTraineeOnlyView } from "@/lib/trainee-view";
 import { Sidebar } from "@/components/lms/Sidebar";
 import { ImpersonationBanner } from "@/components/admin/ImpersonationBanner";
 import { DemoBanner } from "@/components/admin/DemoBanner";
@@ -87,7 +88,8 @@ export default async function EventsLayout({ children }: { children: React.React
             <PageTranslator />
           </div>
         </div>
-        <Onboarding />
+        {/* The 200-step product tour is hidden from trainees. */}
+        {!isTraineeOnlyView(actingAs ?? role) && <Onboarding />}
         <KeyboardShortcuts realRole={realRole} actingAs={actingAs ?? null} />
         <NavHighlightOverlay />
       </div>

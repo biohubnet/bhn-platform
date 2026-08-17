@@ -12,9 +12,7 @@ import { ExpiringCreditsBanner } from "@/components/credits/ExpiringCreditsBanne
 import { CommitteeBadgeStrip } from "@/components/lms/CommitteeBadgeStrip";
 import { LogoMark } from "@/components/ui/Logo";
 import { CreditUsageScoreboard } from "@/components/dashboards/CreditUsageScoreboard";
-import { CreditApplicationCallout } from "@/components/dashboards/CreditApplicationCallout";
 import { RewardsDistanceCard } from "@/components/dashboards/RewardsDistanceCard";
-import { CREDIT_GRANT_TTL_DAYS } from "@/lib/credits/expiry";
 import { LatestNewsCard } from "@/components/dashboards/LatestNewsCard";
 import { getDisplayName } from "@/lib/user/display-name";
 import { PreferredNameEditor } from "@/components/profile/PreferredNameEditor";
@@ -86,21 +84,12 @@ export default async function DashboardPage() {
     );
   }
 
-  // First-login gamified ritual — trainees / evaluating users land
-  // on /welcome/split-a-cell on their very first dashboard visit so
-  // they can play the "split a cell" mini-game. Flag flips to true
-  // when they finish; subsequent logins skip the redirect. Admins
-  // never trigger this guard (they hit one of the branches above);
-  // they can replay at any time via /welcome/split-a-cell?replay=1.
-  if (role === "trainee" || role === "evaluating") {
-    const me = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { hasSplitCell: true },
-    });
-    if (me && !me.hasSplitCell) {
-      redirect("/welcome/split-a-cell");
-    }
-  }
+  // The first-login "split a cell" mini-game is hidden from trainees.
+  // Upstream redirects trainees / evaluating users to
+  // /welcome/split-a-cell on their first dashboard visit; the page
+  // still exists and admins can replay it at ?replay=1, but nobody is
+  // sent there automatically. User.hasSplitCell is left in place so
+  // restoring the guard needs no migration.
 
   // Minimal data for the stripped trainee home. We only need:
   //   • the one active enrollment (most-recent in-progress course)
@@ -177,18 +166,9 @@ export default async function DashboardPage() {
   // Latest ENGAGE credit application — surfaces in the prominent
   // callout right under the hero. The callout's own render logic
   // decides what to show based on status (CTA / pending / rejected /
-  // hidden-when-approved); we just hand it the freshest row.
-  const latestCreditApp = await prisma.creditApplication.findFirst({
-    where: { userId },
-    orderBy: { submittedAt: "desc" },
-    select: {
-      status: true,
-      submittedAt: true,
-      reviewedAt: true,
-      reviewerNote: true,
-      approvedAmount: true,
-    },
-  });
+   // (Upstream fetched the latest creditApplication here to feed the
+  // dashboard callout. That callout is hidden from trainees, so the
+  // query is gone too rather than run for nothing on every load.)
 
   // Saved-internship deadline nudge — shown when the trainee has any
   // saved postings whose deadline lands in the next 7 days. Cheaper
@@ -671,15 +651,14 @@ export default async function DashboardPage() {
           already in their balance — no point repeating the pitch).
           Also renders for users in the `evaluating` role, who can
           apply but aren't full trainees yet. */}
-      {(role === "trainee" || role === "evaluating") && (
-        <div className="max-w-screen-2xl mx-auto px-6 mt-6">
-          <CreditApplicationCallout
-            latestApp={latestCreditApp}
-            ttlDays={CREDIT_GRANT_TTL_DAYS}
-            variant="prominent"
-          />
-        </div>
-      )}
+      {/* The training-credit application is hidden from trainees.
+          Upstream renders CreditApplicationCallout here for trainee /
+          evaluating roles only — a prominent "apply for up to N
+          credits" CTA linking to /credits/apply. Since its audience
+          was exactly the roles now being restricted, hiding it means
+          removing the block outright rather than gating it further.
+          The /credits/apply page and the admin review queue are
+          untouched; only this entry point is gone. */}
 
       {/* First-time prompt — only shows for users who haven't picked
           a preferredName yet. Smart suggestion chips derived from

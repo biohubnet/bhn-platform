@@ -20,6 +20,7 @@ import {
   type LayoutBannerData,
 } from "@/components/layout/LayoutBanners";
 import { resolveSidebarHiddenSet, parsePrefs } from "@/lib/preferences/active";
+import { isTraineeOnlyView } from "@/lib/trainee-view";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession();
@@ -159,7 +160,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
           Hides entirely when the user toggles "Page translation" off
           from the ThemePicker dropdown. */}
       <TranslatorDock platformEnabled={translationPlatformEnabled} />
-      <Onboarding />
+      {/* The 200-step product tour is hidden from trainees. */}
+        {!isTraineeOnlyView(actingAs ?? role) && <Onboarding />}
       <KeyboardShortcuts realRole={realRole} actingAs={actingAs ?? null} />
       <RoleSwitchOverlay />
       <NavHighlightOverlay />

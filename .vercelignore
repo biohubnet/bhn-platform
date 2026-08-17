@@ -1,0 +1,11 @@
+# Vercel installs and builds these itself. Without this the CLI can try
+# to upload them (.next ~700MB, node_modules ~1.2GB) and the upload
+# fails outright as "fetch failed" rather than erroring usefully.
+node_modules
+.next
+tsconfig.tsbuildinfo
+
+# Local-only test + docs artefacts
+test-results
+playwright-report
+docs/screenshots
