@@ -59,6 +59,15 @@ function validateVentureConnect(f: VentureConnectFormData): string[] {
   if (!f.currentRole)                   errors.push("Applicant: Current Role is required");
   if (!f.institutionEmail?.trim())      errors.push("Applicant: Institution Email is required");
 
+  // Eligibility — biohubnet.ca/equip requires applicants to be within
+  // one year of thesis submission / course completion / contract end.
+  if (f.eligibilityWithinOneYear !== true) {
+    errors.push("Eligibility: confirm you are within one year of thesis submission, course completion, or contract end");
+  }
+  if (!f.eligibilityEndDate?.trim()) {
+    errors.push("Eligibility: expected completion / contract end date is required");
+  }
+
   // Company
   if (!f.companyName?.trim())           errors.push("Company: Company Name is required");
   if (!f.ventureDescription || f.ventureDescription.trim().length < 30) {

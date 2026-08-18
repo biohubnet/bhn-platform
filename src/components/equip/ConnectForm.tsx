@@ -263,6 +263,38 @@ export function ConnectForm({ applicationId, initial, initialDocuments, profile,
       </Section>
 
       {/* ── 2. Company Information ─────────────────────────── */}
+      {/* ── 1b. Eligibility ─────────────────────────────────
+          biohubnet.ca/equip gates VentureConnect on being within one
+          year of thesis submission / course completion / contract end.
+          The Mar-2026 PDF has no field for it, so reviewers were
+          inferring it from a CV; asking directly makes the check
+          explicit and reviewable. */}
+      <Section title="Eligibility">
+        <label className="flex items-start gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={form.eligibilityWithinOneYear === true}
+            onChange={(e) => set("eligibilityWithinOneYear", e.target.checked)}
+            className="mt-0.5"
+          />
+          <span className="text-xs text-fg">
+            I am a Master&apos;s / PhD student or postdoctoral fellow{" "}
+            <strong>within one year</strong> of my thesis submission, course
+            completion, or contract end date.
+          </span>
+        </label>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+          <Field label="Expected thesis submission / completion / contract end date" required>
+            <input
+              type="date"
+              value={form.eligibilityEndDate ?? ""}
+              onChange={(e) => set("eligibilityEndDate", e.target.value)}
+              className={inputCls}
+            />
+          </Field>
+        </div>
+      </Section>
+
       <Section title="Company Information">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Field label="Company Name" required>

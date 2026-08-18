@@ -163,8 +163,8 @@ export const FEATURES: FeatureDef[] = [
   { id: "engage-themes",       label: "Themes",                    description: "Theme proposals + voting.",                                                                group: "engage",     defaultEnabled: false },
 
   // EQUIP ---------------------------------------------------------
-  { id: "equip-funding",       label: "EQUIP · Funding",           description: "VentureConnect + VentureLift funding applications.",                                       group: "equip",      defaultEnabled: false },
-  { id: "equip-tracker",       label: "EQUIP · My applications",   description: "Your in-flight EQUIP funding applications + their status.",                              group: "equip",      defaultEnabled: false },
+  { id: "equip-funding",       label: "EQUIP · Funding",           description: "VentureConnect + VentureLift funding applications.",                                       group: "equip",      defaultEnabled: true },
+  { id: "equip-tracker",       label: "EQUIP · My applications",   description: "Your in-flight EQUIP funding applications + their status.",                              group: "equip",      defaultEnabled: true },
   { id: "equip-deadlines",     label: "EQUIP · Deadlines",         description: "Upcoming review windows + submission deadlines.",                                          group: "equip",      defaultEnabled: false },
   // (Most EQUIP entries are admin-only — they're toggled under "admin" below.)
 

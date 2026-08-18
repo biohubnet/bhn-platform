@@ -51,6 +51,14 @@ export type CommercializationStage = "exploring" | "building" | "unsure";
  *  company may submit up to 3 separate applications, max $5K each);
  *  VentureLift pre-screening references up to $25,000 CAD for the
  *  full application that follows a successful pre-screen. */
+/** Applications one company may hold per stream. VentureConnect:
+ *  "A company may submit up to three separate applications", each
+ *  capped at $5K (biohubnet.ca/equip). VentureLift has no published
+ *  cap, so it is left unlimited rather than invented. */
+export const STREAM_APPLICATION_CAP: Partial<Record<EquipStream, number>> = {
+  venture_connect: 3,
+};
+
 export const STREAM_BUDGETS: Record<EquipStream, number> = {
   venture_connect: 5_000,
   venture_lift:    25_000,
@@ -142,6 +150,17 @@ export interface VentureConnectFormData {
   budgetRideshareTaxi?: number;
   budgetAccommodation?: number;
   budgetRegistration?: number;
+
+  // ── Eligibility (biohubnet.ca/equip) ─────────────────────
+  /** "Master's/PhD/postdoctoral fellows within 1 year of thesis
+   *  submission / course completion / contract end date." The site
+   *  states this as an eligibility bar but the Mar-2026 PDF has no
+   *  field for it, so reviewers were reading it out of a CV. Asked
+   *  explicitly here and surfaced in the admin queue. */
+  eligibilityWithinOneYear?: boolean;
+  /** Expected thesis-submission / course-completion / contract-end
+   *  date, so a reviewer can check the claim rather than trust it. */
+  eligibilityEndDate?: string;          // ISO yyyy-mm-dd
 
   // ── Signature ────────────────────────────────────────────
   /** "I acknowledge that the information provided in this

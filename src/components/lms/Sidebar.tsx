@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
-import { isTraineeOnlyView } from "@/lib/trainee-view";
+import { isTraineeOnlyView, isTraineeAllowedHref } from "@/lib/trainee-view";
 import { LogoMark } from "@/components/ui/Logo";
 import { ThemePicker } from "@/components/ui/ThemePicker";
 import { RoleSwitcher } from "@/components/admin/RoleSwitcher";
@@ -1593,7 +1593,7 @@ export function Sidebar({
           </SectionGroup>
         )}
 
-        {showLearnerNav && equipItems.length > 0 && (
+        {(showLearnerNav || traineeOnly) && equipItems.length > 0 && (
           <SectionGroup
             title="EQUIP"
             tone="equip"
@@ -1619,8 +1619,8 @@ export function Sidebar({
                 without having to flip individual toggles in
                 /profile/preferences first.
                 Non-admin roles keep the preference-respecting
-                `visibleByPrefs(equipItems)` behaviour. */}
-            {(isAdmin ? equipItems : visibleByPrefs(equipItems)).map((item) => {
+                `visibleByPrefs(equipItems).filter((i) => !traineeOnly || isTraineeAllowedHref(i.href))` behaviour. */}
+            {(isAdmin ? equipItems : visibleByPrefs(equipItems).filter((i) => !traineeOnly || isTraineeAllowedHref(i.href))).map((item) => {
               const labeled = { ...item, label: t(item.labelKey) };
               return <NavLink key={item.href} item={labeled} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />;
             })}
