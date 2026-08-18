@@ -36,6 +36,17 @@ export default async function EventsLayout({ children }: { children: React.React
   const session = await getSession();
   const signedIn = session !== null;
 
+  // Page translation is gated platform-wide by the same
+  // PlatformSetting the (dashboard) layout reads. /events lives
+  // outside that route group and previously rendered the dock
+  // unconditionally, so turning translation off left the pill
+  // visible here — the one surface anonymous visitors see most.
+  // Absent row → enabled, matching the dashboard's default.
+  const translationSetting = await prisma.platformSetting
+    .findUnique({ where: { key: "translationEnabled" }, select: { value: true } })
+    .catch(() => null);
+  const translationPlatformEnabled = translationSetting?.value !== "false";
+
   if (signedIn) {
     const role = (session.user as { role?: string }).role ?? "trainee";
     const realRole = (session.user as { realRole?: string }).realRole;
@@ -83,11 +94,13 @@ export default async function EventsLayout({ children }: { children: React.React
               event marketing layout has the full canvas. */}
           <div className="pt-16">{children}</div>
         </main>
-        <div className="fixed top-3 right-4 z-40 pointer-events-auto" data-no-translate>
-          <div className="surface px-1 py-1">
-            <PageTranslator />
+        {translationPlatformEnabled && (
+          <div className="fixed top-3 right-4 z-40 pointer-events-auto" data-no-translate>
+            <div className="surface px-1 py-1">
+              <PageTranslator />
+            </div>
           </div>
-        </div>
+        )}
         {/* The 200-step product tour is hidden from trainees. */}
         {!isTraineeOnlyView(actingAs ?? role) && <Onboarding />}
         <KeyboardShortcuts realRole={realRole} actingAs={actingAs ?? null} />

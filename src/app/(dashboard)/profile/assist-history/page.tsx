@@ -16,6 +16,7 @@ import { prisma } from "@/lib/prisma";
 import { AssistConsentPanel } from "@/components/assist/AssistConsentPanel";
 import { AssistHistoryView } from "@/components/assist/AssistHistoryView";
 import { AssistFlowChart } from "@/components/assist/AssistFlowChart";
+import { ASSIST_ENABLED } from "@/lib/assist/flags";
 
 export const dynamic = "force-dynamic";
 
@@ -92,7 +93,7 @@ export default async function AssistHistoryPage() {
         </p>
       </header>
 
-      <AssistConsentPanel verbose />
+      {ASSIST_ENABLED && <AssistConsentPanel verbose />}
 
       <AssistHistoryView
         counts={{

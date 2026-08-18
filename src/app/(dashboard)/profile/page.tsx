@@ -7,6 +7,7 @@ import { ProfileClient } from "@/components/lms/ProfileClient";
 import { AssistConsentPanel } from "@/components/assist/AssistConsentPanel";
 import { parsePrefs } from "@/lib/preferences/active";
 import { PreferencesSwitchboard } from "@/components/profile/PreferencesSwitchboard";
+import { ASSIST_ENABLED } from "@/lib/assist/flags";
 
 export default async function ProfilePage() {
   const session = await requireSession().catch(() => null);
@@ -44,7 +45,7 @@ export default async function ProfilePage() {
         description="Update your information, change your password, or request a role change."
       />
       <ProfileClient user={user} latestRoleRequest={latestRoleRequest} />
-      <AssistConsentPanel />
+      {ASSIST_ENABLED && <AssistConsentPanel />}
 
       {/* Feature switcher board — was a standalone page at
           /profile/preferences; lifted onto the main profile page

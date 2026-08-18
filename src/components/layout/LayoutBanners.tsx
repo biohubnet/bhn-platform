@@ -23,6 +23,7 @@ import { ImpersonationBanner } from "@/components/admin/ImpersonationBanner";
 import { DemoBanner } from "@/components/admin/DemoBanner";
 import { UnverifiedEmailBanner } from "@/components/auth/UnverifiedEmailBanner";
 import { AutoPipetteFirstRunNotice } from "@/components/assist/AutoPipetteFirstRunNotice";
+import { ASSIST_ENABLED } from "@/lib/assist/flags";
 
 export interface LayoutBannerData {
   actingAs: string | null;
@@ -78,7 +79,11 @@ export function LayoutBannersSlot() {
         {data.showUnverifiedBanner && data.email && (
           <UnverifiedEmailBanner email={data.email} />
         )}
-        <AutoPipetteFirstRunNotice />
+        {/* AutoPipette is off platform-wide — the tracker and hint
+            dock in (dashboard)/layout are already gated on ASSIST_ENABLED;
+            this notice and the /profile consent panel were not, so they
+            advertised a feature that never runs. */}
+        {ASSIST_ENABLED && <AutoPipetteFirstRunNotice />}
       </div>
     </>
   );
