@@ -135,6 +135,7 @@ export const FEATURES: FeatureDef[] = [
   { id: "learn-courses",       label: "Course catalog",            description: "Browse and enrol in courses. Filter by topic, skill, language, level.",                   group: "learn",      defaultEnabled: true },
   { id: "learn-my-courses",    label: "My Courses",                description: "Your active + completed enrolments. Resume where you left off.",                          group: "learn",      defaultEnabled: true },
   { id: "learn-pathways",      label: "Pathways",                  description: "Curated multi-course tracks for specific roles + skill sets.",                            group: "learn",      defaultEnabled: true },
+  { id: "learn-progress",      label: "Progress Tracker",          description: "Credit utilisation, milestone dates, completed + in-flight courses.",                       group: "learn",      defaultEnabled: true },
   { id: "learn-gradebook",     label: "Gradebook",                 description: "Per-course assessment scores + completion status.",                                       group: "learn",      defaultEnabled: false },
   { id: "learn-certificates",  label: "Certificates",              description: "Every credential you've earned; each has a public verify link.",                          group: "learn",      defaultEnabled: true },
   { id: "learn-credits",       label: "My Credits",                description: "Balance + grant/spend log + apply-for-more.",                                              group: "learn",      defaultEnabled: true },
