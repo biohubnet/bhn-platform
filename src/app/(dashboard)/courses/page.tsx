@@ -12,6 +12,7 @@ import { EditableText } from "@/components/cms/EditableText";
 import { getCopy } from "@/lib/copy";
 import { parseFilters } from "@/lib/courses/filters";
 import {
+  getCourseFilterCounts,
   ensureCourseFilterOptions, getCourseFilterOptions,
 } from "@/lib/courses/filter-options";
 
@@ -42,6 +43,7 @@ export default async function CoursesPage({
   // Idempotent first-deploy seed of the option lists.
   await ensureCourseFilterOptions();
   const options = await getCourseFilterOptions();
+  const filterCounts = await getCourseFilterCounts();
 
   // Signed-in user's favorite course IDs — fetched first so we
   // can both (a) restrict the catalog query when the user has
@@ -178,7 +180,7 @@ export default async function CoursesPage({
       )}
 
       {/* Filter panel — full-width, prominent, expanded by default. */}
-      <CourseFilters options={options} />
+      <CourseFilters options={options} counts={filterCounts} />
 
       {courses.length === 0 ? (
         <div className="text-center py-16 bg-card rounded-xl border border-line">

@@ -25,7 +25,18 @@ export interface CourseFilterOptions {
   provider: string[];
 }
 
-export function CourseFilters({ options }: { options: CourseFilterOptions }) {
+/** Published-course count per filter value, keyed by facet. A missing
+ *  key means zero — the chip still renders, showing "(0)", rather than
+ *  disappearing and leaving the facet list looking arbitrary. */
+export type CourseFilterCounts = Record<"topic" | "delivery" | "provider", Record<string, number>>;
+
+export function CourseFilters({
+  options,
+  counts,
+}: {
+  options: CourseFilterOptions;
+  counts?: CourseFilterCounts;
+}) {
   const router = useRouter();
   const sp = useSearchParams();
 
@@ -147,6 +158,7 @@ export function CourseFilters({ options }: { options: CourseFilterOptions }) {
           <ChipGroup
             label="Topic"
             values={options.topic}
+            counts={counts?.topic}
             selected={selected.topic}
             onToggle={(v) => toggle("topic", v)}
           />
@@ -155,6 +167,7 @@ export function CourseFilters({ options }: { options: CourseFilterOptions }) {
           <ChipGroup
             label="Delivery"
             values={options.delivery}
+            counts={counts?.delivery}
             selected={selected.delivery}
             onToggle={(v) => toggle("delivery", v)}
           />
@@ -163,6 +176,7 @@ export function CourseFilters({ options }: { options: CourseFilterOptions }) {
           <ChipGroup
             label="Provider"
             values={options.provider}
+            counts={counts?.provider}
             selected={selected.provider}
             onToggle={(v) => toggle("provider", v)}
           />
@@ -173,12 +187,13 @@ export function CourseFilters({ options }: { options: CourseFilterOptions }) {
 }
 
 function ChipGroup({
-  label, values, selected, onToggle,
+  label, values, selected, onToggle, counts,
 }: {
   label: string;
   values: string[];
   selected: string[];
   onToggle: (v: string) => void;
+  counts?: Record<string, number>;
 }) {
   const sel = new Set(selected);
   return (
@@ -211,6 +226,11 @@ function ChipGroup({
                 )}
               >
                 {v}
+                {counts && (
+                  <span className={cn("ml-1 tabular-nums", on ? "text-white/80" : "text-slate-500")}>
+                    ({counts[v] ?? 0})
+                  </span>
+                )}
               </button>
             );
           })}
