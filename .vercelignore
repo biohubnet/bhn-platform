@@ -9,3 +9,10 @@ tsconfig.tsbuildinfo
 test-results
 playwright-report
 docs/screenshots
+
+# Local env files. Vercel injects the real environment variables at build
+# time; uploading a local .env would ship developer credentials into the
+# build and can silently shadow the project's configured values.
+.env
+.env.*
+!.env.example
