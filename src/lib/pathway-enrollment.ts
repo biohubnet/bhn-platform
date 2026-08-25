@@ -76,3 +76,52 @@ export async function waitlistPosition(pathwayId: string, enrollmentId: string) 
   });
   return ahead + 1;
 }
+
+/**
+ * Pure, batch version of the window rules above.
+ *
+ * `resolvePathwayWindow` does its own findUnique plus a conditional
+ * count, which makes it one-query-per-pathway — fine on a detail page,
+ * an N+1 on the /pathways list. This takes rows the caller has already
+ * fetched (plus a map of approved counts) and applies the SAME
+ * precedence, so the list badge and the detail page cannot disagree.
+ *
+ * Keep the two in step: any rule added above belongs here too.
+ */
+export function pathwayWindowFrom(
+  p: {
+    status: string;
+    enrollmentStatus: string;
+    enrollmentOpensAt: Date | null;
+    enrollmentClosesAt: Date | null;
+    capacity: number | null;
+  },
+  approvedCount: number,
+  now: Date = new Date(),
+): { state: PathwayWindowState; reason: string | null } {
+  if (p.enrollmentStatus === "closed") {
+    return { state: "closed", reason: "Closed by admin" };
+  }
+  if (p.enrollmentClosesAt && p.enrollmentClosesAt < now) {
+    return { state: "closed", reason: "Enrollment window has ended" };
+  }
+  if (p.enrollmentOpensAt && p.enrollmentOpensAt > now) {
+    return {
+      state: "closed",
+      reason: `Opens on ${p.enrollmentOpensAt.toLocaleDateString()}`,
+    };
+  }
+  if (p.status !== "published") {
+    return { state: "closed", reason: "Pathway is not published" };
+  }
+  if (p.capacity != null && approvedCount >= p.capacity) {
+    return {
+      state: "full",
+      reason: `Capacity reached (${approvedCount}/${p.capacity})`,
+    };
+  }
+  if (p.enrollmentStatus === "full") {
+    return { state: "full", reason: "Marked full by admin" };
+  }
+  return { state: "open", reason: null };
+}

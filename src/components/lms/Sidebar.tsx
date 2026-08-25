@@ -62,7 +62,7 @@ import {
   Ghost,
   MessageSquare,
   Gauge,
-  Sliders, SlidersHorizontal, FolderOpen, Library,
+  Sliders, FolderOpen, Library,
   Eye,
   Drama,
   Theater,
@@ -137,10 +137,6 @@ const engageItems: (NavItem & { labelKey: string })[] = [
     description: "BHN Annual Symposium & Training Week. Workshops, agenda, speakers. Register here." },
 ];
 
-/** The Events entry, pulled out by href so the trainee-only sidebar
- *  can render it standalone. Derived rather than duplicated: edit the
- *  entry in engageItems above and this follows automatically. */
-const eventsItem = engageItems.find((i) => i.href === "/events");
 
 
 // MY PROFILE section retired from the sidebar — it carried a single
@@ -1322,12 +1318,13 @@ export function Sidebar({
   const isEmployer = effectiveRole === "employer";
   // Employer accounts only see ENGAGE / EXPERIENCE / Buddies if an
   // admin has flipped allowPlatformContent on for them.
-  // Trainees get a deliberately minimal sidebar: the Events tab only.
-  // Folding this into showLearnerNav switches off ENGAGE / EXPERIENCE /
-  // EQUIP / misc in one place rather than gating each SectionGroup —
-  // fewer edits, and a new learner section cannot forget to opt in.
+  // Trainees see ENGAGE / EXPERIENCE / EQUIP, matching the pillar nav
+  // on the current platform (app.biohubnet.ca). `traineeOnly` no longer
+  // suppresses the learner sections — it survives only for the surfaces
+  // that stay hidden regardless of pillar access: the product tour and
+  // the first-login mini-game.
   const traineeOnly = isTraineeOnlyView(effectiveRole);
-  const showLearnerNav = (!isEmployer || allowPlatformContent) && !traineeOnly;
+  const showLearnerNav = !isEmployer || allowPlatformContent;
 
   // Mobile off-canvas drawer. The shell renders on every viewport;
   // <md the desktop shell collapses behind a hamburger. State lives
@@ -1500,15 +1497,8 @@ export function Sidebar({
             identity row + action queue. Hiding the Dashboard link
             for employers keeps the sidebar honest (no link → a
             page that just redirects them back out). */}
-        {!isEmployer && !traineeOnly && (
+        {!isEmployer && (
           <NavLink item={{ ...dashboardItem, label: t(dashboardItem.labelKey) }} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
-        )}
-
-        {/* Trainee view: Events is the only tab. It normally lives
-            inside the ENGAGE group, which is switched off above, so it
-            is rendered standalone here rather than left orphaned. */}
-        {traineeOnly && eventsItem && (
-          <NavLink item={{ ...eventsItem, label: t(eventsItem.labelKey) }} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
         )}
 
         {isEmployer && (
@@ -1562,7 +1552,7 @@ export function Sidebar({
           </SectionGroup>
         )}
 
-        {(showLearnerNav || traineeOnly) && experienceItems.length > 0 && (
+        {showLearnerNav && experienceItems.length > 0 && (
           <SectionGroup
             title="EXPERIENCE"
             tone="experience"
@@ -1593,7 +1583,7 @@ export function Sidebar({
           </SectionGroup>
         )}
 
-        {(showLearnerNav || traineeOnly) && equipItems.length > 0 && (
+        {showLearnerNav && equipItems.length > 0 && (
           <SectionGroup
             title="EQUIP"
             tone="equip"
@@ -1632,7 +1622,7 @@ export function Sidebar({
             members spot the shortcut immediately on first paint;
             primary roles still see ENGAGE / EXPERIENCE / EQUIP /
             ADMINISTRATION as before. */}
-        {!traineeOnly && visibleCommittees.length > 0 && (
+        {visibleCommittees.length > 0 && (
           <SectionGroup
             title="COMMITTEES"
             description="Your committee surfaces. Equip Review members can claim + decide on funding apps; HQP members coordinate via the HQP dashboard."
@@ -1860,8 +1850,7 @@ export function Sidebar({
        */}
 
       {/* Credits chip */}
-      {/* Credit balance is hidden from trainees. */}
-      {!isStaff && !traineeOnly && credits !== undefined && (
+      {!isStaff && credits !== undefined && (
         <div className="px-3 py-1.5 border-t border-line">
           <div className="flex items-center gap-1.5 bg-amber-50 rounded-md px-2 py-1">
             <Coins size={11} className="text-amber-500 shrink-0" />

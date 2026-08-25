@@ -11,6 +11,8 @@ import { LeavePathwayButton } from "@/components/lms/LeavePathwayButton";
 import { ClickStop } from "@/components/lms/ClickStop";
 import { ensureRegisteredForms } from "@/lib/forms/registry";
 import { parseOverlay, overlayStyle } from "@/lib/courses/thumbnail-overlay";
+import { pathwayWindowFrom } from "@/lib/pathway-enrollment";
+import { DSStatusDot } from "@/components/design-system/DSStatusDot";
 
 interface PathwayRow {
   id: string;
@@ -21,6 +23,11 @@ interface PathwayRow {
   thumbnail: string | null;
   /** Optional colour / gradient wash stamped from /admin/cover-art. */
   thumbnailOverlay: unknown;
+  /** Enrolment-window config — drives the Open / Closed / Full pill. */
+  enrollmentStatus: string;
+  enrollmentOpensAt: Date | null;
+  enrollmentClosesAt: Date | null;
+  capacity: number | null;
   _count: { courses: number; enrollments: number };
 }
 
@@ -35,6 +42,19 @@ export default async function PathwaysPage() {
     include: { _count: { select: { courses: true, enrollments: true } } },
     orderBy: { createdAt: "desc" },
   }) as PathwayRow[];
+
+  // Approved/completed counts for every pathway in ONE grouped query.
+  // resolvePathwayWindow() would be a query per card here; pathwayWindowFrom()
+  // applies the identical rules to rows we already have.
+  const approvedRows = await prisma.pathwayEnrollment.groupBy({
+    by: ["pathwayId"],
+    where: { status: { in: ["approved", "completed"] } },
+    _count: { _all: true },
+  });
+  const approvedByPathway = new Map(
+    approvedRows.map((r) => [r.pathwayId, r._count._all]),
+  );
+  const nowForWindows = new Date();
 
   const myEnrollments = await prisma.pathwayEnrollment.findMany({
     where: { userId },
@@ -199,6 +219,24 @@ export default async function PathwaysPage() {
                       </h3>
                     </div>
                     <div className="flex flex-col items-end gap-1.5 shrink-0">
+                      {/* Enrolment window — matches the Open / Closed marker
+                          each pathway carries on the current platform. Shown
+                          for everyone: whether a window is open is the first
+                          thing a trainee needs, before their own state. */}
+                      {(() => {
+                        const w = pathwayWindowFrom(
+                          p,
+                          approvedByPathway.get(p.id) ?? 0,
+                          nowForWindows,
+                        );
+                        return (
+                          <DSStatusDot
+                            tone={w.state}
+                            label={w.state === "open" ? "Open" : w.state === "full" ? "Full" : "Closed"}
+                            title={w.reason ?? "Enrolment is open"}
+                          />
+                        );
+                      })()}
                       {myStatus === "completed" ? (
                         <Badge tone="success">Completed</Badge>
                       ) : myStatus === "approved" ? (
