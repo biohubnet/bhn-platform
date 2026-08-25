@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.09.10a";
+export const TOUR_VERSION = "2026.09.11a";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Workspace · Website Review → overview home — Sep 2026
@@ -932,6 +932,17 @@ export const TOUR_STEPS: TourStep[] = [
     placement: "center",
     roles: ["trainee", "evaluating"],
     since: "2025.04",
+  },
+  // ─── Learn · Catalogue → a catalogue with courses in it — Aug 2026
+  {
+    id: "trainee.catalog.filters",
+    title: "Filter the catalogue three ways",
+    body: "The catalogue now covers every topic area, from GxP fundamentals and quality through upstream and downstream processing to regulatory affairs and career insights. Narrow it by **topic**, by **provider** or by **delivery** — each filter shows how many published courses sit behind it, so you can see what is worth opening before you click. Every course carries its modules and a knowledge check at the end.",
+    path: "/courses",
+    placement: "center",
+    roles: ["trainee", "evaluating"],
+    cta: { label: "Browse the catalogue", href: "/courses" },
+    since: "2026.09.11a",
   },
   {
     id: "trainee.catalog",

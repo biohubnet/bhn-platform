@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Learn · Course catalogue — real courses across every topic
+  {
+    title: "Course catalogue — 18 courses across every topic",
+    body: "The catalogue has courses in it. Eighteen of them, covering **every topic area** the filters offer: sector and technology overviews, career insights, business and commercialization, clinical trials, regulatory affairs, GxP fundamentals, quality, and both general and upstream/downstream biomanufacturing.\n\nEach one is a real course rather than a listing — modules you work through, then a knowledge check with explanations on every answer. Courses come from Talent Accelerator, BioTalent Canada, CASTL and Seneca Polytechnic, and span all four delivery modes: asynchronous, live online, in-person and blended.\n\nThe **topic**, **provider** and **delivery** filters now each show a count, so you can tell which facets are worth opening before you click one.",
+    kind: "feature",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Workspace · Website Review — a real home page
   {
     title: "Website Review — see every page at a glance",
