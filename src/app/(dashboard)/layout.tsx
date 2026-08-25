@@ -33,8 +33,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
   // Single user fetch — used by both the Sidebar (credits,
   // allowPlatformContent) and the LayoutBannerProvider (banner
   // state: accountKind, demoExpiresAt, email, emailVerified).
-  const userRow = userId
-    ? await prisma.user.findUnique({
+  const userRowPromise = userId
+    ? prisma.user.findUnique({
         where: { id: userId },
         select: {
           credits: true,
@@ -49,22 +49,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           featurePrefs: true,
         },
       })
-    : null;
-
-  // Compute banner state for the LayoutBannerProvider.
-  // "Verify your email" only shows for real accounts — demo / sandbox
-  // accounts deliberately bypass email verification.
-  const showUnverifiedBanner =
-    !!userRow &&
-    !userRow.emailVerified &&
-    (userRow.accountKind === "real" || userRow.accountKind == null);
-  const bannerData: LayoutBannerData = {
-    actingAs: actingAs ?? null,
-    isDemo: userRow?.accountKind === "demo",
-    demoExpiresAt: userRow?.demoExpiresAt?.toISOString() ?? null,
-    showUnverifiedBanner,
-    email: userRow?.email ?? null,
-  };
+    : Promise.resolve(null);
 
   // Queue badges — two layers stitched into one map:
   //   • Admin badges (credit apps, role requests, pathway enrolments,
@@ -79,7 +64,13 @@ export default async function DashboardLayout({ children }: { children: React.Re
   // "credit-applications") never collide.
   const canSeeAdminQueues = ROLE_RANK[realRole ?? role] >= ROLE_RANK.admin;
   const isEmployer = (realRole ?? role) === "employer";
-  const [adminCounts, traineeCounts, employerCounts, committeeSlugs, translationSetting, unreadCount] = await Promise.all([
+  // userRowPromise joins this fan-out rather than being awaited above it.
+  // It depends only on the session's userId, which is already known, so
+  // awaiting it separately cost a whole extra round trip on every
+  // authenticated navigation — and round trips, not query time, are what
+  // this layout actually spends (the DB executes all of this in ~0.2ms).
+  const [userRow, adminCounts, traineeCounts, employerCounts, committeeSlugs, translationSetting, unreadCount] = await Promise.all([
+    userRowPromise,
     canSeeAdminQueues ? getAdminQueueCounts() : Promise.resolve(undefined),
     userId ? getTraineeQueueCounts(userId) : Promise.resolve(undefined),
     // Employer join-request badge — only fetched for employer accounts
@@ -96,6 +87,22 @@ export default async function DashboardLayout({ children }: { children: React.Re
       ? prisma.notification.count({ where: { userId, readAt: null } }).catch(() => 0)
       : Promise.resolve(0),
   ]);
+
+  // Compute banner state for the LayoutBannerProvider.
+  // "Verify your email" only shows for real accounts — demo / sandbox
+  // accounts deliberately bypass email verification.
+  const showUnverifiedBanner =
+    !!userRow &&
+    !userRow.emailVerified &&
+    (userRow.accountKind === "real" || userRow.accountKind == null);
+  const bannerData: LayoutBannerData = {
+    actingAs: actingAs ?? null,
+    isDemo: userRow?.accountKind === "demo",
+    demoExpiresAt: userRow?.demoExpiresAt?.toISOString() ?? null,
+    showUnverifiedBanner,
+    email: userRow?.email ?? null,
+  };
+
   // Platform-level gate: absent row (never set) → enabled (default true).
   const translationPlatformEnabled = translationSetting?.value !== "false";
   const queueCounts: QueueCounts | undefined =

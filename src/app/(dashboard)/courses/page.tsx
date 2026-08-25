@@ -40,52 +40,67 @@ export default async function CoursesPage({
   const filters = parseFilters(sp);
   const favOnly = sp.fav === "1";
 
-  // Idempotent first-deploy seed of the option lists.
+  // Idempotent first-deploy seed of the option lists. Awaited on its own
+  // because getCourseFilterOptions() below reads the rows this may create.
   await ensureCourseFilterOptions();
-  const options = await getCourseFilterOptions();
-  const filterCounts = await getCourseFilterCounts();
 
-  // Signed-in user's favorite course IDs — fetched first so we
-  // can both (a) restrict the catalog query when the user has
-  // toggled `?fav=1`, and (b) tag every card with `isFavorite`
-  // so the heart icon renders in the right state.
-  const favoriteIds = userId
-    ? new Set(
-        (
-          await prisma.courseFavorite.findMany({
-            where: { userId },
-            select: { courseId: true },
-          })
-        ).map((f) => f.courseId),
-      )
-    : new Set<string>();
+  const subtitleDefault = "Self-paced modules, SCORM-backed simulations, and instructor-led series — all in one library. Filter by topic, delivery, provider, or run a search.";
 
-  // Non-staff see published AND archived courses (archived stay in
-  // the catalog so trainees can read about courses that ran in the
-  // past — the detail page disables the enroll button). Staff see
-  // everything including drafts so they can edit unreleased work.
-  const courses = await prisma.course.findMany({
-    where: {
-      ...(isStaff ? {} : { status: { in: ["published", "archived"] } }),
-      ...(filters.topic.length    && { topic:    { in: filters.topic } }),
-      ...(filters.delivery.length && { delivery: { in: filters.delivery } }),
-      ...(filters.provider.length && { provider: { in: filters.provider } }),
-      ...(filters.special         && { isSpecial: true }),
-      ...(sp.q ? { title: { contains: sp.q, mode: "insensitive" as const } } : {}),
-      // Favorites-only filter — empty set ⇒ matches nothing
-      // (intentional: an unauthenticated user with `?fav=1` sees
-      // an empty catalog, not the full list).
-      ...(favOnly ? { id: { in: Array.from(favoriteIds) } } : {}),
-    },
-    include: {
-      instructor: { select: { name: true } },
-    },
-    // Admin-controlled order first, recency as tiebreaker. Every
-    // pre-displayOrder course sits at 0 and falls back to the
-    // historical createdAt ordering; admins drag tiles on the page
-    // to set new positions.
-    orderBy: [{ displayOrder: "asc" }, { createdAt: "desc" }],
-  });
+  // Signed-in user's favorite course IDs. Every card is tagged with
+  // `isFavorite` so the heart renders in the right state.
+  const favoriteRowsPromise = userId
+    ? prisma.courseFavorite.findMany({
+        where: { userId },
+        select: { courseId: true },
+      })
+    : Promise.resolve([] as { courseId: string }[]);
+
+  // `?fav=1` is the ONE case where the catalog query has to know the
+  // favourite ids before it runs, so only that path pays for the extra
+  // round trip. Every other visit sends the catalog query out in the
+  // same wave as everything else.
+  const favoriteIdsForQuery = favOnly
+    ? new Set((await favoriteRowsPromise).map((f) => f.courseId))
+    : null;
+
+  // These were six sequential `await`s. Only the seed above and the
+  // favourites-filter case are genuine dependencies; the rest were
+  // serialised by statement order alone. Round trips are what this page
+  // spends, not query time.
+  const [options, filterCounts, favoriteRows, courses, subtitle] = await Promise.all([
+    getCourseFilterOptions(),
+    getCourseFilterCounts(),
+    favoriteRowsPromise,
+    // Non-staff see published AND archived courses (archived stay in
+    // the catalog so trainees can read about courses that ran in the
+    // past — the detail page disables the enroll button). Staff see
+    // everything including drafts so they can edit unreleased work.
+    prisma.course.findMany({
+      where: {
+        ...(isStaff ? {} : { status: { in: ["published", "archived"] } }),
+        ...(filters.topic.length    && { topic:    { in: filters.topic } }),
+        ...(filters.delivery.length && { delivery: { in: filters.delivery } }),
+        ...(filters.provider.length && { provider: { in: filters.provider } }),
+        ...(filters.special         && { isSpecial: true }),
+        ...(sp.q ? { title: { contains: sp.q, mode: "insensitive" as const } } : {}),
+        // Favorites-only filter — empty set ⇒ matches nothing
+        // (intentional: an unauthenticated user with `?fav=1` sees
+        // an empty catalog, not the full list).
+        ...(favoriteIdsForQuery ? { id: { in: Array.from(favoriteIdsForQuery) } } : {}),
+      },
+      include: {
+        instructor: { select: { name: true } },
+      },
+      // Admin-controlled order first, recency as tiebreaker. Every
+      // pre-displayOrder course sits at 0 and falls back to the
+      // historical createdAt ordering; admins drag tiles on the page
+      // to set new positions.
+      orderBy: [{ displayOrder: "asc" }, { createdAt: "desc" }],
+    }),
+    getCopy("courses.subtitle", subtitleDefault),
+  ]);
+
+  const favoriteIds = new Set(favoriteRows.map((f) => f.courseId));
 
   const catalogCourses: CatalogCourse[] = courses.map((c) => ({
     id: c.id,
@@ -114,9 +129,6 @@ export default async function CoursesPage({
   // Total count of favorites — used by the favorites-filter chip
   // so users can see "Favorites · 12" without scrolling.
   const favoriteCount = favoriteIds.size;
-
-  const subtitleDefault = "Self-paced modules, SCORM-backed simulations, and instructor-led series — all in one library. Filter by topic, delivery, provider, or run a search.";
-  const subtitle = await getCopy("courses.subtitle", subtitleDefault);
 
   return (
     <div>

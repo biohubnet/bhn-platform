@@ -26,24 +26,37 @@ export async function getOrSeedForm(slug: string) {
 
 /**
  * Idempotent: ensure every registered seed form exists in the DB.
- * Cheap (one findUnique per seed); call from any page that lists forms
- * so a fresh deployment doesn't show empty until someone visits the
- * specific /forms/[slug] URL first.
+ * Call from any page that lists forms so a fresh deployment doesn't
+ * show empty until someone visits the specific /forms/[slug] URL first.
+ *
+ * One batched read, and a write only when something is genuinely
+ * missing — which is to say, almost never. This used to loop and
+ * `await` a findUnique per seed. That read "cheap" when the database
+ * was local, but each of those is a network round trip: three seeds
+ * meant three strictly sequential round trips on every render of a
+ * page that lists forms, spent confirming that rows which already
+ * exist still exist. Query *time* was never the cost here; the number
+ * of round trips was.
+ *
+ * `skipDuplicates` covers the race where two first-requests arrive
+ * together — the same race the sequential version already had.
  */
 export async function ensureRegisteredForms() {
-  for (const seed of SEEDS) {
-    const existing = await prisma.eventForm.findUnique({
-      where: { slug: seed.slug },
-      select: { id: true },
-    });
-    if (existing) continue;
-    await prisma.eventForm.create({
-      data: {
-        slug: seed.slug,
-        title: seed.title,
-        description: seed.description ?? null,
-        fields: seed.fields as unknown as Prisma.InputJsonValue,
-      },
-    });
-  }
+  const existing = await prisma.eventForm.findMany({
+    where: { slug: { in: SEEDS.map((s) => s.slug) } },
+    select: { slug: true },
+  });
+  const have = new Set(existing.map((row) => row.slug));
+  const missing = SEEDS.filter((seed) => !have.has(seed.slug));
+  if (missing.length === 0) return;
+
+  await prisma.eventForm.createMany({
+    data: missing.map((seed) => ({
+      slug: seed.slug,
+      title: seed.title,
+      description: seed.description ?? null,
+      fields: seed.fields as unknown as Prisma.InputJsonValue,
+    })),
+    skipDuplicates: true,
+  });
 }

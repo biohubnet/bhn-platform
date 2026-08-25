@@ -38,76 +38,92 @@ export default async function PathwaysPage() {
   const userId = (session!.user as { id?: string }).id!;
   const isStaff = checkIsStaff(role);
 
-  const pathways = await prisma.pathway.findMany({
-    where: isStaff ? {} : { status: "published" },
-    include: { _count: { select: { courses: true, enrollments: true } } },
-    orderBy: { createdAt: "desc" },
-  }) as PathwayRow[];
-
-  // Approved/completed counts for every pathway in ONE grouped query.
-  // resolvePathwayWindow() would be a query per card here; pathwayWindowFrom()
-  // applies the identical rules to rows we already have.
-  const approvedRows = await prisma.pathwayEnrollment.groupBy({
-    by: ["pathwayId"],
-    where: { status: { in: ["approved", "completed"] } },
-    _count: { _all: true },
-  });
-  const approvedByPathway = new Map(
-    approvedRows.map((r) => [r.pathwayId, r._count._all]),
-  );
-  const nowForWindows = new Date();
-
-  const myEnrollments = await prisma.pathwayEnrollment.findMany({
-    where: { userId },
-    select: { pathwayId: true, status: true },
-  });
-  const enrollmentMap = new Map(myEnrollments.map((e) => [e.pathwayId, e.status]));
+  // Forms with their own home elsewhere shouldn't repeat on Pathways.
+  // (Talent Application lives under EXPERIENCE in the sidebar.)
+  const FORMS_HIDDEN_FROM_PATHWAYS = ["talent-application"];
+  const pathwaysSubtitleDefault = "Stack of courses that ladder up to a single certificate, plus open registrations for live programmes. Pick something to build toward.";
 
   // First-time deploys won't have any EventForm rows; auto-provision
   // the registered seeds so the cards show up without needing to visit
   // each /forms/[slug] URL individually first.
+  //
+  // Deliberately awaited BEFORE the fan-out rather than inside it: the
+  // form listing below must see rows this may have just created. Run in
+  // parallel, the first render after a new seed ships would list the
+  // form set from a moment earlier and only show the new one on refresh.
+  // One round trip is worth more than that inconsistency.
   await ensureRegisteredForms();
 
-  // Forms with their own home elsewhere shouldn't repeat on Pathways.
-  // (Talent Application lives under EXPERIENCE in the sidebar.)
-  const FORMS_HIDDEN_FROM_PATHWAYS = ["talent-application"];
-
-  // Registration forms — listed alongside pathways. Inactive forms are
-  // staff-only so users don't try to submit something already closed.
-  const formRows = await prisma.eventForm.findMany({
-    where: {
-      ...(isStaff ? {} : { active: true }),
-      slug: { notIn: FORMS_HIDDEN_FROM_PATHWAYS },
-    },
-    select: {
-      id: true,
-      slug: true,
-      title: true,
-      description: true,
-      active: true,
-      _count: { select: { submissions: true } },
-    },
-    orderBy: { createdAt: "desc" },
-  });
-  const formIds = formRows.map((f) => f.id);
-  const mySubmissions = formIds.length
-    ? await prisma.eventFormSubmission.findMany({
-        where: { userId, formId: { in: formIds } },
+  // Everything below is mutually independent — each derives only from
+  // userId or isStaff, both known above — so it goes out as ONE round
+  // trip instead of seven. These were sequential `await` statements,
+  // serialised purely by statement order rather than by any real data
+  // dependency. The database executes this whole page in ~2.6ms; the
+  // cost was always the waiting, not the querying.
+  const [pathways, approvedRows, myEnrollments, formRows, mySubmissionRows, courses, pathwaysSubtitle] =
+    await Promise.all([
+      prisma.pathway.findMany({
+        where: isStaff ? {} : { status: "published" },
+        include: { _count: { select: { courses: true, enrollments: true } } },
+        orderBy: { createdAt: "desc" },
+      }) as Promise<PathwayRow[]>,
+      // Approved/completed counts for every pathway in ONE grouped query.
+      // resolvePathwayWindow() would be a query per card here;
+      // pathwayWindowFrom() applies the identical rules to rows we already have.
+      prisma.pathwayEnrollment.groupBy({
+        by: ["pathwayId"],
+        where: { status: { in: ["approved", "completed"] } },
+        _count: { _all: true },
+      }),
+      prisma.pathwayEnrollment.findMany({
+        where: { userId },
+        select: { pathwayId: true, status: true },
+      }),
+      // Registration forms — listed alongside pathways. Inactive forms are
+      // staff-only so users don't try to submit something already closed.
+      prisma.eventForm.findMany({
+        where: {
+          ...(isStaff ? {} : { active: true }),
+          slug: { notIn: FORMS_HIDDEN_FROM_PATHWAYS },
+        },
+        select: {
+          id: true,
+          slug: true,
+          title: true,
+          description: true,
+          active: true,
+          _count: { select: { submissions: true } },
+        },
+        orderBy: { createdAt: "desc" },
+      }),
+      // Fetched for the user rather than for this page's form ids, so it
+      // no longer has to wait on formRows. One person's submissions are a
+      // handful of rows; narrowing them in memory below is free, and it
+      // buys the whole page a round trip.
+      prisma.eventFormSubmission.findMany({
+        where: { userId },
         select: { formId: true },
-      })
-    : [];
-  const submittedFormIds = new Set(mySubmissions.map((s) => s.formId));
+      }),
+      // For staff: list of all published courses to attach to pathways
+      isStaff
+        ? prisma.course.findMany({
+            select: { id: true, title: true, category: true },
+            orderBy: { title: "asc" },
+          })
+        : Promise.resolve([]),
+      getCopy("pathways.subtitle", pathwaysSubtitleDefault),
+    ]);
 
-  // For staff: list of all published courses to attach to pathways
-  const courses = isStaff
-    ? await prisma.course.findMany({
-        select: { id: true, title: true, category: true },
-        orderBy: { title: "asc" },
-      })
-    : [];
+  const approvedByPathway = new Map(
+    approvedRows.map((r) => [r.pathwayId, r._count._all]),
+  );
+  const nowForWindows = new Date();
+  const enrollmentMap = new Map(myEnrollments.map((e) => [e.pathwayId, e.status]));
 
-  const pathwaysSubtitleDefault = "Stack of courses that ladder up to a single certificate, plus open registrations for live programmes. Pick something to build toward.";
-  const pathwaysSubtitle = await getCopy("pathways.subtitle", pathwaysSubtitleDefault);
+  const formIds = new Set(formRows.map((f) => f.id));
+  const submittedFormIds = new Set(
+    mySubmissionRows.map((s) => s.formId).filter((id) => formIds.has(id)),
+  );
 
   return (
     <div>
