@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Platform · performance — navigation latency
+  {
+    title: "The platform is roughly 4x faster to click through",
+    body: "Moving between pages used to take about a second, sometimes a second and a half. It now lands in a quarter of a second.\n\nThe database was never the problem — it was doing the actual work for a whole page in under three milliseconds. The time was going into **waiting**: pages asked the database for one thing, waited for the answer, then asked for the next, and a connection setting meant those questions could never overlap even where the code asked for them together.\n\nSo the questions now go out at once, and pages that were asking for the same thing several times over ask once. Pathways went from about fifteen hundred milliseconds to under three hundred; the course catalogue, your credits, and the progress tracker all landed in the same place.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Learn · Course catalogue — real courses across every topic
   {
     title: "Course catalogue — 18 courses across every topic",
