@@ -43,6 +43,7 @@ import {
   FilePlus,
   ListChecks,
   Activity,
+  HelpCircle,
   Mail,
   Inbox,
   Calendar,
@@ -109,6 +110,9 @@ const dashboardItem: NavItem & { labelKey: string } = {
 
 // ENGAGE — the learning loop: catalog → pathway → progress → credits → rewards.
 const engageItems: (NavItem & { labelKey: string })[] = [
+  { label: "Program Details & FAQ", labelKey: "nav.engageGuide", href: "/engage", icon: HelpCircle,
+    featureId: "engage-faq",
+    description: "How training, credits and enrolment work: access, on-demand courses, pathways, the credit-expiry policy, applying for more credits, and leaving the programme." },
   { label: "Course Catalog",     labelKey: "nav.catalog",     href: "/courses", icon: BookOpen,
     featureId: "learn-courses",
     description: "Every published course. Natural-language search ranks results by what each course actually covers, not just keyword matches." },

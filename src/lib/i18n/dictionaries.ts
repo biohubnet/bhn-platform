@@ -28,6 +28,7 @@ type Dict = Record<string, string>;
 const en: Dict = {
   // Navigation
   "nav.dashboard": "Dashboard",
+  "nav.engageGuide": "Program Details & FAQ",
   "nav.catalog": "Course Catalog",
   "nav.pathways": "Learning Pathways",
   "nav.myCourses": "My Courses",
@@ -118,6 +119,7 @@ const en: Dict = {
 
 const es: Dict = {
   "nav.dashboard": "Panel",
+  "nav.engageGuide": "Program Details & FAQ",
   "nav.catalog": "Catálogo de cursos",
   "nav.pathways": "Itinerarios",
   "nav.myCourses": "Mis cursos",
@@ -202,6 +204,7 @@ const es: Dict = {
 
 const fr: Dict = {
   "nav.dashboard": "Tableau de bord",
+  "nav.engageGuide": "Program Details & FAQ",
   "nav.catalog": "Catalogue de cours",
   "nav.pathways": "Parcours",
   "nav.myCourses": "Mes cours",
@@ -286,6 +289,7 @@ const fr: Dict = {
 
 const zh: Dict = {
   "nav.dashboard": "仪表板",
+  "nav.engageGuide": "Program Details & FAQ",
   "nav.catalog": "课程目录",
   "nav.pathways": "学习路径",
   "nav.myCourses": "我的课程",
@@ -370,6 +374,7 @@ const zh: Dict = {
 
 const hi: Dict = {
   "nav.dashboard": "डैशबोर्ड",
+  "nav.engageGuide": "Program Details & FAQ",
   "nav.catalog": "पाठ्यक्रम सूची",
   "nav.pathways": "पाथवे",
   "nav.myCourses": "मेरे पाठ्यक्रम",
@@ -454,6 +459,7 @@ const hi: Dict = {
 
 const ko: Dict = {
   "nav.dashboard": "대시보드",
+  "nav.engageGuide": "Program Details & FAQ",
   "nav.catalog": "코스 카탈로그",
   "nav.pathways": "학습 경로",
   "nav.myCourses": "내 코스",
@@ -536,6 +542,7 @@ const ko: Dict = {
 
 const pa: Dict = {
   "nav.dashboard": "ਡੈਸ਼ਬੋਰਡ",
+  "nav.engageGuide": "Program Details & FAQ",
   "nav.catalog": "ਕੋਰਸ ਕੈਟਾਲਾਗ",
   "nav.pathways": "ਮਾਰਗ",
   "nav.myCourses": "ਮੇਰੇ ਕੋਰਸ",
@@ -618,6 +625,7 @@ const pa: Dict = {
 
 const ar: Dict = {
   "nav.dashboard": "لوحة التحكم",
+  "nav.engageGuide": "Program Details & FAQ",
   "nav.catalog": "كتالوج الدورات",
   "nav.pathways": "المسارات",
   "nav.myCourses": "دوراتي",

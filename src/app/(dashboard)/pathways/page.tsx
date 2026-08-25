@@ -13,6 +13,7 @@ import { ensureRegisteredForms } from "@/lib/forms/registry";
 import { parseOverlay, overlayStyle } from "@/lib/courses/thumbnail-overlay";
 import { pathwayWindowFrom } from "@/lib/pathway-enrollment";
 import { DSStatusDot } from "@/components/design-system/DSStatusDot";
+import { AdvisorBookingMock } from "@/components/engage/AdvisorBookingMock";
 
 interface PathwayRow {
   id: string;
@@ -130,6 +131,7 @@ export default async function PathwaysPage() {
           </p>
         </div>
       ) : (
+        <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-6 lg:items-start">
         <div className="grid grid-cols-1 gap-5">
           {formRows.map((f) => {
             const submitted = submittedFormIds.has(f.id);
@@ -278,6 +280,8 @@ export default async function PathwaysPage() {
               </Link>
             );
           })}
+        </div>
+        <AdvisorBookingMock className="mt-5 lg:mt-0 lg:sticky lg:top-6" />
         </div>
       )}
     </div>

@@ -132,6 +132,7 @@ export const FEATURES: FeatureDef[] = [
 
   // Learn ---------------------------------------------------------
   { id: "learn-dashboard",     label: "Dashboard",                 description: "Your home — pickup-where-you-left-off, upcoming events, notifications.",                  group: "learn",      defaultEnabled: true },
+  { id: "engage-faq",          label: "ENGAGE · Program details & FAQ", description: "How training, credits and enrolment work.",                                          group: "learn",      defaultEnabled: true },
   { id: "learn-courses",       label: "Course catalog",            description: "Browse and enrol in courses. Filter by topic, skill, language, level.",                   group: "learn",      defaultEnabled: true },
   { id: "learn-my-courses",    label: "My Courses",                description: "Your active + completed enrolments. Resume where you left off.",                          group: "learn",      defaultEnabled: true },
   { id: "learn-pathways",      label: "Pathways",                  description: "Curated multi-course tracks for specific roles + skill sets.",                            group: "learn",      defaultEnabled: true },
