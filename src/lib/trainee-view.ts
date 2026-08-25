@@ -26,18 +26,16 @@ export function isTraineeOnlyView(role: string | null | undefined): boolean {
 }
 
 /**
- * Nav destinations a trainee may still reach.
+ * Visibility is decided per SECTION, not per href.
  *
- * EQUIP is here because trainee-entrepreneurs are exactly who the
- * VentureConnect / VentureLift grants are for — hiding the nav would
- * leave the application portal built but unreachable. Matched by href
- * prefix, so /equip/apply/new and /equip/my-applications resolve
- * without listing every child route.
+ * An earlier version kept a TRAINEE_ALLOWED_PREFIXES allowlist and
+ * filtered individual nav items against it. That does not survive
+ * contact with EXPERIENCE, whose entries are scattered across
+ * /experience, /profile/*, /forms/*, /internships, /simulator,
+ * /mock-interview and /career-paths — enumerating those prefixes would
+ * be a second, silently-drifting copy of the nav arrays.
+ *
+ * So the sidebar gates whole SectionGroups on `traineeOnly` instead,
+ * and per-item visibility stays where it already lived: the feature
+ * registry (`defaultEnabled`) plus each user's own toggles.
  */
-export const TRAINEE_ALLOWED_PREFIXES = ["/events", "/equip"] as const;
-
-export function isTraineeAllowedHref(href: string): boolean {
-  return TRAINEE_ALLOWED_PREFIXES.some(
-    (p) => href === p || href.startsWith(p + "/"),
-  );
-}
