@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Learn · catalogue expanded to 51
+  {
+    title: "The catalogue is now 51 courses",
+    body: "Thirty-three more, bringing the library level with what BioHubNet offers: company profiles across the sector, cell and gene therapy, vaccines, digital health and precision medicine; the practical career set — interviewing, resumes, networking, and what changes when you start work in a regulated environment; and a deep GMP and quality run covering cleaning validation, equipment qualification, method validation, environmental monitoring, stability, cell line development, filtration, viral safety, fill-finish and technology transfer.\n\nEvery course carries its modules and a knowledge check, and every one was reviewed for technical accuracy before it shipped.",
+    kind: "feature",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── ENGAGE · parity — pathways, advisor booking, mentorship
   {
     title: "Learning Pathways, advisor booking, and a mentorship section",
