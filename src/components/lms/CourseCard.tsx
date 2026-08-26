@@ -120,7 +120,7 @@ export function CourseCard({ course }: CourseCardProps) {
     <Link
       href={`/courses/${course.id}`}
       className={cn(
-        "group relative flex flex-col overflow-hidden rounded-xl transition-all h-full",
+        "group relative flex flex-col overflow-hidden rounded-md transition-all h-full",
         "bg-card-solid border border-line",
         "shadow-sm hover:shadow-md hover:border-brand-300",
         "hover:-translate-y-0.5",
@@ -221,29 +221,30 @@ export function CourseCard({ course }: CourseCardProps) {
         </div>
 
         {/* RIGHT — metadata sidebar.
-            Deep slate-800 backdrop (#1e293b) for high-contrast
-            "shelf" treatment. The earlier color-mix(--raised, +12%
-            black) made the right column a slightly darker grey but
-            still relied on dark text — readability fell apart at
-            the dim end of every theme. Going to a true dark navy +
-            white text gives us:
-              • white-on-slate-800 ≈ 14.5:1 contrast → AAA on body
-              • white/70 on slate-800 ≈ 9.4:1 → AAA on micro labels
-              • dark-to-light bg jump IS the divider — no border-l
-                hairline needed (it would have been invisible
-                against slate-800 anyway)
-              • theme-stable: hardcoded slate so every palette
-                (Sakura / Voltage / Greenwood / dark variants…)
-                gets the same dark shelf without a theme-conditional
-                inversion of fg colour
-            Pastel chips keep their light-fill backgrounds — each
-            chip carries its own opaque container so the contrast
-            inside the chip is unchanged; sitting them on a darker
-            band actually crispens the chip silhouettes. */}
+            Slate-600 backdrop (#475569). This was slate-800, which
+            read as a near-black slab against the light card and
+            pulled more attention than metadata deserves. Slate-600
+            still separates the shelf from the card body but sits
+            closer to it in weight.
+            Contrast after the change:
+              • white on slate-600 ≈ 7.5:1 → AAA on body text
+              • white/80 on slate-600 ≈ 5.4:1 → AA on the micro
+                labels, which are 9px bold uppercase. The labels
+                moved 70% → 80% precisely because the lighter
+                ground ate the margin the old value had.
+            Unchanged from before:
+              • the dark-to-light bg jump IS the divider — no
+                border-l hairline needed
+              • theme-stable: a fixed slate rather than a theme
+                token, so every palette (Sakura / Voltage /
+                Greenwood / dark variants…) gets the same shelf
+                without a theme-conditional inversion of fg colour
+              • pastel chips keep their own opaque light fills, so
+                contrast inside each chip is untouched */}
         <div
           className={cn(
             "p-2.5 sm:p-3 flex flex-col gap-1",
-            "bg-slate-800 text-white",
+            "bg-slate-600 text-white",
           )}
         >
           <Chip
@@ -260,7 +261,7 @@ export function CourseCard({ course }: CourseCardProps) {
               like missing data, where the whole point is that enrolment
               never closes. Matches how the current platform reads. */}
           <div className="mt-2 pt-2 border-t border-white/10">
-            <p className="text-[9px] uppercase tracking-[0.18em] font-bold text-white/70 leading-snug">
+            <p className="text-[9px] uppercase tracking-[0.18em] font-bold text-white/80 leading-snug">
               Enroll by:
             </p>
             <p className="text-[10.5px] font-semibold text-white leading-snug mt-0.5">
@@ -272,7 +273,7 @@ export function CourseCard({ course }: CourseCardProps) {
               Hybrid; single-line minutes for self-serve. */}
           {(hasCohort || course.cohortStartDate || course.duration) && (
             <div className="mt-auto pt-2">
-              <p className="text-[9px] uppercase tracking-[0.18em] font-bold text-white/70 leading-snug">
+              <p className="text-[9px] uppercase tracking-[0.18em] font-bold text-white/80 leading-snug">
                 Duration:
               </p>
               {hasCohort ? (

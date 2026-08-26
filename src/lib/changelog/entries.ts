@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Learn · course card refinement
+  {
+    title: "Course cards sit a little quieter",
+    body: "The metadata shelf on the right of each course card was near-black, which made it the loudest thing in the catalogue grid — heavier than the course title next to it. It's a lighter slate now, still clearly a separate shelf but no longer competing. The label text moved up a notch in opacity to keep it just as readable on the lighter ground.\n\nThe cards' outer corners are less rounded too, which reads as a touch more precise in a dense grid.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Learn · catalogue expanded to 51
   {
     title: "The catalogue is now 51 courses",
