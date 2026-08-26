@@ -53,7 +53,7 @@ export default async function PathwaysPage() {
   const userId = (session!.user as { id?: string }).id!;
   const isStaff = checkIsStaff(role);
 
-  const pathwaysSubtitleDefault = "Stack of courses that ladder up to a single certificate, plus open registrations for live programmes. Pick something to build toward.";
+  const pathwaysSubtitleDefault = "Structured programmes that combine expert-led training, hands-on sessions and professional support. Open one to see what is running and when applications close.";
 
 
   // Everything below is mutually independent — each derives only from
