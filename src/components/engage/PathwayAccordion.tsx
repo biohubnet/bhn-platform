@@ -233,7 +233,8 @@ export function PathwayAccordion({ pathways }: { pathways: PathwayEntry[] }) {
                   size={16}
                   aria-hidden="true"
                   className={cn(
-                    "shrink-0 text-subtle transition-transform duration-200",
+                    "shrink-0 text-subtle transition-transform",
+                    "duration-[300ms] ease-[cubic-bezier(.22,1,.36,1)]",
                     "motion-reduce:transition-none",
                     isOpen && "rotate-180",
                   )}
@@ -254,19 +255,40 @@ export function PathwayAccordion({ pathways }: { pathways: PathwayEntry[] }) {
             </div>
 
             {/* The expanded programme list spans the full card width — the
-                art column belongs to the header row, not to the panel. */}
-            {/* grid-rows 0fr -> 1fr animates to content height without a
-                hard-coded max-height, and collapses to genuinely zero. */}
+                art column belongs to the header row, not to the panel.
+
+                grid-rows 0fr -> 1fr animates to content height without a
+                hard-coded max-height, and collapses to genuinely zero.
+
+                Durations are bracketed, not bare: `duration-250` is not on
+                Tailwind's scale, so it compiled to nothing and the panel was
+                falling back to the 150ms default with a built-in ease.
+
+                Opening is slower than closing (300 vs 220ms) and the content
+                is held back 70ms so the card visibly makes room before the
+                programmes arrive. Closing reverses that — content leaves
+                first, at speed, because attention has already moved on. */}
             <div
               id={`pathway-panel-${p.id}`}
               role="region"
               className={cn(
-                "grid transition-[grid-template-rows] duration-250 ease-out",
-                "motion-reduce:transition-none",
+                "grid transition-[grid-template-rows] motion-reduce:transition-none",
+                isOpen
+                  ? "duration-[300ms] ease-[cubic-bezier(.22,1,.36,1)]"
+                  : "duration-[220ms] ease-[cubic-bezier(.4,0,.2,1)]",
               )}
               style={{ gridTemplateRows: isOpen ? "1fr" : "0fr" }}
             >
               <div className="overflow-hidden">
+                <div
+                  className={cn(
+                    "transition-[opacity,transform] motion-reduce:transition-none",
+                    "motion-reduce:opacity-100 motion-reduce:translate-y-0",
+                    isOpen
+                      ? "opacity-100 translate-y-0 duration-[240ms] delay-[70ms] ease-[cubic-bezier(.22,1,.36,1)]"
+                      : "opacity-0 -translate-y-1 duration-[130ms] ease-[cubic-bezier(.55,0,1,.45)]",
+                  )}
+                >
                 <div className="px-4 pb-4 pt-3 border-t border-line">
                   {p.programmes.length > 0 ? (
                     <ul className="mt-3.5 space-y-2.5">
@@ -279,6 +301,7 @@ export function PathwayAccordion({ pathways }: { pathways: PathwayEntry[] }) {
                       No programmes scheduled for this pathway yet.
                     </p>
                   )}
+                  </div>
                 </div>
               </div>
             </div>
