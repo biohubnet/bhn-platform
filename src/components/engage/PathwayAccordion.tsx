@@ -172,36 +172,30 @@ export function PathwayAccordion({ pathways }: { pathways: PathwayEntry[] }) {
             key={p.id}
             className="rounded-lg border border-line bg-card overflow-hidden"
           >
-            {/* Cover art — same slim banner as a course card, and the same
-                3.5:1 art. It replaces the small colour bar that stood in for
-                it: the banner already carries the pathway's identity, so a
-                second accent alongside it was doing nothing. */}
-            <div
-              className={cn(
-                "relative h-20 sm:h-24 overflow-hidden",
-                !p.accentColor && "bg-gradient-to-br " + NEUTRAL_FALLBACK,
-              )}
-              // Inline because the value is data on the Pathway record, not a
-              // design token — the same pattern the merch tiers use for their
-              // per-tier accents.
-              style={p.accentColor ? { backgroundColor: p.accentColor } : undefined}
-            >
-              {p.thumbnail && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={p.thumbnail} alt="" className="absolute inset-0 w-full h-full object-cover" />
-              )}
-              {/* Accent stripe along the foot of the banner. Reads as the
-                  pathway's colour code even once the artwork covers the rest,
-                  which is what the current platform uses to tell them apart. */}
-              {p.accentColor && (
-                <span
-                  aria-hidden="true"
-                  className="absolute inset-x-0 bottom-0 h-1"
-                  style={{ backgroundColor: p.accentColor }}
-                />
-              )}
-            </div>
+            {/* Art beside the text rather than above it. As a full-width
+                banner the artwork outweighed the title and description it was
+                meant to introduce; in a left column it sits alongside them and
+                the row reads as one unit.
 
+                `self-stretch` lets the panel match whatever height the copy
+                needs, and object-cover crops the 3.5:1 artwork to fit. */}
+            <div className="flex items-stretch">
+              <div
+                className={cn(
+                  "relative shrink-0 w-28 sm:w-44 overflow-hidden border-r border-line",
+                  !p.accentColor && "bg-gradient-to-br " + NEUTRAL_FALLBACK,
+                )}
+                // Inline because the value is data on the Pathway record, not
+                // a design token — the same pattern the merch tiers use.
+                style={p.accentColor ? { backgroundColor: p.accentColor } : undefined}
+              >
+                {p.thumbnail && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={p.thumbnail} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                )}
+              </div>
+
+              <div className="flex-1 min-w-0">
             <h3>
               <button
                 type="button"
@@ -256,7 +250,11 @@ export function PathwayAccordion({ pathways }: { pathways: PathwayEntry[] }) {
                 {p.description}
               </p>
             )}
+              </div>
+            </div>
 
+            {/* The expanded programme list spans the full card width — the
+                art column belongs to the header row, not to the panel. */}
             {/* grid-rows 0fr -> 1fr animates to content height without a
                 hard-coded max-height, and collapses to genuinely zero. */}
             <div
