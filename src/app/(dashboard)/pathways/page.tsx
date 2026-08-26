@@ -1,13 +1,10 @@
 import { getSession, isStaff as checkIsStaff } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import Link from "next/link";
-import { Layers, Users, ClipboardList, Check, ArrowRight } from "lucide-react";
-import { Badge } from "@/components/ui/Badge";
+import { Layers } from "lucide-react";
 import { PageHero } from "@/components/ui/PageHero";
 import { EditableText } from "@/components/cms/EditableText";
 import { getCopy } from "@/lib/copy";
 import { PathwayManageButton } from "@/components/lms/PathwayManageButton";
-import { ensureRegisteredForms } from "@/lib/forms/registry";
 import { pathwayWindowFrom } from "@/lib/pathway-enrollment";
 import {
   PathwayAccordion,
@@ -26,6 +23,8 @@ interface PathwayRow {
   category: string | null;
   status: string;
   thumbnail: string | null;
+  /** Identity colour for this pathway, as a hex literal. */
+  accentColor: string | null;
   /** Optional colour / gradient wash stamped from /admin/cover-art. */
   thumbnailOverlay: unknown;
   /** Enrolment-window config — drives the Open / Closed / Full pill. */
@@ -54,21 +53,8 @@ export default async function PathwaysPage() {
   const userId = (session!.user as { id?: string }).id!;
   const isStaff = checkIsStaff(role);
 
-  // Forms with their own home elsewhere shouldn't repeat on Pathways.
-  // (Talent Application lives under EXPERIENCE in the sidebar.)
-  const FORMS_HIDDEN_FROM_PATHWAYS = ["talent-application"];
   const pathwaysSubtitleDefault = "Stack of courses that ladder up to a single certificate, plus open registrations for live programmes. Pick something to build toward.";
 
-  // First-time deploys won't have any EventForm rows; auto-provision
-  // the registered seeds so the cards show up without needing to visit
-  // each /forms/[slug] URL individually first.
-  //
-  // Deliberately awaited BEFORE the fan-out rather than inside it: the
-  // form listing below must see rows this may have just created. Run in
-  // parallel, the first render after a new seed ships would list the
-  // form set from a moment earlier and only show the new one on refresh.
-  // One round trip is worth more than that inconsistency.
-  await ensureRegisteredForms();
 
   // Everything below is mutually independent — each derives only from
   // userId or isStaff, both known above — so it goes out as ONE round
@@ -77,7 +63,7 @@ export default async function PathwaysPage() {
   // dependency. The database executes this whole page in ~2.6ms; the
   // cost was always the waiting, not the querying.
   const [
-    pathways, approvedRows, myEnrollments, formRows, mySubmissionRows, courses,
+    pathways, approvedRows, myEnrollments, courses,
     pathwaysSubtitle, advisorRows, myAdvisorBooking,
   ] = await Promise.all([
       prisma.pathway.findMany({
@@ -111,31 +97,6 @@ export default async function PathwaysPage() {
       prisma.pathwayEnrollment.findMany({
         where: { userId },
         select: { pathwayId: true, status: true },
-      }),
-      // Registration forms — listed alongside pathways. Inactive forms are
-      // staff-only so users don't try to submit something already closed.
-      prisma.eventForm.findMany({
-        where: {
-          ...(isStaff ? {} : { active: true }),
-          slug: { notIn: FORMS_HIDDEN_FROM_PATHWAYS },
-        },
-        select: {
-          id: true,
-          slug: true,
-          title: true,
-          description: true,
-          active: true,
-          _count: { select: { submissions: true } },
-        },
-        orderBy: { createdAt: "desc" },
-      }),
-      // Fetched for the user rather than for this page's form ids, so it
-      // no longer has to wait on formRows. One person's submissions are a
-      // handful of rows; narrowing them in memory below is free, and it
-      // buys the whole page a round trip.
-      prisma.eventFormSubmission.findMany({
-        where: { userId },
-        select: { formId: true },
       }),
       // For staff: list of all published courses to attach to pathways
       isStaff
@@ -223,6 +184,8 @@ export default async function PathwaysPage() {
       category: p.category,
       windowLabel: w.state === "open" ? "Open" : w.state === "full" ? "Full" : "Closed",
       windowTone: w.state,
+      thumbnail: p.thumbnail,
+      accentColor: p.accentColor,
       myStatus: enrollmentMap.get(p.id) ?? null,
       programmes: p.courses.map(({ course }) => ({
         id: course.id,
@@ -239,23 +202,19 @@ export default async function PathwaysPage() {
     };
   });
 
-  const formIds = new Set(formRows.map((f) => f.id));
-  const submittedFormIds = new Set(
-    mySubmissionRows.map((s) => s.formId).filter((id) => formIds.has(id)),
-  );
 
   return (
     <div>
       <PageHero
-        eyebrow={<><Layers size={11} /> Training programmes</>}
-        title="Pathways and registrations"
+        eyebrow={<><Layers size={11} /> Learning pathways</>}
+        title="Learning Pathways"
         description={
           <EditableText copyKey="pathways.subtitle" defaultText={pathwaysSubtitle} isStaff={isStaff} />
         }
         actions={isStaff ? <PathwayManageButton mode="create" courses={courses} /> : null}
       />
 
-      {pathways.length === 0 && formRows.length === 0 ? (
+      {pathways.length === 0 ? (
         <div className="bg-card rounded-2xl border border-line p-16 text-center">
           <div className="w-12 h-12 mx-auto rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center mb-3">
             <Layers size={20} />
@@ -268,55 +227,6 @@ export default async function PathwaysPage() {
       ) : (
         <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-6 lg:items-start">
         <div className="grid grid-cols-1 gap-5">
-          {formRows.map((f) => {
-            const submitted = submittedFormIds.has(f.id);
-            return (
-              <Link
-                key={`form-${f.id}`}
-                href={`/forms/${f.slug}`}
-                className="group bg-card rounded-2xl border border-line hover:border-teal-300 hover:shadow-md transition-all overflow-hidden flex min-h-[180px]"
-              >
-                {/* Hero panel — full card height */}
-                <div className="w-72 shrink-0 bg-gradient-to-br from-teal-500 via-teal-600 to-teal-800 relative overflow-hidden hidden sm:block">
-                  <ClipboardList className="absolute top-5 right-5 text-white/40 z-10 drop-shadow" size={56} />
-                  <span className="absolute top-4 left-4 text-[10px] uppercase tracking-[0.18em] font-semibold bg-white/15 backdrop-blur-sm text-white border border-white/20 px-2 py-1 rounded">
-                    Registration
-                  </span>
-                </div>
-                <div className="flex-1 p-6 flex flex-col">
-                  <div className="flex items-start justify-between gap-3 mb-2">
-                    <div className="min-w-0">
-                      <p className="text-[10px] uppercase tracking-[0.22em] font-semibold text-subtle mb-1.5">
-                        Event registration
-                      </p>
-                      <h3 className="font-semibold text-fg text-lg leading-tight group-hover:text-teal-700 transition-colors">
-                        {f.title}
-                      </h3>
-                    </div>
-                    {submitted ? (
-                      <Badge tone="success">
-                        <Check size={11} className="mr-0.5" /> Submitted
-                      </Badge>
-                    ) : isStaff && !f.active ? (
-                      <Badge tone="warning">Inactive</Badge>
-                    ) : null}
-                  </div>
-                  {f.description && (
-                    <p className="text-sm text-muted line-clamp-3 mb-3 leading-relaxed">{f.description}</p>
-                  )}
-                  <div className="mt-auto flex items-center gap-4 text-xs text-muted">
-                    <span className="inline-flex items-center gap-1"><ClipboardList size={12} /> Form</span>
-                    {isStaff && (
-                      <span className="inline-flex items-center gap-1"><Users size={12} /> {f._count.submissions} responses</span>
-                    )}
-                    <span className="ml-auto inline-flex items-center gap-1 font-medium text-teal-700 opacity-0 group-hover:opacity-100 transition-opacity">
-                      Open form <ArrowRight size={12} />
-                    </span>
-                  </div>
-                </div>
-              </Link>
-            );
-          })}
           <PathwayAccordion pathways={pathwayEntries} />
         </div>
         <AdvisorBooking

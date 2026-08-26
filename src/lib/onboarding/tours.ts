@@ -967,7 +967,7 @@ export const TOUR_STEPS: TourStep[] = [
   },
   {
     id: "trainee.pathways",
-    title: "Training pathways",
+    title: "Learning pathways",
     body: "Pathways group several courses into one learning journey with a single certificate at the end. Some are open to everyone, others require admin approval.",
     path: "/pathways",
     placement: "center",

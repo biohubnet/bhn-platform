@@ -1869,6 +1869,10 @@ model Pathway {
   /// Set from /admin/cover-art alongside course overlays.
   thumbnailOverlay Json?
   category         String?
+  /// Identity colour, as a hex literal. Stored per pathway rather than
+  /// derived from list position: an index-based accent silently recolours
+  /// every pathway the moment one is added, removed or reordered.
+  accentColor      String?
   status           String                      @default("draft") // draft | published
   creditCost       Float                       @default(0)
   createdById      String?

@@ -61,7 +61,7 @@ export default async function BuddyDetailPage({ params }: { params: Promise<{ id
       include: { courses: { select: { courseId: true } } },
     });
     if (pathway) {
-      focusBlock = { title: pathway.title, subtitle: "Training pathway", href: `/pathways/${pathway.id}` };
+      focusBlock = { title: pathway.title, subtitle: "Learning pathway", href: `/pathways/${pathway.id}` };
       const courseIds = pathway.courses.map((c) => c.courseId);
       const enrolls = await prisma.enrollment.findMany({
         where: { courseId: { in: courseIds }, userId: { in: youIds } },

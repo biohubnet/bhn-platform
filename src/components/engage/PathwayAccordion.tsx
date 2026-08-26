@@ -44,6 +44,10 @@ export interface PathwayEntry {
   title: string;
   description: string | null;
   category: string | null;
+  /** Cover art, or null for the accent-tinted fallback. */
+  thumbnail: string | null;
+  /** Identity colour as a hex literal, from the Pathway record. */
+  accentColor: string | null;
   /** Enrolment window for the pathway itself. */
   windowLabel: string;
   windowTone: "open" | "closed" | "full";
@@ -58,14 +62,9 @@ const TONE_DOT: Record<PathwayEntry["windowTone"], string> = {
   full: "bg-amber-500",
 };
 
-/** Per-pathway accent, keyed by index so the six read as a set rather than
- *  six unrelated colours. Fixed hues, not theme tokens, so a pathway keeps
- *  its identity when someone switches theme — the same reasoning the
- *  course-card chips use. */
-const ACCENTS = [
-  "bg-violet-500", "bg-amber-500", "bg-rose-500",
-  "bg-teal-500", "bg-emerald-500", "bg-fuchsia-500",
-];
+/** Neutral fallback when a pathway has neither cover art nor an accent.
+ *  Both are normally set, so this is a safety net rather than a design. */
+const NEUTRAL_FALLBACK = "from-slate-400 to-slate-600";
 
 function Chip({ label, tone }: { label: string; tone: "credit" | "delivery" }) {
   return (
@@ -166,13 +165,43 @@ export function PathwayAccordion({ pathways }: { pathways: PathwayEntry[] }) {
 
   return (
     <ul className="space-y-3">
-      {pathways.map((p, i) => {
+      {pathways.map((p) => {
         const isOpen = open.has(p.id);
         return (
           <li
             key={p.id}
             className="rounded-lg border border-line bg-card overflow-hidden"
           >
+            {/* Cover art — same slim banner as a course card, and the same
+                3.5:1 art. It replaces the small colour bar that stood in for
+                it: the banner already carries the pathway's identity, so a
+                second accent alongside it was doing nothing. */}
+            <div
+              className={cn(
+                "relative h-20 sm:h-24 overflow-hidden",
+                !p.accentColor && "bg-gradient-to-br " + NEUTRAL_FALLBACK,
+              )}
+              // Inline because the value is data on the Pathway record, not a
+              // design token — the same pattern the merch tiers use for their
+              // per-tier accents.
+              style={p.accentColor ? { backgroundColor: p.accentColor } : undefined}
+            >
+              {p.thumbnail && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={p.thumbnail} alt="" className="absolute inset-0 w-full h-full object-cover" />
+              )}
+              {/* Accent stripe along the foot of the banner. Reads as the
+                  pathway's colour code even once the artwork covers the rest,
+                  which is what the current platform uses to tell them apart. */}
+              {p.accentColor && (
+                <span
+                  aria-hidden="true"
+                  className="absolute inset-x-0 bottom-0 h-1"
+                  style={{ backgroundColor: p.accentColor }}
+                />
+              )}
+            </div>
+
             <h3>
               <button
                 type="button"
@@ -185,10 +214,13 @@ export function PathwayAccordion({ pathways }: { pathways: PathwayEntry[] }) {
                   "focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-brand-600",
                 )}
               >
-                <span
-                  aria-hidden="true"
-                  className={cn("h-1 w-7 rounded-full shrink-0", ACCENTS[i % ACCENTS.length])}
-                />
+                {p.accentColor && (
+                  <span
+                    aria-hidden="true"
+                    className="h-1 w-7 rounded-full shrink-0"
+                    style={{ backgroundColor: p.accentColor }}
+                  />
+                )}
                 <span className="flex-1 min-w-0 font-semibold text-fg text-[15px] leading-snug">
                   {p.title}
                 </span>
@@ -215,6 +247,16 @@ export function PathwayAccordion({ pathways }: { pathways: PathwayEntry[] }) {
               </button>
             </h3>
 
+            {/* Always visible. This is the text a trainee reads to decide
+                whether the pathway is worth expanding, so hiding it behind
+                the toggle makes the collapsed list unreadable — six titles
+                and nothing to choose between them. */}
+            {p.description && (
+              <p className="px-4 pb-3.5 -mt-0.5 text-[13px] text-fg-muted leading-relaxed">
+                {p.description}
+              </p>
+            )}
+
             {/* grid-rows 0fr -> 1fr animates to content height without a
                 hard-coded max-height, and collapses to genuinely zero. */}
             <div
@@ -227,12 +269,7 @@ export function PathwayAccordion({ pathways }: { pathways: PathwayEntry[] }) {
               style={{ gridTemplateRows: isOpen ? "1fr" : "0fr" }}
             >
               <div className="overflow-hidden">
-                <div className="px-4 pb-4 pt-1 border-t border-line">
-                  {p.description && (
-                    <p className="text-[13px] text-fg-muted leading-relaxed mt-3">
-                      {p.description}
-                    </p>
-                  )}
+                <div className="px-4 pb-4 pt-3 border-t border-line">
                   {p.programmes.length > 0 ? (
                     <ul className="mt-3.5 space-y-2.5">
                       {p.programmes.map((prog) => (
