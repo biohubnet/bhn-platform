@@ -11,14 +11,14 @@
  *   ┌───────────────────────────────────────────────┐
  *   │ [ COVER ART — slim banner ]                   │
  *   ├──────────────────────────┬────────────────────┤
- *   │ CODE                 ♡   │ ◆ Credit 500       │  bg-card-solid (LEFT)
- *   │ Course title…            │ ◆ Hybrid           │  vs
- *   │ Short blurb under the    │ ◆ OBIO             │  bg-slate-800 (RIGHT)
- *   │ title, 3-line clamp…     │ ──────────         │  (deep navy + white text,
- *   │                          │ Enroll by:         │   white-on-slate-800 = 14.5:1,
- *   │                          │ Jun 30, 2025       │   AAA on every theme; pale
- *   │                          │ Duration:          │   pastel chips have their own
- *   │                          │ Jul 23 / Aug 15    │   opaque container so they sit
+ *   │ CODE                 ♡   │ ◆ Credit 500       │  One ground throughout:
+ *   │ Course title…            │ ◆ Hybrid           │  bg-card-solid. The shelf
+ *   │ Short blurb under the    │ ◆ OBIO             │  on the right is separated
+ *   │ title, 3-line clamp […]  │ ──────────         │  by a hairline, not a fill.
+ *   │                          │ Enroll by:         │  Chip hue lives in the fill
+ *   │                          │ Ongoing            │  and ring; the label uses
+ *   │                          │ Duration:          │  text-fg so it flips with
+ *   │                          │ 1 h                │  the theme rather than
  *   ├──────────────────────────┴────────────────────┤
  *   │      [ Request to Enroll → ] slim brand bar   │  CTA bar
  *   └───────────────────────────────────────────────┘
@@ -36,7 +36,7 @@
  */
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArrowRight, BookOpen, Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { parseOverlay, overlayStyle } from "@/lib/courses/thumbnail-overlay";
@@ -91,6 +91,25 @@ export function CourseCard({ course }: CourseCardProps) {
   // Optimistic favourite state — initialised from the server-passed
   // prop. Heart icon below flips this immediately on click, then
   // calls the API; on error we revert.
+  const blurb = displayCourseDescription(course.description);
+
+  // Whether the blurb is actually overflowing its three-line clamp. Read
+  // from layout instead of inferred from length, and re-read on resize
+  // because the card reflows across breakpoints.
+  const blurbRef = useRef<HTMLParagraphElement | null>(null);
+  const [isClamped, setIsClamped] = useState(false);
+
+  useEffect(() => {
+    const el = blurbRef.current;
+    if (!el) { setIsClamped(false); return; }
+    const measure = () => setIsClamped(el.scrollHeight - el.clientHeight > 1);
+    measure();
+    if (typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [blurb]);
+
   const [isFavorite, setIsFavorite] = useState(course.isFavorite);
   const [pending, setPending] = useState(false);
 
@@ -209,42 +228,56 @@ export function CourseCard({ course }: CourseCardProps) {
               uploader used to stamp, so the card doesn't render that
               placeholder until the backfill script replaces it with
               a real blurb in the DB. */}
-          {(() => {
-            const blurb = displayCourseDescription(course.description);
-            if (!blurb) return null;
-            return (
-              <p className="mt-1.5 text-[11.5px] leading-snug text-fg-muted line-clamp-3 flex-1">
+          {blurb && (
+            <div className="relative mt-1.5 flex-1">
+              <p
+                ref={blurbRef}
+                className="text-[11.5px] leading-snug text-fg-muted line-clamp-3"
+              >
                 {blurb}
               </p>
-            );
-          })()}
+              {/* Shown only when the text is genuinely cut off. Measured
+                  rather than guessed from a character count: the same blurb
+                  clamps at three lines on a narrow card and fits on a wide
+                  one, so any fixed character threshold would append this to
+                  descriptions that are fully visible. It sits over the last
+                  line's tail on a matching ground, which is why the card
+                  background is repeated here. The whole card is already a
+                  link, so this is an affordance rather than its own
+                  control — hence aria-hidden. */}
+              {isClamped && (
+                <span
+                  aria-hidden="true"
+                  className="absolute bottom-0 right-0 pl-3 bg-card-solid text-[11.5px] leading-snug font-semibold text-brand-600 group-hover:text-brand-700 transition-colors"
+                >
+                  […]
+                </span>
+              )}
+            </div>
+          )}
         </div>
 
-        {/* RIGHT — metadata sidebar.
-            Slate-600 backdrop (#475569). This was slate-800, which
-            read as a near-black slab against the light card and
-            pulled more attention than metadata deserves. Slate-600
-            still separates the shelf from the card body but sits
-            closer to it in weight.
-            Contrast after the change:
-              • white on slate-600 ≈ 7.5:1 → AAA on body text
-              • white/80 on slate-600 ≈ 5.4:1 → AA on the micro
-                labels, which are 9px bold uppercase. The labels
-                moved 70% → 80% precisely because the lighter
-                ground ate the margin the old value had.
-            Unchanged from before:
-              • the dark-to-light bg jump IS the divider — no
-                border-l hairline needed
-              • theme-stable: a fixed slate rather than a theme
-                token, so every palette (Sakura / Voltage /
-                Greenwood / dark variants…) gets the same shelf
-                without a theme-conditional inversion of fg colour
-              • pastel chips keep their own opaque light fills, so
-                contrast inside each chip is untouched */}
+        {/* RIGHT — metadata shelf.
+            No background of its own: it sits on the card and is separated
+            by a single hairline. Two earlier versions filled it (slate-800,
+            then slate-600) and both fought the course title for attention —
+            metadata does not need a slab to be findable, a rule is enough.
+
+            Everything here is theme-token driven rather than fixed white,
+            which matters because the platform ships seventeen themes. The
+            chip fills are NOT fixed pastels: globals.css redefines
+            --color-*-100 per theme as a low-alpha tint (e.g. emerald-100
+            becomes rgba(16,185,129,.18) on dark). A tint composites over
+            whatever is behind it, so on a light theme the chip ground is
+            pale and on a dark theme it is dark. That is exactly why the
+            chip label uses text-fg and not a literal black: text-fg
+            resolves to near-black on light themes — the intended look —
+            and to near-white on dark ones, where black would be illegible
+            against the same chip. */}
         <div
           className={cn(
             "p-2.5 sm:p-3 flex flex-col gap-1",
-            "bg-slate-600 text-white",
+            "border-l border-line",
           )}
         >
           <Chip
@@ -261,10 +294,10 @@ export function CourseCard({ course }: CourseCardProps) {
               like missing data, where the whole point is that enrolment
               never closes. Matches how the current platform reads. */}
           <div className="mt-2 pt-2 border-t border-white/10">
-            <p className="text-[9px] uppercase tracking-[0.18em] font-bold text-white/80 leading-snug">
+            <p className="text-[9px] uppercase tracking-[0.18em] font-bold text-subtle leading-snug">
               Enroll by:
             </p>
-            <p className="text-[10.5px] font-semibold text-white leading-snug mt-0.5">
+            <p className="text-[10.5px] font-semibold text-fg leading-snug mt-0.5">
               {course.enrollByDate ? fmtShortDate(course.enrollByDate) : "Ongoing"}
             </p>
           </div>
@@ -273,24 +306,24 @@ export function CourseCard({ course }: CourseCardProps) {
               Hybrid; single-line minutes for self-serve. */}
           {(hasCohort || course.cohortStartDate || course.duration) && (
             <div className="mt-auto pt-2">
-              <p className="text-[9px] uppercase tracking-[0.18em] font-bold text-white/80 leading-snug">
+              <p className="text-[9px] uppercase tracking-[0.18em] font-bold text-subtle leading-snug">
                 Duration:
               </p>
               {hasCohort ? (
                 <>
-                  <p className="text-[10.5px] font-semibold text-white leading-snug mt-0.5">
+                  <p className="text-[10.5px] font-semibold text-fg leading-snug mt-0.5">
                     {fmtShortDate(course.cohortStartDate)}
                   </p>
-                  <p className="text-[10.5px] font-semibold text-white leading-snug">
+                  <p className="text-[10.5px] font-semibold text-fg leading-snug">
                     {fmtShortDate(course.cohortEndDate)}
                   </p>
                 </>
               ) : course.cohortStartDate ? (
-                <p className="text-[10.5px] font-semibold text-white leading-snug mt-0.5">
+                <p className="text-[10.5px] font-semibold text-fg leading-snug mt-0.5">
                   {fmtShortDate(course.cohortStartDate)}
                 </p>
               ) : (
-                <p className="text-[10.5px] font-semibold text-white leading-snug mt-0.5">
+                <p className="text-[10.5px] font-semibold text-fg leading-snug mt-0.5">
                   {fmtMinutes(course.duration)}
                 </p>
               )}
@@ -331,7 +364,7 @@ function Chip({
     <span
       className={cn(
         "inline-flex items-center justify-center text-center",
-        "text-[10.5px] font-semibold leading-tight",
+        "text-[10.5px] font-semibold leading-tight text-fg",
         "px-2.5 py-1 rounded-full w-full truncate ring-1 ring-inset",
         cls,
       )}
@@ -343,20 +376,27 @@ function Chip({
 
 type ChipTone = "credit" | "in-person" | "online" | "hybrid" | "on-demand" | "provider" | "default";
 
-/** Pastel theme-safe palette — soft -100 bg, -700 text, faint
- *  same-family -200 ring. Bumped from the previous near-white
- *  -50 bg to -100 so each tone reads as an actual pastel hue
- *  (mint / sky / lilac / cyan / rose) rather than a barely-
- *  visible wash. Every -100 bg and -700 text already has dark-
- *  theme overrides in globals.css for legibility. */
+/** Chip fill + ring carry the tone; the LABEL colour does not.
+ *
+ *  Each --color-*-100 is redefined per theme in globals.css as a low-alpha
+ *  tint rather than a fixed pastel, so a chip composites over whatever is
+ *  behind it — pale on a light theme, dark on a dark one. A fixed label
+ *  colour (the old -700 pairs, or a literal black) therefore cannot hold
+ *  across all seventeen themes: it would have to be legible on both a pale
+ *  and a dark ground simultaneously.
+ *
+ *  text-fg is the token that already tracks that flip, so the label reads
+ *  near-black on light themes and near-white on dark ones. The hue still
+ *  comes through in the fill and ring, which is where it was doing the
+ *  actual work of telling the chips apart. */
 const CHIP_CLASSES: Record<ChipTone, string> = {
-  credit:      "bg-emerald-100 text-emerald-700 ring-emerald-200",
-  "in-person": "bg-blue-100 text-blue-700 ring-blue-200",
-  online:      "bg-sky-100 text-sky-700 ring-sky-200",
-  hybrid:      "bg-indigo-100 text-indigo-700 ring-indigo-200",
-  "on-demand": "bg-cyan-100 text-cyan-700 ring-cyan-200",
-  provider:    "bg-rose-100 text-rose-700 ring-rose-200",
-  default:     "bg-elevated text-fg-muted ring-line",
+  credit:      "bg-emerald-100 ring-emerald-200",
+  "in-person": "bg-blue-100 ring-blue-200",
+  online:      "bg-sky-100 ring-sky-200",
+  hybrid:      "bg-indigo-100 ring-indigo-200",
+  "on-demand": "bg-cyan-100 ring-cyan-200",
+  provider:    "bg-rose-100 ring-rose-200",
+  default:     "bg-elevated ring-line",
 };
 
 function deliveryTone(delivery: string): ChipTone {
