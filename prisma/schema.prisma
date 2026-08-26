@@ -1471,6 +1471,12 @@ model Course {
   /// null and the card falls back to `duration` (minutes).
   cohortStartDate  DateTime?
   cohortEndDate    DateTime?
+  /// Free-text session schedule for cohort programmes, e.g.
+  /// "Oct 21-23 (9am - 5pm, 3 days), Nov 18-20 (9am - 5pm, 3 days)".
+  /// cohortStartDate/cohortEndDate cannot express a programme that runs
+  /// as several discrete multi-day sittings in different cities, which is
+  /// how the in-person pathway programmes are actually offered.
+  sessionDates     String?
   thumbnail        String?
   /// Non-destructive colour / gradient overlay rendered on top of
   /// `thumbnail` in the catalog. Admins set it from

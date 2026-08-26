@@ -1,18 +1,18 @@
 import { getSession, isStaff as checkIsStaff } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
-import { Layers, Award, BookOpen, Users, ClipboardList, Check, ArrowRight } from "lucide-react";
+import { Layers, Users, ClipboardList, Check, ArrowRight } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { PageHero } from "@/components/ui/PageHero";
 import { EditableText } from "@/components/cms/EditableText";
 import { getCopy } from "@/lib/copy";
 import { PathwayManageButton } from "@/components/lms/PathwayManageButton";
-import { LeavePathwayButton } from "@/components/lms/LeavePathwayButton";
-import { ClickStop } from "@/components/lms/ClickStop";
 import { ensureRegisteredForms } from "@/lib/forms/registry";
-import { parseOverlay, overlayStyle } from "@/lib/courses/thumbnail-overlay";
 import { pathwayWindowFrom } from "@/lib/pathway-enrollment";
-import { DSStatusDot } from "@/components/design-system/DSStatusDot";
+import {
+  PathwayAccordion,
+  type PathwayEntry,
+} from "@/components/engage/PathwayAccordion";
 import {
   AdvisorBooking,
   type AdvisorSlot,
@@ -34,6 +34,18 @@ interface PathwayRow {
   enrollmentClosesAt: Date | null;
   capacity: number | null;
   _count: { courses: number; enrollments: number };
+  courses: {
+    course: {
+      id: string;
+      title: string;
+      provider: string | null;
+      delivery: string | null;
+      creditCost: number;
+      sessionDates: string | null;
+      enrollByDate: Date | null;
+      status: string;
+    };
+  }[];
 }
 
 export default async function PathwaysPage() {
@@ -70,8 +82,23 @@ export default async function PathwaysPage() {
   ] = await Promise.all([
       prisma.pathway.findMany({
         where: isStaff ? {} : { status: "published" },
-        include: { _count: { select: { courses: true, enrollments: true } } },
-        orderBy: { createdAt: "desc" },
+        include: {
+          _count: { select: { courses: true, enrollments: true } },
+          // The cohort programmes shown when a pathway is expanded.
+          courses: {
+            orderBy: { order: "asc" },
+            select: {
+              course: {
+                select: {
+                  id: true, title: true, provider: true, delivery: true,
+                  creditCost: true, sessionDates: true, enrollByDate: true,
+                  status: true,
+                },
+              },
+            },
+          },
+        },
+        orderBy: { createdAt: "asc" },
       }) as Promise<PathwayRow[]>,
       // Approved/completed counts for every pathway in ONE grouped query.
       // resolvePathwayWindow() would be a query per card here;
@@ -181,6 +208,37 @@ export default async function PathwaysPage() {
       }
     : null;
 
+  // Formatted server-side so a date cannot render differently after
+  // hydration in another timezone.
+  const enrollByFmt = new Intl.DateTimeFormat("en-CA", {
+    month: "long", day: "numeric", year: "numeric", timeZone: "America/Toronto",
+  });
+
+  const pathwayEntries: PathwayEntry[] = pathways.map((p) => {
+    const w = pathwayWindowFrom(p, approvedByPathway.get(p.id) ?? 0, nowForWindows);
+    return {
+      id: p.id,
+      title: p.title,
+      description: p.description,
+      category: p.category,
+      windowLabel: w.state === "open" ? "Open" : w.state === "full" ? "Full" : "Closed",
+      windowTone: w.state,
+      myStatus: enrollmentMap.get(p.id) ?? null,
+      programmes: p.courses.map(({ course }) => ({
+        id: course.id,
+        title: course.title,
+        provider: course.provider,
+        delivery: course.delivery,
+        creditCost: course.creditCost,
+        sessionDates: course.sessionDates,
+        enrollByLabel: course.enrollByDate ? enrollByFmt.format(course.enrollByDate) : null,
+        // A programme is archived when its own intake has closed, which is
+        // independent of whether its pathway is still accepting people.
+        isOpen: course.status === "published",
+      })),
+    };
+  });
+
   const formIds = new Set(formRows.map((f) => f.id));
   const submittedFormIds = new Set(
     mySubmissionRows.map((s) => s.formId).filter((id) => formIds.has(id)),
@@ -259,104 +317,7 @@ export default async function PathwaysPage() {
               </Link>
             );
           })}
-          {pathways.map((p) => {
-            const myStatus = enrollmentMap.get(p.id);
-            return (
-              <Link
-                key={p.id}
-                href={`/pathways/${p.id}`}
-                className="group bg-card rounded-2xl border border-line hover:border-brand-300 hover:shadow-md transition-all overflow-hidden flex min-h-[180px]"
-              >
-                {/* Hero panel — full card height */}
-                <div className="w-72 shrink-0 bg-gradient-to-br from-brand-500 via-brand-600 to-brand-800 relative overflow-hidden hidden sm:block">
-                  {p.thumbnail && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={p.thumbnail} alt="" className="absolute inset-0 w-full h-full object-cover" />
-                  )}
-                  {/* Optional admin-stamped colour / gradient wash. Same
-                      helper that course cards use; rendered above the
-                      AI thumbnail and below the Layers icon. */}
-                  {(() => {
-                    const overlay = parseOverlay(p.thumbnailOverlay);
-                    return overlay ? <div className="absolute inset-0" style={overlayStyle(overlay)} /> : null;
-                  })()}
-                  <Layers className="absolute top-5 right-5 text-white/40 z-10 drop-shadow" size={56} />
-                  {p.category && (
-                    <span className="absolute top-4 left-4 text-[10px] uppercase tracking-[0.18em] font-semibold bg-white/15 backdrop-blur-sm text-white border border-white/20 px-2 py-1 rounded z-10">
-                      {p.category}
-                    </span>
-                  )}
-                </div>
-                <div className="flex-1 p-6 flex flex-col">
-                  <div className="flex items-start justify-between gap-3 mb-2">
-                    <div className="min-w-0">
-                      <p className="text-[10px] uppercase tracking-[0.22em] font-semibold text-subtle mb-1.5">
-                        Training pathway
-                      </p>
-                      <h3 className="font-semibold text-fg text-lg leading-tight group-hover:text-brand-700 transition-colors">
-                        {p.title}
-                      </h3>
-                    </div>
-                    <div className="flex flex-col items-end gap-1.5 shrink-0">
-                      {/* Enrolment window — matches the Open / Closed marker
-                          each pathway carries on the current platform. Shown
-                          for everyone: whether a window is open is the first
-                          thing a trainee needs, before their own state. */}
-                      {(() => {
-                        const w = pathwayWindowFrom(
-                          p,
-                          approvedByPathway.get(p.id) ?? 0,
-                          nowForWindows,
-                        );
-                        return (
-                          <DSStatusDot
-                            tone={w.state}
-                            label={w.state === "open" ? "Open" : w.state === "full" ? "Full" : "Closed"}
-                            title={w.reason ?? "Enrolment is open"}
-                          />
-                        );
-                      })()}
-                      {myStatus === "completed" ? (
-                        <Badge tone="success">Completed</Badge>
-                      ) : myStatus === "approved" ? (
-                        <Badge tone="brand">Enrolled</Badge>
-                      ) : myStatus === "pending" ? (
-                        <Badge tone="amber">Requested</Badge>
-                      ) : myStatus === "waitlisted" ? (
-                        <Badge tone="warning">Waitlist</Badge>
-                      ) : isStaff && p.status === "draft" ? (
-                        <Badge tone="warning">Draft</Badge>
-                      ) : null}
-                      {/* Admin fast-leave shown inline on the card so an
-                          admin can clean up their test enrollments
-                          without clicking through to each pathway.
-                          ClickStop is a tiny client component that
-                          swallows the click before it bubbles to the
-                          parent Link — server components can't define
-                          inline onClick handlers, so we delegate to a
-                          named wrapper. */}
-                      {isStaff && myStatus && myStatus !== "withdrawn" && (
-                        <ClickStop>
-                          <LeavePathwayButton pathwayId={p.id} pathwayTitle={p.title} />
-                        </ClickStop>
-                      )}
-                    </div>
-                  </div>
-                  {p.description && (
-                    <p className="text-sm text-muted line-clamp-3 mb-3 leading-relaxed">{p.description}</p>
-                  )}
-                  <div className="mt-auto flex items-center gap-4 text-xs text-muted">
-                    <span className="inline-flex items-center gap-1"><BookOpen size={12} /> {p._count.courses} courses</span>
-                    <span className="inline-flex items-center gap-1"><Users size={12} /> {p._count.enrollments} learners</span>
-                    <span className="inline-flex items-center gap-1 text-amber-600"><Award size={12} /> Pathway certificate</span>
-                    <span className="ml-auto inline-flex items-center gap-1 font-medium text-brand-700 opacity-0 group-hover:opacity-100 transition-opacity">
-                      View pathway <ArrowRight size={12} />
-                    </span>
-                  </div>
-                </div>
-              </Link>
-            );
-          })}
+          <PathwayAccordion pathways={pathwayEntries} />
         </div>
         <AdvisorBooking
           slots={advisorSlots}

@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── ENGAGE · Pathways expand to their programmes
+  {
+    title: "Pathways open up to show what's actually running",
+    body: "Each learning pathway now expands in place instead of sending you to another page. Inside are the cohort programmes it's made of — the multi-day, in-person sessions run with CATTI, CASTL, OBIO, Agilis Health and Seneca — with their session dates, the deadline to apply, what they cost in credits, and whether each one is still open.\n\nThat last part matters: a pathway can be open while one of its programmes has closed, and the two are now marked separately. Programmes still being built say so rather than showing blank dates.\n\nIf you're already enrolled in a pathway, it says so on the header.",
+    kind: "feature",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── ENGAGE · Progress Tracker + course card
   {
     title: "Your credit balance is now the headline",
