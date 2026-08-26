@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useCallback, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { ChevronDown, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -64,6 +64,34 @@ const TONE_DOT: Record<PathwayEntry["windowTone"], string> = {
 
 /** Neutral fallback when a pathway has neither cover art nor an accent.
  *  Both are normally set, so this is a safety net rather than a design. */
+
+/** `[data-theme] *` in globals.css sets transition-property/duration on every
+ *  element, unlayered — so it beats Tailwind's layered transition utilities no
+ *  matter their specificity. Component motion therefore has to be declared
+ *  inline to win, which in turn means reduced motion has to be read here
+ *  rather than expressed as a `motion-reduce:` class. */
+const QUERY = "(prefers-reduced-motion: reduce)";
+
+function usePrefersReducedMotion(): boolean {
+  const subscribe = useCallback((onChange: () => void) => {
+    const mq = window.matchMedia(QUERY);
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
+  // useSyncExternalStore rather than an effect: it reads the real value on the
+  // first client render instead of flashing the default, and the third
+  // argument gives the server a value so hydration matches.
+  return useSyncExternalStore(
+    subscribe,
+    () => window.matchMedia(QUERY).matches,
+    () => false,
+  );
+}
+
+const OPEN_EASE = "cubic-bezier(.22, 1, .36, 1)";
+const CLOSE_EASE = "cubic-bezier(.4, 0, .2, 1)";
+const EXIT_EASE = "cubic-bezier(.55, 0, 1, .45)";
+
 const NEUTRAL_FALLBACK = "from-slate-400 to-slate-600";
 
 function Chip({ label, tone }: { label: string; tone: "credit" | "delivery" }) {
@@ -152,6 +180,7 @@ function ProgrammeRow({ p }: { p: PathwayProgramme }) {
 }
 
 export function PathwayAccordion({ pathways }: { pathways: PathwayEntry[] }) {
+  const reduced = usePrefersReducedMotion();
   // Several can be open at once: the point is comparing what's running.
   const [open, setOpen] = useState<Set<string>>(new Set());
 
@@ -233,11 +262,12 @@ export function PathwayAccordion({ pathways }: { pathways: PathwayEntry[] }) {
                   size={16}
                   aria-hidden="true"
                   className={cn(
-                    "shrink-0 text-subtle transition-transform",
-                    "duration-[300ms] ease-[cubic-bezier(.22,1,.36,1)]",
-                    "motion-reduce:transition-none",
+                    "shrink-0 text-subtle",
                     isOpen && "rotate-180",
                   )}
+                  style={{
+                    transition: reduced ? "none" : `transform 300ms ${OPEN_EASE}`,
+                  }}
                 />
               </button>
             </h3>
@@ -271,23 +301,29 @@ export function PathwayAccordion({ pathways }: { pathways: PathwayEntry[] }) {
             <div
               id={`pathway-panel-${p.id}`}
               role="region"
-              className={cn(
-                "grid transition-[grid-template-rows] motion-reduce:transition-none",
-                isOpen
-                  ? "duration-[300ms] ease-[cubic-bezier(.22,1,.36,1)]"
-                  : "duration-[220ms] ease-[cubic-bezier(.4,0,.2,1)]",
-              )}
-              style={{ gridTemplateRows: isOpen ? "1fr" : "0fr" }}
+              className="grid"
+              style={{
+                gridTemplateRows: isOpen ? "1fr" : "0fr",
+                transition: reduced
+                  ? "none"
+                  : `grid-template-rows ${isOpen ? `300ms ${OPEN_EASE}` : `220ms ${CLOSE_EASE}`}`,
+              }}
             >
               <div className="overflow-hidden">
                 <div
-                  className={cn(
-                    "transition-[opacity,transform] motion-reduce:transition-none",
-                    "motion-reduce:opacity-100 motion-reduce:translate-y-0",
-                    isOpen
-                      ? "opacity-100 translate-y-0 duration-[240ms] delay-[70ms] ease-[cubic-bezier(.22,1,.36,1)]"
-                      : "opacity-0 -translate-y-1 duration-[130ms] ease-[cubic-bezier(.55,0,1,.45)]",
-                  )}
+                  style={{
+                    opacity: reduced || isOpen ? 1 : 0,
+                    transform: reduced || isOpen ? "translateY(0)" : "translateY(-4px)",
+                    transition: reduced
+                      ? "none"
+                      : isOpen
+                        // Held back 70ms so the card visibly makes room before
+                        // the programmes arrive.
+                        ? `opacity 240ms ${OPEN_EASE} 70ms, transform 240ms ${OPEN_EASE} 70ms`
+                        // On close the content leaves first and the height
+                        // follows it down.
+                        : `opacity 130ms ${EXIT_EASE}, transform 130ms ${EXIT_EASE}`,
+                  }}
                 >
                 <div className="px-4 pb-4 pt-3 border-t border-line">
                   {p.programmes.length > 0 ? (
