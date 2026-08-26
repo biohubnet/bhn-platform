@@ -63,7 +63,7 @@ export default async function ProgressTrackerPage() {
   return (
     <div>
       <PageHero
-        eyebrow={<><GraduationCap size={11} /> ENGAGE</>}
+        eyebrow={<><GraduationCap size={12} /> ENGAGE</>}
         title="Progress Tracker"
         description="Your training credits, the courses you've finished, and the ones still in flight."
       />

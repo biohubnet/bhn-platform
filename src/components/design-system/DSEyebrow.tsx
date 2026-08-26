@@ -5,8 +5,14 @@
  * accent treatment.
  *
  *   Classic   — text-only, normal tracking, subtle color
- *   Cinematic — wider tracking, brand-tinted text, leading
- *               gradient hairline accent
+ *   Cinematic — wider tracking, brand-tinted text
+ *
+ * The cinematic variant used to lead with a short gradient hairline. It
+ * was dropped: at eyebrow size the rule read as a stray dash before the
+ * word rather than as an accent, and it pushed the label off the left
+ * edge the title aligns to. All three variants are now 12px, up from
+ * 10-11px — an eyebrow that cannot be read at a glance is not doing the
+ * orienting job it exists for.
  *   Studio    — tracking [0.22em], brand-tinted text, sits inside
  *               a gradient hero so always reads as white-ish on
  *               dark mesh (we use text-white/80 when wrapped in
@@ -22,15 +28,7 @@ export function DSEyebrow({ children, tone }: { children: React.ReactNode; tone?
 
   if (designSystem === "cinematic") {
     return (
-      <p className={"inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.28em] font-bold " + (isDark ? "text-white/85" : "text-brand-700")}>
-        <span
-          className="block h-px w-6"
-          style={{
-            backgroundImage: isDark
-              ? "linear-gradient(to right, rgba(255,255,255,0.85), transparent)"
-              : "linear-gradient(to right, var(--brand-500), transparent)",
-          }}
-        />
+      <p className={"inline-flex items-center gap-2 text-[12px] uppercase tracking-[0.24em] font-bold " + (isDark ? "text-white/90" : "text-brand-700")}>
         {children}
       </p>
     );
@@ -38,7 +36,7 @@ export function DSEyebrow({ children, tone }: { children: React.ReactNode; tone?
 
   if (designSystem === "studio") {
     return (
-      <p className={"inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.22em] font-semibold " + (isDark ? "text-white/85" : "text-brand-700")}>
+      <p className={"inline-flex items-center gap-2 text-[12px] uppercase tracking-[0.2em] font-semibold " + (isDark ? "text-white/85" : "text-brand-700")}>
         {children}
       </p>
     );
@@ -46,7 +44,7 @@ export function DSEyebrow({ children, tone }: { children: React.ReactNode; tone?
 
   // Classic
   return (
-    <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle">
+    <p className="text-[12px] uppercase tracking-[0.2em] font-bold text-subtle">
       {children}
     </p>
   );

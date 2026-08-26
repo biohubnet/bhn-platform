@@ -56,7 +56,7 @@ export default async function CreditsPage() {
   return (
     <div>
       <PageHero
-        eyebrow={<><Coins size={11} /> ENGAGE credits</>}
+        eyebrow={<><Coins size={12} /> ENGAGE</>}
         title="My BHN Credits"
         description={
           <>

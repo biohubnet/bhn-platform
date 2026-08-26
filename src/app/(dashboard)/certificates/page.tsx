@@ -23,7 +23,7 @@ export default async function CertificatesPage() {
   return (
     <div>
       <PageHero
-        eyebrow={<><Award size={11} /> Earned credentials</>}
+        eyebrow={<><Award size={12} /> ENGAGE</>}
         title="My Certificates"
         description={`${certificates.length} certificate${certificates.length !== 1 ? "s" : ""} earned — each one is a signed PDF you can download and share.`}
       />

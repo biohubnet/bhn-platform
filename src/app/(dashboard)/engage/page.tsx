@@ -33,7 +33,7 @@ export default function EngageProgramFaqPage() {
   return (
     <div>
       <PageHero
-        eyebrow={<><BookOpen size={11} /> ENGAGE</>}
+        eyebrow={<><BookOpen size={12} /> ENGAGE</>}
         title="Program details & FAQ"
         description="How training, credits and enrolment work in the ENGAGE programme."
       />

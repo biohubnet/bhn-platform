@@ -67,7 +67,7 @@ export default async function MyCoursesPage() {
   return (
     <div>
       <PageHero
-        eyebrow={<><GraduationCap size={11} /> Your enrollments</>}
+        eyebrow={<><GraduationCap size={12} /> ENGAGE</>}
         title="My Courses"
         description={
           enrollments.length === 0

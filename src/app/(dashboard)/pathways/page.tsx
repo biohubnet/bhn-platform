@@ -53,7 +53,11 @@ export default async function PathwaysPage() {
   const userId = (session!.user as { id?: string }).id!;
   const isStaff = checkIsStaff(role);
 
-  const pathwaysSubtitleDefault = "Structured programmes that combine expert-led training, hands-on sessions and professional support. Open one to see what is running and when applications close.";
+  // Transcribed from the current platform, which carries this as a two-paragraph
+  // description block above the pathway list. House spelling applied
+  // ("programmes") so it reads with the rest of the platform.
+  const pathwaysSubtitleDefault =
+    "BioHubNet's curated learning pathways are structured programmes that combine expert-led training, on-demand courses, professional development support and connections. Each pathway is designed to help you build job-ready skills for specific roles in Canada's Life Sciences sector. Other programmes consist of microcredentials and workshops to help you build in-demand and specialised skills.";
 
 
   // Everything below is mutually independent — each derives only from
@@ -206,8 +210,8 @@ export default async function PathwaysPage() {
   return (
     <div>
       <PageHero
-        eyebrow={<><Layers size={11} /> Learning pathways</>}
-        title="Learning Pathways"
+        eyebrow={<><Layers size={12} /> ENGAGE</>}
+        title="Curated Learning Pathways, Microcredentials &amp; Workshops"
         description={
           <EditableText copyKey="pathways.subtitle" defaultText={pathwaysSubtitle} isStaff={isStaff} />
         }

@@ -133,7 +133,7 @@ export default async function CoursesPage({
   return (
     <div>
       <PageHero
-        eyebrow={<><BookOpen size={11} /> Course catalog</>}
+        eyebrow={<><BookOpen size={12} /> ENGAGE</>}
         title={`${courses.length} courses to explore`}
         description={
           <EditableText
