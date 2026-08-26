@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Learn · cover art
+  {
+    title: "Every course and pathway has cover art",
+    body: "The catalogue used to be a grid of identical gradient headers. All 51 courses and all 6 pathways now carry their own artwork, colour-keyed by topic — so biomanufacturing, regulatory affairs and career courses read as different families before you've read a single title.\n\nThe art is abstract rather than photographic, and deliberately simple: it renders as a slim strip at the top of each card, where fine detail would be lost anyway.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Learn · course card refinement
   {
     title: "Course cards sit a little quieter",

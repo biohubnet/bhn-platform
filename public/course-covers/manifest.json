@@ -1,0 +1,344 @@
+[
+  {
+    "code": "TA-AI-101",
+    "file": "ta-ai-101.webp",
+    "topic": "Sector/Technology Overview",
+    "bytes": 46046
+  },
+  {
+    "code": "TA-CYB-101",
+    "file": "ta-cyb-101.webp",
+    "topic": "Sector/Technology Overview",
+    "bytes": 44038
+  },
+  {
+    "code": "TA-CAR-101",
+    "file": "ta-car-101.webp",
+    "topic": "Career Insights",
+    "bytes": 21926
+  },
+  {
+    "code": "TA-CP-APX",
+    "file": "ta-cp-apx.webp",
+    "topic": "Career Insights",
+    "bytes": 22978
+  },
+  {
+    "code": "TA-CP-EUR",
+    "file": "ta-cp-eur.webp",
+    "topic": "Career Insights",
+    "bytes": 27686
+  },
+  {
+    "code": "BTC-COM-201",
+    "file": "btc-com-201.webp",
+    "topic": "Business and Commercialization",
+    "bytes": 23768
+  },
+  {
+    "code": "CST-CT-201",
+    "file": "cst-ct-201.webp",
+    "topic": "Clinical Trials",
+    "bytes": 26994
+  },
+  {
+    "code": "CST-RA-201",
+    "file": "cst-ra-201.webp",
+    "topic": "Regulatory Affairs",
+    "bytes": 24908
+  },
+  {
+    "code": "CST-GMP-101",
+    "file": "cst-gmp-101.webp",
+    "topic": "Industry Fundamentals (GxPs)",
+    "bytes": 17720
+  },
+  {
+    "code": "CST-GDP-101",
+    "file": "cst-gdp-101.webp",
+    "topic": "Industry Fundamentals (GxPs)",
+    "bytes": 33314
+  },
+  {
+    "code": "CST-QA-201",
+    "file": "cst-qa-201.webp",
+    "topic": "Quality Control/Assurance",
+    "bytes": 28922
+  },
+  {
+    "code": "CST-CAPA-201",
+    "file": "cst-capa-201.webp",
+    "topic": "Quality Control/Assurance",
+    "bytes": 11358
+  },
+  {
+    "code": "TA-MAB-201",
+    "file": "ta-mab-201.webp",
+    "topic": "Biomanufacturing - General",
+    "bytes": 14344
+  },
+  {
+    "code": "CST-ASE-301",
+    "file": "cst-ase-301.webp",
+    "topic": "Biomanufacturing - General",
+    "bytes": 40390
+  },
+  {
+    "code": "CST-USP-201",
+    "file": "cst-usp-201.webp",
+    "topic": "Biomanufacturing - USP/DSP",
+    "bytes": 17962
+  },
+  {
+    "code": "CST-DSP-201",
+    "file": "cst-dsp-201.webp",
+    "topic": "Biomanufacturing - USP/DSP",
+    "bytes": 29962
+  },
+  {
+    "code": "SEN-BOOT-101",
+    "file": "sen-boot-101.webp",
+    "topic": "Biomanufacturing - General",
+    "bytes": 24210
+  },
+  {
+    "code": "BTC-LIVE-101",
+    "file": "btc-live-101.webp",
+    "topic": "Career Insights",
+    "bytes": 27274
+  },
+  {
+    "code": "TA-CP-SAN",
+    "file": "ta-cp-san.webp",
+    "topic": "Career Insights",
+    "bytes": 32856
+  },
+  {
+    "code": "TA-CP-RCH",
+    "file": "ta-cp-rch.webp",
+    "topic": "Career Insights",
+    "bytes": 14006
+  },
+  {
+    "code": "TA-CP-AZ",
+    "file": "ta-cp-az.webp",
+    "topic": "Career Insights",
+    "bytes": 31642
+  },
+  {
+    "code": "TA-CP-STE",
+    "file": "ta-cp-ste.webp",
+    "topic": "Career Insights",
+    "bytes": 36486
+  },
+  {
+    "code": "TA-CP-CRL",
+    "file": "ta-cp-crl.webp",
+    "topic": "Career Insights",
+    "bytes": 25274
+  },
+  {
+    "code": "TA-SEC-201",
+    "file": "ta-sec-201.webp",
+    "topic": "Sector/Technology Overview",
+    "bytes": 35470
+  },
+  {
+    "code": "TA-SEC-202",
+    "file": "ta-sec-202.webp",
+    "topic": "Sector/Technology Overview",
+    "bytes": 35426
+  },
+  {
+    "code": "TA-SEC-203",
+    "file": "ta-sec-203.webp",
+    "topic": "Sector/Technology Overview",
+    "bytes": 43636
+  },
+  {
+    "code": "TA-SEC-204",
+    "file": "ta-sec-204.webp",
+    "topic": "Sector/Technology Overview",
+    "bytes": 20284
+  },
+  {
+    "code": "TA-SEC-205",
+    "file": "ta-sec-205.webp",
+    "topic": "Sector/Technology Overview",
+    "bytes": 15168
+  },
+  {
+    "code": "TA-CAR-201",
+    "file": "ta-car-201.webp",
+    "topic": "Career Insights",
+    "bytes": 31364
+  },
+  {
+    "code": "TA-CAR-202",
+    "file": "ta-car-202.webp",
+    "topic": "Career Insights",
+    "bytes": 16786
+  },
+  {
+    "code": "TA-CAR-203",
+    "file": "ta-car-203.webp",
+    "topic": "Career Insights",
+    "bytes": 33502
+  },
+  {
+    "code": "TA-CAR-204",
+    "file": "ta-car-204.webp",
+    "topic": "Career Insights",
+    "bytes": 16900
+  },
+  {
+    "code": "TA-BUS-201",
+    "file": "ta-bus-201.webp",
+    "topic": "Business and Commercialization",
+    "bytes": 16930
+  },
+  {
+    "code": "TA-BUS-202",
+    "file": "ta-bus-202.webp",
+    "topic": "Business and Commercialization",
+    "bytes": 21358
+  },
+  {
+    "code": "CST-GMP-201",
+    "file": "cst-gmp-201.webp",
+    "topic": "Industry Fundamentals (GxPs)",
+    "bytes": 16686
+  },
+  {
+    "code": "CST-GMP-202",
+    "file": "cst-gmp-202.webp",
+    "topic": "Industry Fundamentals (GxPs)",
+    "bytes": 21754
+  },
+  {
+    "code": "CST-GMP-203",
+    "file": "cst-gmp-203.webp",
+    "topic": "Industry Fundamentals (GxPs)",
+    "bytes": 15864
+  },
+  {
+    "code": "CST-QC-201",
+    "file": "cst-qc-201.webp",
+    "topic": "Quality Control/Assurance",
+    "bytes": 11070
+  },
+  {
+    "code": "CST-QC-202",
+    "file": "cst-qc-202.webp",
+    "topic": "Quality Control/Assurance",
+    "bytes": 25052
+  },
+  {
+    "code": "CST-QC-203",
+    "file": "cst-qc-203.webp",
+    "topic": "Quality Control/Assurance",
+    "bytes": 32976
+  },
+  {
+    "code": "CST-USP-202",
+    "file": "cst-usp-202.webp",
+    "topic": "Biomanufacturing - USP/DSP",
+    "bytes": 29500
+  },
+  {
+    "code": "CST-USP-203",
+    "file": "cst-usp-203.webp",
+    "topic": "Biomanufacturing - USP/DSP",
+    "bytes": 10624
+  },
+  {
+    "code": "CST-DSP-202",
+    "file": "cst-dsp-202.webp",
+    "topic": "Biomanufacturing - USP/DSP",
+    "bytes": 23848
+  },
+  {
+    "code": "CST-DSP-203",
+    "file": "cst-dsp-203.webp",
+    "topic": "Biomanufacturing - USP/DSP",
+    "bytes": 13860
+  },
+  {
+    "code": "CST-BIO-201",
+    "file": "cst-bio-201.webp",
+    "topic": "Biomanufacturing - General",
+    "bytes": 12030
+  },
+  {
+    "code": "CST-BIO-202",
+    "file": "cst-bio-202.webp",
+    "topic": "Biomanufacturing - General",
+    "bytes": 14202
+  },
+  {
+    "code": "CST-BIO-203",
+    "file": "cst-bio-203.webp",
+    "topic": "Biomanufacturing - General",
+    "bytes": 23076
+  },
+  {
+    "code": "CST-CT-202",
+    "file": "cst-ct-202.webp",
+    "topic": "Clinical Trials",
+    "bytes": 21514
+  },
+  {
+    "code": "BTC-CAR-201",
+    "file": "btc-car-201.webp",
+    "topic": "Career Insights",
+    "bytes": 21128
+  },
+  {
+    "code": "BTC-BUS-201",
+    "file": "btc-bus-201.webp",
+    "topic": "Business and Commercialization",
+    "bytes": 24208
+  },
+  {
+    "code": "BTC-CT-201",
+    "file": "btc-ct-201.webp",
+    "topic": "Clinical Trials",
+    "bytes": 17094
+  },
+  {
+    "code": "PATHWAY-BIOMANUFACTURING",
+    "file": "pathway-biomanufacturing.webp",
+    "topic": "Biomanufacturing",
+    "bytes": 16274
+  },
+  {
+    "code": "PATHWAY-ENTREPRENEURSHIP",
+    "file": "pathway-entrepreneurship.webp",
+    "topic": "Business and Commercialization",
+    "bytes": 27754
+  },
+  {
+    "code": "PATHWAY-MEDICAL-AFFAIRS",
+    "file": "pathway-medical-affairs.webp",
+    "topic": "Clinical Trials",
+    "bytes": 25284
+  },
+  {
+    "code": "PATHWAY-QAQC",
+    "file": "pathway-qaqc.webp",
+    "topic": "Quality Control/Assurance",
+    "bytes": 41192
+  },
+  {
+    "code": "PATHWAY-REGULATORY-AFFAIRS",
+    "file": "pathway-regulatory-affairs.webp",
+    "topic": "Regulatory Affairs",
+    "bytes": 26840
+  },
+  {
+    "code": "PATHWAY-RESEARCH-AND-DEVELOPMENT",
+    "file": "pathway-research-and-development.webp",
+    "topic": "Biomanufacturing - USP/DSP",
+    "bytes": 40658
+  }
+]
