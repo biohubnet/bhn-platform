@@ -146,6 +146,15 @@ const engageItems: (NavItem & { labelKey: string })[] = [
 // "Application Builder" / "Application Tracker" — the s/no-s
 // distinction next to each other was demonstrably confusing. Routes
 // kept the same so deep links stay alive.
+// 1:1 MENTORSHIP — a sustained pairing, distinct from the fifteen-minute
+// advisor booking that lives on /pathways. Mirrors the group the current
+// platform carries beside ENGAGE.
+const mentorshipItems: (NavItem & { labelKey: string })[] = [
+  { label: "Program Details & FAQ", labelKey: "nav.mentorshipFaq", href: "/mentorship", icon: Users,
+    featureId: "mentorship-faq",
+    description: "How mentor pairing works, what to expect, and how it differs from booking an advisor." },
+];
+
 const experienceItems: (NavItem & { labelKey: string })[] = [
   { label: "How it works",              labelKey: "nav.experienceGuide", href: "/experience",            icon: Compass,
     featureId: "experience-guide",
@@ -1544,6 +1553,18 @@ export function Sidebar({
                 queueCounts={queueCounts}
               />
             )}
+          </SectionGroup>
+        )}
+
+        {showLearnerNav && mentorshipItems.length > 0 && (
+          <SectionGroup
+            title="1:1 MENTORSHIP"
+            tone="electric"
+            description="A sustained pairing with someone already working in the part of the sector you're moving toward."
+          >
+            {mentorshipItems.map((item) => (
+              <NavLink key={item.href} item={{ ...item, label: t(item.labelKey) }} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
+            ))}
           </SectionGroup>
         )}
 

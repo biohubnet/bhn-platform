@@ -255,27 +255,23 @@ export function CourseCard({ course }: CourseCardProps) {
           )}
           {course.provider && <Chip tone="provider" label={course.provider} />}
 
-          {/* Enroll by */}
-          {course.enrollByDate && (
-            <div className="mt-2 pt-2 border-t border-white/10">
-              <p className="text-[9px] uppercase tracking-[0.18em] font-bold text-white/70 leading-snug">
-                Enroll by:
-              </p>
-              <p className="text-[10.5px] font-semibold text-white leading-snug mt-0.5">
-                {fmtShortDate(course.enrollByDate)}
-              </p>
-            </div>
-          )}
+          {/* Enroll by — always shown. A course with no deadline reads
+              "Ongoing" rather than dropping the row: an absent line looks
+              like missing data, where the whole point is that enrolment
+              never closes. Matches how the current platform reads. */}
+          <div className="mt-2 pt-2 border-t border-white/10">
+            <p className="text-[9px] uppercase tracking-[0.18em] font-bold text-white/70 leading-snug">
+              Enroll by:
+            </p>
+            <p className="text-[10.5px] font-semibold text-white leading-snug mt-0.5">
+              {course.enrollByDate ? fmtShortDate(course.enrollByDate) : "Ongoing"}
+            </p>
+          </div>
 
           {/* Duration — cohort dates stack on two lines for In-Person /
               Hybrid; single-line minutes for self-serve. */}
           {(hasCohort || course.cohortStartDate || course.duration) && (
-            <div
-              className={cn(
-                "mt-auto pt-2",
-                !course.enrollByDate && "border-t border-white/10",
-              )}
-            >
+            <div className="mt-auto pt-2">
               <p className="text-[9px] uppercase tracking-[0.18em] font-bold text-white/70 leading-snug">
                 Duration:
               </p>

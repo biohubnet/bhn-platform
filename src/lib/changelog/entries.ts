@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── ENGAGE · parity — pathways, advisor booking, mentorship
+  {
+    title: "Learning Pathways, advisor booking, and a mentorship section",
+    body: "**Learning Pathways has pathways in it.** Six of them — Biomanufacturing, Entrepreneurship, Medical Affairs, QA/QC, Regulatory Affairs and Research and Development — each carrying the courses that ladder up to it, and each showing whether enrolment is open or closed. The page and its cards had been built for a while; they simply had nothing to list.\n\n**You can now book an advisor.** The fifteen-minute course-selection slot on the Pathways page used to be a labelled mock-up. It books a real time with a real person now: pick a slot, say what you would like to cover, and cancel it yourself if something changes. One upcoming booking at a time, so the slots stay available to everyone.\n\n**1:1 Mentorship** has its own section in the sidebar, with details on how pairing works and how a mentor differs from an advisor.\n\nSmaller things: every course card now says when enrolment closes — \"Ongoing\" when it never does — and the credit bar marks the 2,500 point, so the halfway policy is something you can see rather than something you have to work out.",
+    kind: "feature",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Platform · performance — navigation latency
   {
     title: "The platform is roughly 4x faster to click through",

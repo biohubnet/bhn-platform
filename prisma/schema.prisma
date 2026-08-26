@@ -223,6 +223,8 @@ model User {
   roleRequests             RoleChangeRequest[]       @relation("RoleRequester")
   reviewedRoleRequests     RoleChangeRequest[]       @relation("RoleReviewer")
   buddiesInitiated         BuddyPair[]               @relation("InitiatorBuddies")
+  advisorBookings          AdvisorBooking[]          @relation("AdvisorBookings")
+  advisorSessionsCreated   AdvisorSession[]          @relation("AdvisorSessionCreator")
   buddiesPartnered         BuddyPair[]               @relation("PartnerBuddies")
   buddyMessages            BuddyMessage[]            @relation("BuddyMessageSender")
 
@@ -5740,4 +5742,57 @@ model PageComment {
 
   @@index([reviewId, createdAt])
   @@index([parentId])
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// ADVISOR BOOKING — 1:1 sessions with a BHN advisor, offered alongside
+// Learning Pathways. Deliberately NOT folded into Workshop /
+// WorkshopBooking: those are Training-Week slots with waitlists,
+// approval and transport, tied to a symposium Registration. An advisor
+// session is a short standing conversation with none of that.
+// ─────────────────────────────────────────────────────────────────────
+
+model AdvisorSession {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  advisorName String
+  startsAt    DateTime
+  endsAt      DateTime
+  /// Almost always 1 — these are one-to-one. Kept configurable so a
+  /// small-group office hour can reuse the same model.
+  capacity    Int      @default(1)
+  /// Free text: "Online (video call)", a room name, etc.
+  location    String?
+  status      String   @default("open") // open | cancelled
+
+  createdById String?
+  createdBy   User?   @relation("AdvisorSessionCreator", fields: [createdById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  bookings AdvisorBooking[]
+
+  @@index([startsAt, status])
+}
+
+model AdvisorBooking {
+  id        String  @id @default(cuid())
+  sessionId String
+  userId    String
+  status    String  @default("booked") // booked | cancelled | attended | no_show
+  /// What the trainee wants to discuss — shown to the advisor.
+  topic     String?
+
+  bookedAt    DateTime  @default(now())
+  cancelledAt DateTime?
+  updatedAt   DateTime  @updatedAt
+
+  session AdvisorSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  user    User           @relation("AdvisorBookings", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, userId])
+  @@index([userId, status])
+  @@index([sessionId, status])
 }

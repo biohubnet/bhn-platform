@@ -29,6 +29,7 @@ const en: Dict = {
   // Navigation
   "nav.dashboard": "Dashboard",
   "nav.engageGuide": "Program Details & FAQ",
+  "nav.mentorshipFaq": "Program Details & FAQ",
   "nav.catalog": "Course Catalog",
   "nav.pathways": "Learning Pathways",
   "nav.myCourses": "My Courses",

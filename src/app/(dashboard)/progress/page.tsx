@@ -59,6 +59,10 @@ export default async function ProgressTrackerPage() {
   ]);
 
   const pct = Math.round(util.fraction * 100);
+  // Where the six-month milestone sits along the bar, as a percentage of
+  // the full award. Derived, not hard-coded, so changing either constant
+  // moves the marker with it.
+  const thresholdPct = (CREDIT_HALFWAY_MILESTONE / CREDIT_AWARD_TOTAL) * 100;
 
   return (
     <div>
@@ -89,18 +93,41 @@ export default async function ProgressTrackerPage() {
               </p>
               <p className="text-xs font-semibold text-fg tabular-nums">{pct}%</p>
             </div>
-            <div
-              role="progressbar"
-              aria-valuenow={util.used}
-              aria-valuemin={0}
-              aria-valuemax={CREDIT_AWARD_TOTAL}
-              aria-label="Credit utilisation"
-              className="h-2.5 w-full rounded-full bg-elevated overflow-hidden"
-            >
+            {/* The bar carries a marker at the halfway milestone. Without it
+                the policy below is an abstract number; with it a trainee can
+                see at a glance which side of the six-month threshold they are
+                on. `overflow-hidden` stays on the inner fill only, so the
+                marker and its label are free to sit above the track. */}
+            <div className="relative">
               <div
-                className="h-full rounded-full bg-brand-600 transition-all"
-                style={{ width: `${Math.max(pct, util.used > 0 ? 2 : 0)}%` }}
+                role="progressbar"
+                aria-valuenow={util.used}
+                aria-valuemin={0}
+                aria-valuemax={CREDIT_AWARD_TOTAL}
+                aria-label="Credit utilisation"
+                className="h-2.5 w-full rounded-full bg-elevated overflow-hidden"
+              >
+                <div
+                  className="h-full rounded-full bg-brand-600 transition-all"
+                  style={{ width: `${Math.max(pct, util.used > 0 ? 2 : 0)}%` }}
+                />
+              </div>
+              <div
+                aria-hidden="true"
+                className="absolute top-0 h-2.5 w-px bg-fg/45"
+                style={{ left: `${thresholdPct}%` }}
               />
+            </div>
+            <div className="relative mt-1 h-4">
+              <p
+                className="absolute -translate-x-1/2 whitespace-nowrap text-[10px] font-semibold uppercase tracking-[0.14em] text-subtle tabular-nums"
+                style={{ left: `${thresholdPct}%` }}
+              >
+                {CREDIT_HALFWAY_MILESTONE.toLocaleString()} policy threshold
+              </p>
+              <p className="absolute right-0 text-[10px] font-semibold text-subtle tabular-nums">
+                {CREDIT_AWARD_TOTAL.toLocaleString()}
+              </p>
             </div>
           </div>
 

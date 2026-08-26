@@ -30,7 +30,7 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.09.11a";
+export const TOUR_VERSION = "2026.09.12a";
 
 export const TOUR_STEPS: TourStep[] = [
   // ─── Workspace · Website Review → overview home — Sep 2026
@@ -953,6 +953,17 @@ export const TOUR_STEPS: TourStep[] = [
     placement: "bottom",
     cta: { label: "Open the catalog", href: "/courses" },
     since: "2025.05",
+  },
+  // ─── ENGAGE · Pathways → advisor booking — Aug 2026
+  {
+    id: "trainee.pathways.advisor",
+    title: "Book fifteen minutes with an advisor",
+    body: "Not sure which pathway fits? The panel beside the pathway list books a real fifteen-minute call with a BHN advisor. Pick a time, add what you'd like to cover, and it's in the diary — you can cancel it yourself if plans change. One upcoming booking at a time, so slots stay available.",
+    path: "/pathways",
+    placement: "center",
+    roles: ["trainee", "evaluating"],
+    cta: { label: "Open Pathways", href: "/pathways" },
+    since: "2026.09.12a",
   },
   {
     id: "trainee.pathways",

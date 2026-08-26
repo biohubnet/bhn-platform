@@ -13,7 +13,11 @@ import { ensureRegisteredForms } from "@/lib/forms/registry";
 import { parseOverlay, overlayStyle } from "@/lib/courses/thumbnail-overlay";
 import { pathwayWindowFrom } from "@/lib/pathway-enrollment";
 import { DSStatusDot } from "@/components/design-system/DSStatusDot";
-import { AdvisorBookingMock } from "@/components/engage/AdvisorBookingMock";
+import {
+  AdvisorBooking,
+  type AdvisorSlot,
+  type AdvisorBookingState,
+} from "@/components/engage/AdvisorBooking";
 
 interface PathwayRow {
   id: string;
@@ -60,8 +64,10 @@ export default async function PathwaysPage() {
   // serialised purely by statement order rather than by any real data
   // dependency. The database executes this whole page in ~2.6ms; the
   // cost was always the waiting, not the querying.
-  const [pathways, approvedRows, myEnrollments, formRows, mySubmissionRows, courses, pathwaysSubtitle] =
-    await Promise.all([
+  const [
+    pathways, approvedRows, myEnrollments, formRows, mySubmissionRows, courses,
+    pathwaysSubtitle, advisorRows, myAdvisorBooking,
+  ] = await Promise.all([
       prisma.pathway.findMany({
         where: isStaff ? {} : { status: "published" },
         include: { _count: { select: { courses: true, enrollments: true } } },
@@ -112,6 +118,31 @@ export default async function PathwaysPage() {
           })
         : Promise.resolve([]),
       getCopy("pathways.subtitle", pathwaysSubtitleDefault),
+      // Advisor slots: open, not yet started, with room left.
+      prisma.advisorSession.findMany({
+        where: { status: "open", startsAt: { gt: new Date() } },
+        orderBy: { startsAt: "asc" },
+        take: 24,
+        select: {
+          id: true,
+          advisorName: true,
+          startsAt: true,
+          endsAt: true,
+          capacity: true,
+          location: true,
+          _count: { select: { bookings: { where: { status: "booked" } } } },
+        },
+      }),
+      prisma.advisorBooking.findFirst({
+        where: { userId, status: "booked", session: { startsAt: { gt: new Date() } } },
+        orderBy: { session: { startsAt: "asc" } },
+        select: {
+          id: true,
+          session: {
+            select: { startsAt: true, advisorName: true, location: true },
+          },
+        },
+      }),
     ]);
 
   const approvedByPathway = new Map(
@@ -119,6 +150,36 @@ export default async function PathwaysPage() {
   );
   const nowForWindows = new Date();
   const enrollmentMap = new Map(myEnrollments.map((e) => [e.pathwayId, e.status]));
+
+  const advisorDay = new Intl.DateTimeFormat("en-CA", {
+    weekday: "short", month: "short", day: "numeric", timeZone: "America/Toronto",
+  });
+  const advisorTime = new Intl.DateTimeFormat("en-CA", {
+    hour: "numeric", minute: "2-digit", timeZone: "America/Toronto",
+  });
+
+  const advisorSlots: AdvisorSlot[] = advisorRows
+    .filter((r) => r._count.bookings < r.capacity)
+    .map((r) => ({
+      id: r.id,
+      advisorName: r.advisorName,
+      startsAtISO: r.startsAt.toISOString(),
+      dayLabel: advisorDay.format(r.startsAt),
+      timeLabel: advisorTime.format(r.startsAt),
+      minutes: Math.max(1, Math.round((r.endsAt.getTime() - r.startsAt.getTime()) / 60000)),
+      location: r.location,
+      seatsLeft: r.capacity - r._count.bookings,
+    }));
+
+  const advisorBookingState: AdvisorBookingState | null = myAdvisorBooking
+    ? {
+        bookingId: myAdvisorBooking.id,
+        dayLabel: advisorDay.format(myAdvisorBooking.session.startsAt),
+        timeLabel: advisorTime.format(myAdvisorBooking.session.startsAt),
+        advisorName: myAdvisorBooking.session.advisorName,
+        location: myAdvisorBooking.session.location,
+      }
+    : null;
 
   const formIds = new Set(formRows.map((f) => f.id));
   const submittedFormIds = new Set(
@@ -297,7 +358,11 @@ export default async function PathwaysPage() {
             );
           })}
         </div>
-        <AdvisorBookingMock className="mt-5 lg:mt-0 lg:sticky lg:top-6" />
+        <AdvisorBooking
+          slots={advisorSlots}
+          existing={advisorBookingState}
+          className="mt-5 lg:mt-0 lg:sticky lg:top-6"
+        />
         </div>
       )}
     </div>
