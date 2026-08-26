@@ -229,7 +229,12 @@ export function CourseCard({ course }: CourseCardProps) {
               placeholder until the backfill script replaces it with
               a real blurb in the DB. */}
           {blurb && (
-            <div className="relative mt-1.5 flex-1">
+            <div className="mt-1.5 flex-1">
+              {/* The relative box wraps ONLY the paragraph, so its height is
+                  the clamped three lines. Putting `relative` on the flex-1
+                  parent instead anchors the cue to the bottom of whatever
+                  space the card has left, which floats it below the text. */}
+              <div className="relative">
               <p
                 ref={blurbRef}
                 className="text-[11.5px] leading-snug text-fg-muted line-clamp-3"
@@ -253,6 +258,7 @@ export function CourseCard({ course }: CourseCardProps) {
                   […]
                 </span>
               )}
+              </div>
             </div>
           )}
         </div>
