@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Dashboard · where you stand, what's open, what's coming up
+  {
+    title: "Your dashboard now shows where you stand",
+    body: "Three things have been added under the welcome band.\n\n**Where you stand** — a short version of the Progress Tracker: credits remaining, how many courses are in progress and finished, and how many certificates you hold, with the used-against-awarded bar underneath. The full page is one click away.\n\n**Open for enrolment** — learning pathways currently accepting people, with their colour code and how many courses each one runs. Pathways you're already in are left out, so it only shows things you could actually join.\n\n**Coming up** — the next events, in the right-hand column, with their dates.\n\nAll of it loads in the same round trip as the rest of the page, so the dashboard is no slower than it was.",
+    kind: "feature",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Security · course API no longer returns lesson content to anyone
   {
     title: "Lesson content is no longer readable straight from the course API",

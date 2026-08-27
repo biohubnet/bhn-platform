@@ -2,7 +2,8 @@ import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { ArrowRight, Compass } from "lucide-react";
+import { ArrowRight, Compass, CalendarDays, Route, Activity } from "lucide-react";
+import { creditUtilization, CREDIT_AWARD_TOTAL } from "@/lib/credits/utilization";
 import { InstructorDashboard } from "@/components/dashboards/InstructorDashboard";
 import { AdminDashboard } from "@/components/dashboards/AdminDashboard";
 import { type ReviewQuestion } from "@/components/adaptive/TodaysReviewsCard";
@@ -95,26 +96,62 @@ export default async function DashboardPage() {
   // flight" line is the last thing that reads it. Upstream also pulled
   // recent activity, user credits, pathway enrolments and a suggested
   // course for cards the trainee view no longer renders.
-  const [enrollments] = await Promise.all([
+  // ONE wave. This page was deliberately stripped back for latency, and
+  // the three new bands below (mini tracker, open pathways, upcoming
+  // events) would undo that if they each added their own await. Every
+  // read the trainee home needs happens here, concurrently.
+  const now = new Date();
+  const [
+    enrollments,
+    certsCount,
+    completedCourseCount,
+    util,
+    openPathways,
+    myPathwayIds,
+    upcomingEvents,
+  ] = await Promise.all([
     prisma.enrollment.findMany({
       where: { userId, status: "active" },
       include: { course: { select: { id: true, title: true, category: true } } },
       orderBy: { enrolledAt: "desc" },
       take: 1,
     }) as Promise<EnrollmentWithCourse[]>,
+    prisma.certificate.count({ where: { userId, revokedAt: null } }),
+    prisma.enrollment.count({ where: { userId, status: "completed" } }),
+    creditUtilization(userId),
+    // Take more than we show so pathways the trainee has already joined
+    // can be filtered out without a second round trip.
+    prisma.pathway.findMany({
+      where: { status: "published", enrollmentStatus: "open" },
+      orderBy: { createdAt: "desc" },
+      take: 8,
+      select: {
+        id: true, title: true, description: true, accentColor: true,
+        _count: { select: { courses: true } },
+      },
+    }),
+    prisma.pathwayEnrollment.findMany({
+      where: { userId },
+      select: { pathwayId: true },
+    }),
+    prisma.bhnEvent.findMany({
+      where: { status: "published", endDate: { gte: now } },
+      orderBy: { startDate: "asc" },
+      take: 3,
+      select: { id: true, slug: true, title: true, tagline: true, startDate: true, endDate: true },
+    }),
   ]);
 
   const inProgress = enrollments.length;
+
+  const joined = new Set(myPathwayIds.map((p) => p.pathwayId));
+  const promotedPathways = openPathways.filter((p) => !joined.has(p.id)).slice(0, 3);
 
   // (Upstream also fetched pending buddy invites, due review bookmarks
   //  and expiring saved postings here, for the REMINDERS band and the
   //  Today's-reviews card. Neither renders in the trainee view, so the
   //  three queries are gone rather than running on every load.)
 
-  const [certsCount, completedCourseCount] = await Promise.all([
-    prisma.certificate.count({ where: { userId, revokedAt: null } }),
-    prisma.enrollment.count({ where: { userId, status: "completed" } }),
-  ]);
   // (Upstream derived openEquipDeadlines, liveEquipApp, fundedEquipApp,
   //  inPoolApproved and hasReminders here for the OPEN OPPORTUNITIES
   //  board, the PERSONAL STATUS strip and the REMINDERS band. None of
@@ -413,7 +450,10 @@ export default async function DashboardPage() {
             <aside className="hidden lg:block self-stretch pl-8 border-l border-white/15">
               <div className="space-y-4">
                 <HeroStat label="In progress" value={inProgress.toLocaleString()} />
-                {/* Credits stat hidden — trainees do not see credit balances. */}
+                {/* No credits figure in the hero — it lives in the mini
+                    Progress Tracker below, where it sits next to the used
+                    /awarded bar that gives it meaning. A bare balance in a
+                    stat column was the thing that read as unexplained. */}
                 <HeroStat label="Certificates" value={certsCount.toLocaleString()} />
               </div>
             </aside>
@@ -464,6 +504,161 @@ export default async function DashboardPage() {
           and the first committee badge / chip row. */}
       <div className="max-w-screen-2xl mx-auto px-6 mt-4">
         <CommitteeBadgeStrip userId={userId} />
+      </div>
+
+      {/* ── WHERE YOU STAND + WHAT'S OPEN ───────────────────────────
+            Three things the trainee home was missing: a compact read
+            of the Progress Tracker, the pathways currently accepting
+            people, and what's coming up.
+
+            Two columns on lg+, events in the right rail as asked.
+            Below lg they stack, events last — on a phone the thing you
+            came for is your own progress, not a date three weeks out. */}
+      <div className="max-w-screen-2xl mx-auto px-6 mt-8">
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_20rem] gap-6 items-start">
+          <div className="space-y-6 min-w-0">
+            {/* ── Mini Progress Tracker ─────────────────────────── */}
+            <section className="rounded-2xl border border-line bg-card p-5">
+              <div className="flex items-center justify-between gap-4 mb-4">
+                <p className="text-[12px] uppercase tracking-[0.2em] font-bold text-subtle">
+                  Where you stand
+                </p>
+                <Link
+                  href="/progress"
+                  className="inline-flex items-center gap-1 text-xs font-semibold text-brand-700 hover:underline shrink-0"
+                >
+                  Progress Tracker <ArrowRight size={12} />
+                </Link>
+              </div>
+
+              <div className="flex flex-wrap items-end gap-x-10 gap-y-4">
+                <div>
+                  <p className="text-[11px] uppercase tracking-[0.16em] font-semibold text-subtle">
+                    Credits remaining
+                  </p>
+                  <p className="mt-0.5 text-3xl font-bold tabular-nums text-fg leading-none">
+                    {util.balance.toLocaleString()}
+                  </p>
+                </div>
+                <MiniStat label="In progress" value={inProgress} />
+                <MiniStat label="Completed" value={completedCourseCount} />
+                <MiniStat label="Certificates" value={certsCount} />
+              </div>
+
+              {/* Same scaleX bar language as the Progress Tracker, without
+                  its animation — this is a glance, not the main event. */}
+              <div className="mt-4">
+                <div className="h-1.5 w-full rounded-full bg-raised overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-brand-600"
+                    style={{
+                      width: `${CREDIT_AWARD_TOTAL > 0
+                        ? Math.min(100, Math.max(0, (util.used / CREDIT_AWARD_TOTAL) * 100))
+                        : 0}%`,
+                    }}
+                  />
+                </div>
+                <div className="mt-1.5 flex items-center justify-between text-[10px] font-semibold tabular-nums text-subtle">
+                  <span>{util.used.toLocaleString()} used</span>
+                  <span>{CREDIT_AWARD_TOTAL.toLocaleString()} awarded</span>
+                </div>
+              </div>
+            </section>
+
+            {/* ── Open learning pathways ────────────────────────── */}
+            {promotedPathways.length > 0 && (
+              <section className="rounded-2xl border border-line bg-card p-5">
+                <div className="flex items-center justify-between gap-4 mb-4">
+                  <p className="text-[12px] uppercase tracking-[0.2em] font-bold text-subtle">
+                    Open for enrolment
+                  </p>
+                  <Link
+                    href="/pathways"
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-brand-700 hover:underline shrink-0"
+                  >
+                    All pathways <ArrowRight size={12} />
+                  </Link>
+                </div>
+                <ul className="space-y-2">
+                  {promotedPathways.map((pw) => (
+                    <li key={pw.id}>
+                      <Link
+                        href="/pathways"
+                        className="flex items-start gap-3 rounded-xl border border-line p-3 hover:border-brand-200 transition-colors"
+                      >
+                        {/* The pathway's own colour code, as on /pathways.
+                            Inline style because it is data, not a token. */}
+                        <span
+                          aria-hidden
+                          className="mt-1 w-1 h-8 rounded-full shrink-0"
+                          style={{ background: pw.accentColor ?? "var(--brand-600)" }}
+                        />
+                        <span className="min-w-0 flex-1">
+                          <span className="flex items-center gap-2">
+                            <Route size={13} className="text-subtle shrink-0" />
+                            <span className="text-sm font-semibold text-fg truncate">{pw.title}</span>
+                          </span>
+                          {pw.description && (
+                            <span className="mt-0.5 block text-xs text-muted line-clamp-2">
+                              {pw.description}
+                            </span>
+                          )}
+                          <span className="mt-1 block text-[11px] text-subtle tabular-nums">
+                            {pw._count.courses} {pw._count.courses === 1 ? "course" : "courses"}
+                          </span>
+                        </span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+          </div>
+
+          {/* ── Upcoming events — the right rail ──────────────────── */}
+          <aside className="rounded-2xl border border-line bg-card p-5">
+            <div className="flex items-center justify-between gap-3 mb-4">
+              <p className="text-[12px] uppercase tracking-[0.2em] font-bold text-subtle">
+                Coming up
+              </p>
+              <Link
+                href="/events"
+                className="inline-flex items-center gap-1 text-xs font-semibold text-brand-700 hover:underline shrink-0"
+              >
+                All <ArrowRight size={12} />
+              </Link>
+            </div>
+            {upcomingEvents.length === 0 ? (
+              <p className="text-sm text-muted">
+                Nothing scheduled right now. Events appear here as they are announced.
+              </p>
+            ) : (
+              <ul className="space-y-3">
+                {upcomingEvents.map((ev) => (
+                  <li key={ev.id}>
+                    <Link
+                      href={`/events/${ev.slug}`}
+                      className="block rounded-xl border border-line p-3 hover:border-brand-200 transition-colors"
+                    >
+                      <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-brand-700">
+                        <CalendarDays size={12} />
+                        {formatEventDates(ev.startDate, ev.endDate)}
+                      </span>
+                      <span className="mt-1 block text-sm font-semibold text-fg leading-snug">
+                        {ev.title}
+                      </span>
+                      {ev.tagline && (
+                        <span className="mt-0.5 block text-xs text-muted line-clamp-2">
+                          {ev.tagline}
+                        </span>
+                      )}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </aside>
+        </div>
       </div>
 
       {/* ── A NOTE FROM THE TEAM ────────────────────────────────────
@@ -632,5 +827,29 @@ function pillToneClasses(tone: PillarItem["pillTone"]): string {
 
 // ─── Minimal helpers ─────────────────────────────────────────────
 
+/** One small labelled figure in the mini Progress Tracker. */
+function MiniStat({ label, value }: { label: string; value: number }) {
+  return (
+    <div>
+      <p className="text-[11px] uppercase tracking-[0.16em] font-semibold text-subtle">{label}</p>
+      <p className="mt-0.5 text-xl font-bold tabular-nums text-fg leading-none">
+        {value.toLocaleString()}
+      </p>
+    </div>
+  );
+}
 
-
+/** "Nov 4" for a single day, "Nov 4 – 6" within a month, "Nov 28 – Dec 2"
+ *  across one. Formatted on the server in the platform's timezone so the
+ *  string cannot shift between render and hydration. */
+function formatEventDates(start: Date, end: Date): string {
+  const opts: Intl.DateTimeFormatOptions = {
+    month: "short", day: "numeric", timeZone: "America/Toronto",
+  };
+  const f = new Intl.DateTimeFormat("en-CA", opts);
+  const a = f.format(start);
+  const b = f.format(end);
+  if (a === b) return a;
+  const sameMonth = a.split(" ")[0] === b.split(" ")[0];
+  return sameMonth ? `${a} – ${b.split(" ")[1]}` : `${a} – ${b}`;
+}
