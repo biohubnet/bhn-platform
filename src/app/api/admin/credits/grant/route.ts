@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireRole } from "@/lib/auth";
+import { guardRole } from "@/lib/api/guard";
+
 import { prisma } from "@/lib/prisma";
 
 export async function POST(req: NextRequest) {
-  const session = await requireRole("admin");
+  const session = await guardRole("admin");
+  if (session instanceof NextResponse) return session;
   const actorId = (session.user as { id?: string }).id!;
   const { userId, amount, reason } = await req.json();
 

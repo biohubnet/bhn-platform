@@ -7,7 +7,8 @@
  *   DELETE /api/admin/showcases   → delete the account entirely
  */
 import { NextResponse } from "next/server";
-import { requireRole, getSession } from "@/lib/auth";
+import { guardRole } from "@/lib/api/guard";
+import { getSession } from "@/lib/auth";
 import {
   spawnShowcase,
   resetShowcase,
@@ -22,13 +23,15 @@ async function meId() {
 }
 
 export async function GET() {
-  await requireRole("admin");
+  const _guard = await guardRole("admin");
+  if (_guard instanceof NextResponse) return _guard;
   const summary = await getShowcase();
   return NextResponse.json({ showcase: summary });
 }
 
 export async function POST() {
-  await requireRole("admin");
+  const _guard = await guardRole("admin");
+  if (_guard instanceof NextResponse) return _guard;
   const adminId = await meId();
   if (!adminId) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const r = await spawnShowcase(adminId);
@@ -36,7 +39,8 @@ export async function POST() {
 }
 
 export async function PATCH() {
-  await requireRole("admin");
+  const _guard = await guardRole("admin");
+  if (_guard instanceof NextResponse) return _guard;
   const adminId = await meId();
   if (!adminId) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const r = await resetShowcase(adminId);
@@ -44,7 +48,8 @@ export async function PATCH() {
 }
 
 export async function DELETE() {
-  await requireRole("admin");
+  const _guard = await guardRole("admin");
+  if (_guard instanceof NextResponse) return _guard;
   const r = await deleteShowcase();
   return NextResponse.json({ ok: true, ...r });
 }

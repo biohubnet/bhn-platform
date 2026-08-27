@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { guardRole } from "@/lib/api/guard";
 import { prisma } from "@/lib/prisma";
-import { getSession, requireRole, requireCourseOwner, isStaff as checkIsStaff } from "@/lib/auth";
+import { getSession, requireCourseOwner, isStaff as checkIsStaff } from "@/lib/auth";
 import { canAccessCourseContent } from "@/lib/courses/enrollment-status";
 
 /**
@@ -138,7 +139,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
 export async function DELETE(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  await requireRole("admin");
+  const _guard = await guardRole("admin");
+  if (_guard instanceof NextResponse) return _guard;
   await prisma.course.delete({ where: { id } });
   return NextResponse.json({ ok: true });
 }

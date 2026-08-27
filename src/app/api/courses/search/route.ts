@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { embed, toVectorLiteral, AI_CONFIGURED } from "@/lib/ai";
 import { getSession, isStaff } from "@/lib/auth";
-
 interface ResultRow {
   id: string;
   title: string;

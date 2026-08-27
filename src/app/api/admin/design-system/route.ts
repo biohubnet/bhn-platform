@@ -12,6 +12,7 @@
  * no cache invalidation needed beyond a normal page reload.
  */
 import { NextResponse } from "next/server";
+import { guardRole } from "@/lib/api/guard";
 import { requireRole } from "@/lib/auth";
 import { getActiveDesignSystem, setActiveDesignSystem } from "@/lib/settings";
 import { isValidDesignSystem } from "@/lib/design-system/registry";
@@ -19,13 +20,15 @@ import { isValidDesignSystem } from "@/lib/design-system/registry";
 export const runtime = "nodejs";
 
 export async function GET() {
-  await requireRole("admin");
+  const _guard = await guardRole("admin");
+  if (_guard instanceof NextResponse) return _guard;
   const active = await getActiveDesignSystem();
   return NextResponse.json({ designSystem: active });
 }
 
 export async function PATCH(req: Request) {
-  await requireRole("admin");
+  const _guard = await guardRole("admin");
+  if (_guard instanceof NextResponse) return _guard;
   const body = await req.json().catch(() => ({} as { designSystem?: string }));
   const target = body.designSystem;
   if (typeof target !== "string" || !isValidDesignSystem(target)) {

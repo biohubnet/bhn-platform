@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireRole } from "@/lib/auth";
+import { guardRole } from "@/lib/api/guard";
+
 import { prisma } from "@/lib/prisma";
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const session = await requireRole("superadmin");
+  const session = await guardRole("superadmin");
+  if (session instanceof NextResponse) return session;
   const actorId = (session.user as { id?: string }).id!;
   const { id } = await params;
   const body = await req.json();
@@ -30,7 +32,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 }
 
 export async function DELETE(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const session = await requireRole("superadmin");
+  const session = await guardRole("superadmin");
+  if (session instanceof NextResponse) return session;
   const actorId = (session.user as { id?: string }).id!;
   const { id } = await params;
 

@@ -16,7 +16,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
-
 export const runtime = "nodejs";
 
 const MAX_LEN = 80;

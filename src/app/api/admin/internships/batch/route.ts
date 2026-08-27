@@ -16,7 +16,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth";
-
 export const runtime = "nodejs";
 
 type BatchAction = "delete" | "activate" | "close" | "draft";

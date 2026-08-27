@@ -20,7 +20,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/auth";
-
 export const runtime = "nodejs";
 
 const MAX_IDS = 200;

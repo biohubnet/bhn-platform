@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireRole, ROLE_RANK } from "@/lib/auth";
-
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await requireRole("admin").catch(() => null);
   if (!session) return NextResponse.json({ error: "Forbidden" }, { status: 403 });

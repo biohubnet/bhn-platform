@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireRole, requireSession } from "@/lib/auth";
+import { guardRole, guardSession } from "@/lib/api/guard";
+
 import { prisma } from "@/lib/prisma";
 
 export async function GET() {
-  await requireSession();
+  const _guard = await guardSession();
+  if (_guard instanceof NextResponse) return _guard;
   const announcements = await prisma.announcement.findMany({
     orderBy: [{ pinned: "desc" }, { createdAt: "desc" }],
     take: 50,
@@ -12,7 +14,8 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const session = await requireRole("admin");
+  const session = await guardRole("admin");
+  if (session instanceof NextResponse) return session;
   const authorId = (session.user as { id?: string }).id!;
   const { title, body, courseId, pinned } = await req.json();
 

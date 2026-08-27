@@ -11,6 +11,7 @@
  * All three handlers are gated to admin/superadmin via requireRole.
  */
 import { NextRequest, NextResponse } from "next/server";
+import { guardRole } from "@/lib/api/guard";
 import { requireRole, getSession } from "@/lib/auth";
 import {
   type MatchingConfig,
@@ -24,7 +25,8 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  await requireRole("admin");
+  const _guard = await guardRole("admin");
+  if (_guard instanceof NextResponse) return _guard;
   const current = await getMatchingConfig();
   return NextResponse.json({
     current,
@@ -33,7 +35,8 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const session = await requireRole("admin");
+  const session = await guardRole("admin");
+  if (session instanceof NextResponse) return session;
   const url = new URL(req.url);
   const test = url.searchParams.get("test") === "1";
   const body = (await req.json().catch(() => ({}))) as {

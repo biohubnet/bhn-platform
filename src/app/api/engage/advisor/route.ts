@@ -9,8 +9,9 @@
  * holding three while others see none.
  */
 import { NextRequest, NextResponse } from "next/server";
+import { guardSession } from "@/lib/api/guard";
 import { z } from "zod";
-import { requireSession } from "@/lib/auth";
+
 import { prisma } from "@/lib/prisma";
 
 const BookSchema = z.object({
@@ -23,7 +24,8 @@ const CancelSchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
-  const session = await requireSession();
+  const session = await guardSession();
+  if (session instanceof NextResponse) return session;
   const userId = (session.user as { id?: string }).id;
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -81,7 +83,8 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  const session = await requireSession();
+  const session = await guardSession();
+  if (session instanceof NextResponse) return session;
   const userId = (session.user as { id?: string }).id;
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 

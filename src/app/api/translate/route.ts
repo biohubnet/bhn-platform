@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { createHash } from "node:crypto";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
-
 export const runtime = "nodejs";
 export const maxDuration = 30;
 

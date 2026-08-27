@@ -16,7 +16,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/auth";
-
 export const runtime = "nodejs";
 
 const VALID_STATUSES = ["active", "closed", "expired", "draft"] as const;

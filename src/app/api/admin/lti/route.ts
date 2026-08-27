@@ -1,15 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireRole } from "@/lib/auth";
+import { guardRole } from "@/lib/api/guard";
+
 import { prisma } from "@/lib/prisma";
 
 export async function GET() {
-  await requireRole("superadmin");
+  const _guard = await guardRole("superadmin");
+  if (_guard instanceof NextResponse) return _guard;
   const configs = await prisma.ltiConfig.findMany({ orderBy: { createdAt: "desc" } });
   return NextResponse.json(configs);
 }
 
 export async function POST(req: NextRequest) {
-  const session = await requireRole("superadmin");
+  const session = await guardRole("superadmin");
+  if (session instanceof NextResponse) return session;
   const actorId = (session.user as { id?: string }).id!;
   const body = await req.json();
 

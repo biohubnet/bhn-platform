@@ -9,7 +9,7 @@
  * matching anonymised trainees. Drives the "post to convert" loop.
  */
 import { NextRequest, NextResponse } from "next/server";
-import { requireRole, getSession } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { extractSkillsFromText, scoreMatch } from "@/lib/skills/ontology";
 

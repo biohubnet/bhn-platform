@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth";
-
 export async function GET() {
   const pathways = await prisma.pathway.findMany({
     include: {

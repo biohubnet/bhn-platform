@@ -9,8 +9,9 @@
  *   GET  /api/admin/test-data            → status (which rows exist)
  */
 import { NextRequest, NextResponse } from "next/server";
+import { guardRole } from "@/lib/api/guard";
 import bcrypt from "bcryptjs";
-import { requireRole } from "@/lib/auth";
+
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@prisma/client";
 
@@ -51,12 +52,14 @@ async function readStatus() {
 }
 
 export async function GET() {
-  await requireRole("superadmin");
+  const _guard = await guardRole("superadmin");
+  if (_guard instanceof NextResponse) return _guard;
   return NextResponse.json(await readStatus());
 }
 
 export async function POST(req: NextRequest) {
-  await requireRole("superadmin");
+  const _guard = await guardRole("superadmin");
+  if (_guard instanceof NextResponse) return _guard;
   const body = (await req.json().catch(() => ({}))) as { action?: string };
   const action = body.action;
   if (action !== "seed" && action !== "cleanup") {

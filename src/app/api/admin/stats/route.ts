@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
-import { requireRole } from "@/lib/auth";
+import { guardRole } from "@/lib/api/guard";
+
 import { prisma } from "@/lib/prisma";
 
 export async function GET() {
-  await requireRole("admin");
+  const _guard = await guardRole("admin");
+  if (_guard instanceof NextResponse) return _guard;
 
   const [
     totalUsers,

@@ -10,13 +10,15 @@
  *   POST   /api/admin/demo-workspaces/cleanup     → run the sweeper
  */
 import { NextRequest, NextResponse } from "next/server";
+import { guardRole } from "@/lib/api/guard";
 import { randomBytes } from "crypto";
-import { requireRole, getSession } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { deleteDemoWorkspace, sweepExpiredDemos } from "@/lib/demo/workspace";
 
 export async function GET() {
-  await requireRole("admin");
+  const _guard = await guardRole("admin");
+  if (_guard instanceof NextResponse) return _guard;
   const [invites, active] = await Promise.all([
     // Show every non-expired demo invite, claimed or not. Magic links
     // are reusable bookmarks — admins should be able to copy them again.
@@ -41,7 +43,8 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  await requireRole("admin");
+  const _guard = await guardRole("admin");
+  if (_guard instanceof NextResponse) return _guard;
   const session = await getSession();
   const meId = (session?.user as { id?: string } | undefined)?.id ?? null;
   const meName = (session?.user as { name?: string | null; email?: string | null } | undefined)?.name
@@ -97,7 +100,8 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  await requireRole("admin");
+  const _guard = await guardRole("admin");
+  if (_guard instanceof NextResponse) return _guard;
   const url = new URL(req.url);
   const all = url.searchParams.get("all") === "true";
 
@@ -129,7 +133,8 @@ export async function DELETE(req: NextRequest) {
 
 // Cleanup sweeper — admin can trigger manually; also fired on /admin/system-status load.
 export async function PATCH() {
-  await requireRole("admin");
+  const _guard = await guardRole("admin");
+  if (_guard instanceof NextResponse) return _guard;
   const r = await sweepExpiredDemos();
   return NextResponse.json({ ok: true, deleted: r.deleted });
 }

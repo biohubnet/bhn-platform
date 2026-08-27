@@ -2,13 +2,15 @@
  * Single HQP application window — close / reopen / edit.
  */
 import { NextResponse } from "next/server";
-import { requireRole } from "@/lib/auth";
+import { guardRole } from "@/lib/api/guard";
+
 import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const session = await requireRole("admin");
+  const session = await guardRole("admin");
+  if (session instanceof NextResponse) return session;
   const actorId = (session.user as { id?: string }).id ?? "";
   const { id } = await params;
   const body = await req.json().catch(() => ({} as Record<string, unknown>));

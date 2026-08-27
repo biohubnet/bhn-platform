@@ -31,9 +31,10 @@
  *     rows always fall inside the dashboard's "last 7 days" cuts.
  */
 import { NextResponse } from "next/server";
+import { guardRole } from "@/lib/api/guard";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { requireRole } from "@/lib/auth";
+
 import { findHelpCard } from "@/lib/assist/help-cards";
 
 export const runtime = "nodejs";
@@ -397,7 +398,8 @@ function summaryText(archetypeSlug: string): { summary: string; stuckOn: string[
 }
 
 export async function POST() {
-  await requireRole("admin");
+  const _guard = await guardRole("admin");
+  if (_guard instanceof NextResponse) return _guard;
 
   const weekStart = lastMondayUTC();
   let usersCreated = 0;
@@ -521,7 +523,8 @@ export async function POST() {
 }
 
 export async function DELETE() {
-  await requireRole("admin");
+  const _guard = await guardRole("admin");
+  if (_guard instanceof NextResponse) return _guard;
 
   // Find all demo users matching our slug pattern; deleting the User
   // row cascades AssistEvent / Rollup / Summary / Hint / Feedback /

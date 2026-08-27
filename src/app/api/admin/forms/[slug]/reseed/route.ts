@@ -9,8 +9,9 @@
  * No-op if the slug isn't in the registered seed list.
  */
 import { NextResponse } from "next/server";
+import { guardRole } from "@/lib/api/guard";
 import { Prisma } from "@prisma/client";
-import { requireRole } from "@/lib/auth";
+
 import { prisma } from "@/lib/prisma";
 import { OBIO_BOOTCAMP_DEFAULTS } from "@/lib/forms/obio-bootcamp";
 import { TALENT_APPLICATION_DEFAULTS } from "@/lib/forms/talent-application";
@@ -21,7 +22,8 @@ export async function POST(
   _req: Request,
   { params }: { params: Promise<{ slug: string }> }
 ) {
-  await requireRole("admin");
+  const _guard = await guardRole("admin");
+  if (_guard instanceof NextResponse) return _guard;
   const { slug } = await params;
 
   const seed = SEEDS.find((s) => s.slug === slug);

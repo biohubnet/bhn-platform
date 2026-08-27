@@ -8,19 +8,22 @@
  * submitted; only platform staff should be able to schedule them.
  */
 import { NextResponse } from "next/server";
-import { requireRole } from "@/lib/auth";
+import { guardRole } from "@/lib/api/guard";
+
 import { prisma } from "@/lib/prisma";
 import { listWindows } from "@/lib/hqp/windows";
 
 export const runtime = "nodejs";
 
 export async function GET() {
-  await requireRole("admin");
+  const _guard = await guardRole("admin");
+  if (_guard instanceof NextResponse) return _guard;
   return NextResponse.json({ windows: await listWindows() });
 }
 
 export async function POST(req: Request) {
-  const session = await requireRole("admin");
+  const session = await guardRole("admin");
+  if (session instanceof NextResponse) return session;
   const actorId = (session.user as { id?: string }).id ?? "";
   const body = await req.json().catch(() => ({} as Record<string, unknown>));
 

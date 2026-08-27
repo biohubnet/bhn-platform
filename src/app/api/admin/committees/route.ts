@@ -12,14 +12,16 @@
  * platform-staff concern.
  */
 import { NextResponse } from "next/server";
-import { requireRole } from "@/lib/auth";
+import { guardRole } from "@/lib/api/guard";
+
 import { prisma } from "@/lib/prisma";
 import { isCommitteeSlug, COMMITTEES } from "@/lib/committees/registry";
 
 export const runtime = "nodejs";
 
 export async function GET() {
-  await requireRole("admin");
+  const _guard = await guardRole("admin");
+  if (_guard instanceof NextResponse) return _guard;
 
   const rows = await prisma.committeeMembership.findMany({
     orderBy: [{ committee: "asc" }, { active: "desc" }, { joinedAt: "desc" }],
@@ -39,7 +41,8 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  const session = await requireRole("admin");
+  const session = await guardRole("admin");
+  if (session instanceof NextResponse) return session;
   const actorId = (session.user as { id?: string }).id ?? "";
   const body = await req.json().catch(() => ({} as Record<string, unknown>));
   const slug = body.committee;

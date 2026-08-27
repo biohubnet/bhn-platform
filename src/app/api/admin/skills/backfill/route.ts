@@ -12,7 +12,8 @@
  * whole catalog.
  */
 import { NextRequest, NextResponse } from "next/server";
-import { requireRole } from "@/lib/auth";
+import { guardRole } from "@/lib/api/guard";
+
 import { prisma } from "@/lib/prisma";
 import {
   ensureSkillSeed, embedMissingSkills, tagCourse, tagPosting, tagUser,
@@ -29,7 +30,8 @@ interface BackfillReport {
 }
 
 export async function POST(req: NextRequest) {
-  await requireRole("admin");
+  const _guard = await guardRole("admin");
+  if (_guard instanceof NextResponse) return _guard;
   const body = (await req.json().catch(() => ({}))) as { kind?: string; limit?: number };
   const kind = body.kind ?? "all";
   const limit = Math.min(Math.max(body.limit ?? 100, 1), 200);

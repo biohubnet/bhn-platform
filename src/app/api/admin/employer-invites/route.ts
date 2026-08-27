@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { randomBytes } from "node:crypto";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth";
-
 export const runtime = "nodejs";
 
 // Invite tokens are 32 random bytes → 64 hex chars. Long enough that

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireRole } from "@/lib/auth";
+import { guardRole } from "@/lib/api/guard";
+
 import { getAlgoliaInsightsClient, ALGOLIA_INDEX } from "@/lib/algolia";
 
 /**
@@ -11,7 +12,8 @@ import { getAlgoliaInsightsClient, ALGOLIA_INDEX } from "@/lib/algolia";
 const VALID_INDEXES: string[] = Object.values(ALGOLIA_INDEX);
 
 export async function POST(req: NextRequest) {
-  const session = await requireRole("admin");
+  const session = await guardRole("admin");
+  if (session instanceof NextResponse) return session;
   const userId = (session.user as { id?: string }).id;
   if (!userId) return NextResponse.json({ error: "No user id on session" }, { status: 400 });
 

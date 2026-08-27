@@ -4,13 +4,15 @@
  *   GET /api/admin/committees/hqp/applications?status=...&windowId=...
  */
 import { NextResponse } from "next/server";
-import { requireRole } from "@/lib/auth";
+import { guardRole } from "@/lib/api/guard";
+
 import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
 
 export async function GET(req: Request) {
-  await requireRole("admin");
+  const _guard = await guardRole("admin");
+  if (_guard instanceof NextResponse) return _guard;
   const url = new URL(req.url);
   const status = url.searchParams.get("status");
   const windowId = url.searchParams.get("windowId");

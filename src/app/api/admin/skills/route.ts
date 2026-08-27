@@ -7,14 +7,16 @@
  *   POST   /api/admin/skills/merge        → merge two skills (separate route)
  */
 import { NextRequest, NextResponse } from "next/server";
-import { requireRole } from "@/lib/auth";
+import { guardRole } from "@/lib/api/guard";
+
 import { prisma } from "@/lib/prisma";
 import {
   ensureSkillSeed, slugify, embedSkill, embedMissingSkills,
 } from "@/lib/skills/ontology";
 
 export async function GET() {
-  await requireRole("admin");
+  const _guard = await guardRole("admin");
+  if (_guard instanceof NextResponse) return _guard;
   // Idempotent — first hit seeds the starter catalog, subsequent hits no-op.
   await ensureSkillSeed();
   // Best-effort embed a small batch each visit so the index warms up
@@ -33,7 +35,8 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  await requireRole("admin");
+  const _guard = await guardRole("admin");
+  if (_guard instanceof NextResponse) return _guard;
   const body = (await req.json().catch(() => ({}))) as { name?: string; category?: string; description?: string };
   const name = body.name?.trim();
   if (!name) return NextResponse.json({ error: "name required" }, { status: 400 });
@@ -60,7 +63,8 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
-  await requireRole("admin");
+  const _guard = await guardRole("admin");
+  if (_guard instanceof NextResponse) return _guard;
   const body = (await req.json().catch(() => ({}))) as {
     id?: string;
     name?: string;
@@ -104,7 +108,8 @@ export async function PATCH(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  await requireRole("superadmin");
+  const _guard = await guardRole("superadmin");
+  if (_guard instanceof NextResponse) return _guard;
   const url = new URL(req.url);
   const id = url.searchParams.get("id");
   if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });

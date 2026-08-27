@@ -17,9 +17,10 @@
  * meaningfully even on a fresh deploy.
  */
 import { NextResponse } from "next/server";
+import { guardRole } from "@/lib/api/guard";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { requireRole } from "@/lib/auth";
+
 import { templateMilestones } from "@/lib/equip/milestones";
 import type {
   VentureConnectFormData,
@@ -215,7 +216,8 @@ const DEMO_APPS: Record<string, DemoAppSpec> = {
 };
 
 export async function POST() {
-  await requireRole("admin");
+  const _guard = await guardRole("admin");
+  if (_guard instanceof NextResponse) return _guard;
 
   let usersCreated = 0;
   let appsCreated = 0;
@@ -321,7 +323,8 @@ export async function POST() {
 }
 
 export async function DELETE() {
-  await requireRole("admin");
+  const _guard = await guardRole("admin");
+  if (_guard instanceof NextResponse) return _guard;
 
   const users = await prisma.user.findMany({
     where: {

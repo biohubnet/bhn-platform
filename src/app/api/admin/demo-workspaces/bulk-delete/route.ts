@@ -17,14 +17,16 @@
  * invite rows wiped.
  */
 import { NextRequest, NextResponse } from "next/server";
-import { requireRole } from "@/lib/auth";
+import { guardRole } from "@/lib/api/guard";
+
 import { prisma } from "@/lib/prisma";
 import { deleteDemoWorkspace } from "@/lib/demo/workspace";
 
 export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
-  await requireRole("admin");
+  const _guard = await guardRole("admin");
+  if (_guard instanceof NextResponse) return _guard;
   const body = (await req.json().catch(() => ({}))) as {
     employerIds?: unknown;
     inviteIds?: unknown;

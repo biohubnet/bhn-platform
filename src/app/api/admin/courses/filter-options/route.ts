@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth";
-
 export const runtime = "nodejs";
 
 const ALLOWED_TYPES = new Set(["topic", "delivery", "provider"]);

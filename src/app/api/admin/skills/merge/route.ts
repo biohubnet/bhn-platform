@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireRole } from "@/lib/auth";
+import { guardRole } from "@/lib/api/guard";
+
 import { mergeSkills } from "@/lib/skills/ontology";
 
 /**
@@ -9,7 +10,8 @@ import { mergeSkills } from "@/lib/skills/ontology";
  *   POST /api/admin/skills/merge { loserId, winnerId }
  */
 export async function POST(req: NextRequest) {
-  await requireRole("admin");
+  const _guard = await guardRole("admin");
+  if (_guard instanceof NextResponse) return _guard;
   const body = (await req.json().catch(() => ({}))) as { loserId?: string; winnerId?: string };
   if (!body.loserId || !body.winnerId) {
     return NextResponse.json({ error: "loserId and winnerId required" }, { status: 400 });

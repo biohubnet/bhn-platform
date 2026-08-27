@@ -10,11 +10,13 @@
  * stamp the timestamp on each row so they don't show up next time.
  */
 import { NextRequest, NextResponse } from "next/server";
-import { requireRole, getSession } from "@/lib/auth";
+import { guardRole } from "@/lib/api/guard";
+import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 export async function GET(req: NextRequest) {
-  await requireRole("admin");
+  const _guard = await guardRole("admin");
+  if (_guard instanceof NextResponse) return _guard;
   const url = new URL(req.url);
   const scope = url.searchParams.get("scope") ?? "new";
 
@@ -67,7 +69,8 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  await requireRole("admin");
+  const _guard = await guardRole("admin");
+  if (_guard instanceof NextResponse) return _guard;
   const session = await getSession();
   const body = (await req.json().catch(() => ({}))) as { userIds?: string[] };
   const ids = Array.isArray(body.userIds) ? body.userIds.filter((x): x is string => typeof x === "string") : [];
@@ -105,7 +108,8 @@ export async function POST(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   // Convenience: clear the exportedAt flag on a list of users so they
   // re-appear in the "new" view. Useful for re-running an export.
-  await requireRole("admin");
+  const _guard = await guardRole("admin");
+  if (_guard instanceof NextResponse) return _guard;
   const body = (await req.json().catch(() => ({}))) as { userIds?: string[] };
   const ids = Array.isArray(body.userIds) ? body.userIds.filter((x): x is string => typeof x === "string") : [];
   if (ids.length === 0) {

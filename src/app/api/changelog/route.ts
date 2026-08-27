@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession, requireRole, ROLE_RANK } from "@/lib/auth";
-
 export async function GET() {
   const session = await getSession();
   const role = (session?.user as { role?: string })?.role ?? "trainee";

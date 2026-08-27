@@ -5,11 +5,13 @@
  *   PATCH /api/admin/access-requests   { id, status }   — approve | reject
  */
 import { NextRequest, NextResponse } from "next/server";
-import { requireRole, getSession } from "@/lib/auth";
+import { guardRole } from "@/lib/api/guard";
+import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 export async function GET() {
-  await requireRole("admin");
+  const _guard = await guardRole("admin");
+  if (_guard instanceof NextResponse) return _guard;
   const rows = await prisma.accessRequest.findMany({
     orderBy: [{ status: "asc" }, { createdAt: "desc" }],
     take: 200,
@@ -18,7 +20,8 @@ export async function GET() {
 }
 
 export async function PATCH(req: NextRequest) {
-  await requireRole("admin");
+  const _guard = await guardRole("admin");
+  if (_guard instanceof NextResponse) return _guard;
   const session = await getSession();
   const me = (session?.user as { id?: string } | undefined)?.id ?? null;
   const body = (await req.json().catch(() => ({}))) as { id?: string; status?: string };

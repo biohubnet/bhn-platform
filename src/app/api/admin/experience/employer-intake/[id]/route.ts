@@ -6,9 +6,10 @@
  * form submissions (e.g. talent applications).
  */
 import { NextRequest, NextResponse } from "next/server";
+import { guardRole } from "@/lib/api/guard";
 import { Prisma } from "@prisma/client";
 import { z } from "zod";
-import { requireRole } from "@/lib/auth";
+
 import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
@@ -37,7 +38,8 @@ async function loadOwned(id: string) {
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  await requireRole("admin");
+  const _guard = await guardRole("admin");
+  if (_guard instanceof NextResponse) return _guard;
   const { id } = await params;
   const sub = await loadOwned(id);
   if (!sub) return NextResponse.json({ error: "Not found." }, { status: 404 });
@@ -59,7 +61,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 }
 
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  await requireRole("admin");
+  const _guard = await guardRole("admin");
+  if (_guard instanceof NextResponse) return _guard;
   const { id } = await params;
   const sub = await loadOwned(id);
   if (!sub) return NextResponse.json({ error: "Not found." }, { status: 404 });

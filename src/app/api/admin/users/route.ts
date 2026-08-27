@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireRole } from "@/lib/auth";
+import { guardRole } from "@/lib/api/guard";
+
 import { prisma } from "@/lib/prisma";
 
 /** Roles an admin-ranked session may assign. Superadmin promotion
@@ -14,7 +15,8 @@ const ALLOWED_ROLES = [
 type AllowedRole = (typeof ALLOWED_ROLES)[number];
 
 export async function GET() {
-  await requireRole("admin");
+  const _guard = await guardRole("admin");
+  if (_guard instanceof NextResponse) return _guard;
 
   const users = await prisma.user.findMany({
     select: {
@@ -32,7 +34,8 @@ export async function GET() {
 }
 
 export async function PATCH(req: NextRequest) {
-  const session = await requireRole("admin");
+  const session = await guardRole("admin");
+  if (session instanceof NextResponse) return session;
   const actorId = (session.user as { id?: string }).id ?? "unknown";
   const actorRole = (session.user as { role?: string }).role ?? "";
   const actorIsSuperadmin = actorRole === "superadmin";

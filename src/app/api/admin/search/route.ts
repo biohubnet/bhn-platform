@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireRole } from "@/lib/auth";
+import { guardRole } from "@/lib/api/guard";
+
 import { getAlgoliaClient, ALGOLIA_INDEX } from "@/lib/algolia";
 
 /**
@@ -18,7 +19,8 @@ interface CourseHit { objectID: string; title: string; code: string | null }
 interface PostingHit { objectID: string; title: string; companyName: string }
 
 export async function GET(req: NextRequest) {
-  await requireRole("admin");
+  const _guard = await guardRole("admin");
+  if (_guard instanceof NextResponse) return _guard;
 
   const q = (req.nextUrl.searchParams.get("q") ?? "").trim();
   if (q.length < 2) {
