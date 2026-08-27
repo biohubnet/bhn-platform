@@ -16,7 +16,7 @@ import { Play, CheckCircle, Clock, XCircle, Hourglass, LogOut } from "lucide-rea
 import { cn, formatDuration } from "@/lib/utils";
 import { Badge } from "@/components/ui/Badge";
 import { LeaveCourseButton } from "@/components/lms/LeaveCourseButton";
-import { isLaunchable, type EnrollmentBucket } from "@/lib/courses/enrollment-status";
+import { canAccessCourseContent, type EnrollmentBucket } from "@/lib/courses/enrollment-status";
 
 export interface EnrollmentRowData {
   id: string;
@@ -88,7 +88,9 @@ export function EnrollmentRow({
   isStaff: boolean;
 }) {
   const Icon = ICONS[bucket];
-  const launchable = isLaunchable(bucket);
+  // Same predicate the server gates on, fed the same raw status —
+  // so the button shown and the door opened can never disagree.
+  const launchable = canAccessCourseContent(e.status);
   const href = e.course.scormPackage
     ? `/player/${e.courseId}`
     : e.course._count.modules > 0

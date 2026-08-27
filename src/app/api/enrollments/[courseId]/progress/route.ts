@@ -10,10 +10,22 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ co
   const userId = (session.user as { id?: string }).id!;
   const { progress } = await req.json();
 
-  await prisma.enrollment.updateMany({
-    where: { userId, courseId },
+  // Status on the where-clause: a withdrawn or unapproved enrolment
+  // should not accrue progress. updateMany simply matches nothing.
+  const updated = await prisma.enrollment.updateMany({
+    where: {
+      userId,
+      courseId,
+      status: { in: ["active", "completed", "passed", "complete", "failed", "fail"] },
+    },
     data: { progress },
   });
+  if (updated.count === 0) {
+    return NextResponse.json(
+      { error: "Your enrolment in this course is not active.", code: "enrollment_not_active" },
+      { status: 403 },
+    );
+  }
 
   return NextResponse.json({ ok: true });
 }

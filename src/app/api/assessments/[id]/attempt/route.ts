@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { onCourseCompleted } from "@/lib/pathway-completion";
+import { canAccessCourseContent } from "@/lib/courses/enrollment-status";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id: assessmentId } = await params;
@@ -16,6 +17,21 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     include: { questions: true },
   });
   if (!assessment) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  // Entitlement check before anything is recorded. A passing attempt
+  // here sets the enrolment to "completed" and triggers certificate
+  // issuance downstream, so an unapproved or declined learner reaching
+  // this route would be self-certifying.
+  const enrolForAuth = await prisma.enrollment.findUnique({
+    where: { userId_courseId: { userId, courseId: assessment.courseId } },
+    select: { status: true },
+  });
+  if (!canAccessCourseContent(enrolForAuth?.status)) {
+    return NextResponse.json(
+      { error: "Your enrolment in this course is not active.", code: "enrollment_not_active" },
+      { status: 403 },
+    );
+  }
 
   // Grade
   let earned = 0;

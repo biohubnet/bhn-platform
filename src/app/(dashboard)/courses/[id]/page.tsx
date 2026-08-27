@@ -1,4 +1,5 @@
 import { getSession, isStaff as checkIsStaff } from "@/lib/auth";
+import { canAccessCourseContent } from "@/lib/courses/enrollment-status";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { EnrollButton } from "@/components/lms/EnrollButton";
@@ -12,7 +13,7 @@ import { CourseTutorWidget } from "@/components/lms/CourseTutorWidget";
 import { MasteryHeatmap } from "@/components/adaptive/MasteryHeatmap";
 import { formatDuration, statusColor, cn } from "@/lib/utils";
 import { displayCourseDescription } from "@/lib/courses/displayDescription";
-import { BookOpen, Clock, Users, Award, Play, Upload, Coins, Archive, AlertCircle } from "lucide-react";
+import { BookOpen, Clock, Users, Award, Play, Upload, Coins, Archive, AlertCircle, Hourglass, LogOut } from "lucide-react";
 import Link from "next/link";
 
 export default async function CourseDetailPage({
@@ -50,6 +51,13 @@ export default async function CourseDetailPage({
   const enrollment = await prisma.enrollment.findUnique({
     where: { userId_courseId: { userId, courseId: id } },
   });
+
+  // Entitlement, not merely "is there a row". `pending` (awaiting admin
+  // approval, and for a gated course not yet charged) and `withdrawn`
+  // (left, or DECLINED by an admin) both leave a row behind. Sharing one
+  // predicate with the player and module reader keeps the button shown
+  // here and the door those pages open from disagreeing.
+  const canOpen = Boolean(enrollment) && canAccessCourseContent(enrollment?.status);
 
   // For staff: how many active courses do they hold right now, and
   // what's the current trainee-facing cap? The enrol button uses these
@@ -240,7 +248,12 @@ export default async function CourseDetailPage({
                 Enrolment closed (archived)
               </button>
             )}
-            {enrollment && course.scormPackage && (
+            {/* Launch controls follow the SAME predicate the player and
+                module reader gate on. This page is where both of those
+                redirect to, so offering the link on row existence alone
+                would bounce an unentitled learner straight back here and
+                invite the click again, with no explanation. */}
+            {canOpen && course.scormPackage && (
               <Link
                 href={`/player/${id}`}
                 className="flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
@@ -249,14 +262,28 @@ export default async function CourseDetailPage({
                 {scormSession ? "Continue" : "Start Course"}
               </Link>
             )}
-            {enrollment && !course.scormPackage && course.modules.length > 0 && (
+            {canOpen && !course.scormPackage && course.modules.length > 0 && (
               <Link
                 href={`/courses/${id}/learn`}
                 className="flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
               >
                 <Play size={14} />
-                {enrollment.progress > 0 ? "Continue Learning" : "Start Learning"}
+                {(enrollment?.progress ?? 0) > 0 ? "Continue Learning" : "Start Learning"}
               </Link>
+            )}
+            {/* Enrolled but not entitled — say WHY, the way the pathway
+                detail page does, rather than silently showing nothing. */}
+            {enrollment?.status === "pending" && (
+              <span className="flex items-center gap-2 bg-amber-50 text-amber-800 text-sm font-medium px-4 py-2 rounded-lg ring-1 ring-inset ring-amber-200">
+                <Hourglass size={14} />
+                Waiting on admin approval
+              </span>
+            )}
+            {enrollment?.status === "withdrawn" && !isStaff && (
+              <span className="flex items-center gap-2 bg-elevated text-muted text-sm font-medium px-4 py-2 rounded-lg ring-1 ring-inset ring-line">
+                <LogOut size={14} />
+                No longer enrolled
+              </span>
             )}
             {/* Enrolled but the course has no playable content yet —
                 no SCORM package AND no modules. Previously this
@@ -265,7 +292,7 @@ export default async function CourseDetailPage({
                 why there's no launch, and (for staff) a CTA to add
                 content. Without this branch enrolled trainees would
                 arrive, look around, and silently bounce. */}
-            {enrollment && !course.scormPackage && course.modules.length === 0 && (
+            {canOpen && !course.scormPackage && course.modules.length === 0 && (
               isStaff ? (
                 <a
                   href="#course-content"
@@ -406,14 +433,14 @@ export default async function CourseDetailPage({
       {/* Topic-mastery heatmap — only renders meaningful content
           once the trainee has at least one graded attempt. Enrolled
           learners + staff (so course authors can see the same view). */}
-      {(enrollment || isStaff) && (
+      {(canOpen || isStaff) && (
         <div className="mt-6">
           <MasteryHeatmap userId={userId} courseId={id} courseTitle={course.title} />
         </div>
       )}
 
       {/* AI tutor — only for enrolled learners and staff */}
-      {(enrollment || isStaff) && <CourseTutorWidget courseId={id} />}
+      {(canOpen || isStaff) && <CourseTutorWidget courseId={id} />}
     </div>
   );
 }

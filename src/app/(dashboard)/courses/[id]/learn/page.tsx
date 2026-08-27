@@ -1,4 +1,5 @@
 import { getSession, isStaff as checkIsStaff } from "@/lib/auth";
+import { canAccessCourseContent } from "@/lib/courses/enrollment-status";
 import { prisma } from "@/lib/prisma";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
@@ -24,7 +25,10 @@ export default async function LearnPage({
   const enrollment = await prisma.enrollment.findUnique({
     where: { userId_courseId: { userId, courseId } },
   });
-  if (!enrollment && !isStaff) redirect(`/courses/${courseId}`);
+  // Same rule as the SCORM player — see lib/courses/enrollment-status.
+  if (!isStaff && !canAccessCourseContent(enrollment?.status)) {
+    redirect(`/courses/${courseId}`);
+  }
 
   const course = await prisma.course.findUnique({
     where: { id: courseId },

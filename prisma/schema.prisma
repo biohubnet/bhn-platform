@@ -1638,6 +1638,12 @@ model Enrollment {
   id          String    @id @default(cuid())
   userId      String
   courseId    String
+  // active | pending | completed | failed | withdrawn
+  //   pending    — course has requiresApproval; awaits an admin, and for
+  //                a credit-priced course has NOT been charged yet
+  //   withdrawn  — the trainee left, OR an admin declined the request
+  // Entitlement to open content is an allow-list over these values, not
+  // a check that a row exists — see lib/courses/enrollment-status.ts.
   status      String    @default("active")
   score       Float?
   progress    Float     @default(0)

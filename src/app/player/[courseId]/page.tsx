@@ -1,4 +1,5 @@
 import { getSession, isStaff as checkIsStaff } from "@/lib/auth";
+import { canAccessCourseContent } from "@/lib/courses/enrollment-status";
 import { prisma } from "@/lib/prisma";
 import { notFound, redirect } from "next/navigation";
 import { ScormPlayer } from "@/components/lms/ScormPlayer";
@@ -26,7 +27,15 @@ export default async function PlayerPage({
   const role = (session.user as { role?: string }).role ?? "learner";
   const isStaff = checkIsStaff(role);
 
-  if (!enrollment && !isStaff) redirect(`/courses/${courseId}`);
+  // Status, not row existence. A `pending` request has not been
+  // approved (and for a gated course has not been charged), and a
+  // `withdrawn` row covers both leaving and being DECLINED by an
+  // admin — none of which should open the course. This must stay
+  // above the ScormSession create below: loading the page mints an
+  // attempt row, so a gate placed after it still leaks a write.
+  if (!isStaff && !canAccessCourseContent(enrollment?.status)) {
+    redirect(`/courses/${courseId}`);
+  }
 
   const course = await prisma.course.findUnique({
     where: { id: courseId },

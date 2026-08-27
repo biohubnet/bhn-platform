@@ -46,15 +46,49 @@ export function classifyEnrollment(status: string, progress: number): Enrollment
 }
 
 /**
- * Whether a row may offer a launch / resume control.
+ * Statuses that entitle a learner to open course content, record
+ * progress, or record a completion.
  *
- * `pending` has not been approved yet and `withdrawn` has been left, so
- * neither should be presented as resumable. This is a UI decision, not
- * an access control: `/player/[courseId]` gates on the *existence* of an
- * enrollment row (`if (!enrollment && !isStaff)`), not its status, so a
- * withdrawn or unapproved trainee who kept the URL can still open the
- * player. Tightening that gate is a separate change to the player route.
+ * This is an ALLOW-LIST, and that is the point. `Enrollment.status` is
+ * free text, so a value nobody anticipated — an import artifact, a
+ * status added later, a typo — must be DENIED rather than admitted.
+ * Deriving access from the display bucket instead would fail open:
+ * `classifyEnrollment` ends `return progress > 0 ? ... : "not_started"`,
+ * so an unrecognised status lands in a bucket that looks launchable.
+ *
+ * Mirrors how the pathway side has always done it — see
+ * `lib/pathway-enrollment.ts`, which counts `status: { in: ["approved",
+ * "completed"] }` rather than asking whether a row exists.
+ *
+ * Denied:
+ *   pending    — the credit debit for an approval-gated course is
+ *                deliberately deferred until an admin approves
+ *                (api/courses/[id]/enroll skips the deduction and
+ *                api/admin/enrollments/[id]/review performs it). That
+ *                design only holds if an unapproved request also
+ *                delivers nothing.
+ *   withdrawn  — written both when a trainee leaves AND when an admin
+ *                DECLINES a gated request (the review route's "reject"
+ *                action). Admitting it makes a decline unenforceable.
+ *
+ * Allowed:
+ *   active     — approved and paid for.
+ *   completed  — re-entry is the product's intent; the tracker labels
+ *                the control "Review", and a learner should be able to
+ *                re-read a course they hold a certificate for.
+ *   failed     — likewise "Retry". The Progress Tracker says so in
+ *                copy: "your best attempt is the one that counts".
+ *
+ * ONE predicate, used by both the UI and the server-side gates, so the
+ * button a learner sees and the door the server opens cannot drift
+ * apart. Do not add a second, laxer copy for presentation.
  */
-export function isLaunchable(bucket: EnrollmentBucket): boolean {
-  return bucket !== "pending" && bucket !== "withdrawn";
+const CONTENT_ACCESS_STATES = new Set([
+  "active",
+  "completed", "passed", "complete",
+  "failed", "fail",
+]);
+
+export function canAccessCourseContent(status: string | null | undefined): boolean {
+  return typeof status === "string" && CONTENT_ACCESS_STATES.has(status);
 }

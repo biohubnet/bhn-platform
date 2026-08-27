@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Security · course access checks the enrolment, not just its existence
+  {
+    title: "Course access now checks whether your enrolment is actually active",
+    body: "Opening a course used to require only that an enrolment record existed for you — not that it was in good standing. So a course you'd withdrawn from, or a request an admin had declined, or one still waiting on approval, all still opened if you had the link. On an approval-gated course that mattered: those are charged when an admin approves, so an unapproved request could reach the content without ever being charged for it.\n\nAccess is now an allow-list on the enrolment itself — active, completed and failed can open a course; pending and withdrawn cannot. Completed and failed stay open on purpose: reviewing a course you've finished and retrying one you didn't pass are both things you should be able to do.\n\nThe same rule now applies to recording progress, submitting an assessment, and recording a completion — not just to opening the page. Before, those could be reached directly even when the page wouldn't open, which meant a declined enrolment could still be marked complete and pick up a certificate.\n\nIf you're waiting on approval, the course page now says so instead of showing a start button that wouldn't have worked.",
+    kind: "fix",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Design · leading hairline removed from every section label
   {
     title: "Section labels lost the little dash in front of them",
