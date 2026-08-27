@@ -86,28 +86,12 @@ jobs:
     name: "Schema + migrations (clean Postgres 16)"
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    # ADVISORY — and it currently FAILS. That is the finding, not a bug in
-    # this job. Rehearsed against Postgres 16.14 + pgvector before adding
-    # it: the chain stops at migration 29 of 135 with
-    #   column "accountKind" does not exist
-    # because three migrations dated 2026-05-13 (drop_sandbox_kind,
-    # clear_hr_demo_data, clear_demo_workspaces) reference a column that
-    # 20260516000000_sandbox_and_demo_accounts creates three days LATER.
-    # Production is fine — it was migrated forward in real time, so the
-    # column existed when those ran — but a database built from history
-    # cannot be stood up. No staging, no fresh local DB, no rebuild from
-    # schema alone.
-    #
-    # It is NOT fixable by editing those three files: _prisma_migrations
-    # stores a checksum per migration, and `migrate deploy` refuses a
-    # migration whose content changed after it was applied. Editing them
-    # would break deploys on production instead. The real fix is to
-    # baseline — snapshot the current schema as an initial migration for
-    # fresh environments — which is a deliberate decision, not a drive-by.
-    #
-    # Kept and left running so the breakage is visible on every PR rather
-    # than forgotten. Flip continue-on-error off the day it goes green.
-    continue-on-error: true
+    # Blocking as of the baseline (0_init). Before it, the 135 incremental
+    # migrations could not replay from empty — the chain died at migration
+    # 29 with `column "accountKind" does not exist` — so this job could
+    # never have gone green and ran advisory. It builds the schema from
+    # nothing on every PR now, which is what stops the next ordering
+    # mistake reaching main.
     services:
       postgres:
         # pgvector/pgvector:pg16 is stock Postgres 16 with the vector
