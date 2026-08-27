@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── EQUIP · VentureConnect September round
+  {
+    title: "VentureConnect: the September round is open",
+    body: "The next VentureConnect window is **Round 18 — September 2026**, closing **Thursday 24 September at 12:00 PM ET**. It opens the moment the August round closes, so there is no gap between the two.\n\nRounds are now named on the platform. Where it used to say only \"September 2026\", it says **Round 18 · September 2026** — the same numbering BHN already uses in the award history.\n\nTwo things behind this were broken and are fixed. Windows used to open on the 1st of their month rather than when the previous one closed, which left several days each month where VentureConnect accepted nothing at all. And a window configured ahead of time could never open — it was marked as scheduled and nothing ever moved it, so the deadline showed correctly while every application was refused. Round changeovers now happen on their own, on schedule, instead of waiting for an admin to open a page.",
+    kind: "fix",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Dashboard + pathways · layout pass
   {
     title: "Training Week and the Symposium are on the calendar",

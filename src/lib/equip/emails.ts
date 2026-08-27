@@ -596,7 +596,7 @@ export function sampleEquipCtx(stream: EquipStream): EquipEmailCtx {
         requestedAmount: 4200,
         approvedAmount: 4200,
         reviewerNote: "Strong fit for the BIO International Convention — approved for airfare, registration, and two nights' accommodation.",
-        deadlineLabel: "this Friday, June 27",
+        deadlineLabel: "Thursday, September 24",
         milestoneTitle: "Submit post-event outcomes report",
         dueLabel: "in 2 weeks",
       }

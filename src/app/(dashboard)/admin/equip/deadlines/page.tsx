@@ -13,7 +13,7 @@ import { redirect } from "next/navigation";
 import { CalendarClock } from "lucide-react";
 import { requireCommitteeOrAdmin } from "@/lib/committees/membership";
 import { prisma } from "@/lib/prisma";
-import { listDeadlines } from "@/lib/equip/deadlines";
+import { listDeadlines, type DeadlineStatus } from "@/lib/equip/deadlines";
 import { derivedDeadlineSpecs, VL_ROUNDS } from "@/lib/equip/calendar";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { DeadlineManager } from "@/components/admin/equip/DeadlineManager";
@@ -34,7 +34,7 @@ async function syncRoundsToDeadlines(actorId: string): Promise<number> {
   const now    = new Date();
   const halfDay = 12 * 60 * 60 * 1000;
 
-  function specStatus(s: (typeof specs)[number]): string {
+  function specStatus(s: (typeof specs)[number]): DeadlineStatus {
     if (s.deadlineAt < now) return "closed";
     if (s.opensAt <= now)   return "open";
     return "scheduled";
@@ -88,7 +88,11 @@ async function syncRoundsToDeadlines(actorId: string): Promise<number> {
         originalDeadlineAt: s.deadlineAt,
         status: specStatus(s),
         cycleLabel: s.cycleLabel,
-        note: `Auto-synced from VL round schedule (${s.stageLabel})`,
+        // Rendered to APPLICANTS on the deadline card, so it cannot
+        // say "VL round schedule" on a VentureConnect window. The
+        // "Auto-synced" prefix is load-bearing — Steps 1, 3 and 3b all
+        // key off it to leave admin-created rows alone.
+        note: `Auto-synced from the ${s.stream === "venture_connect" ? "VentureConnect monthly" : "VentureLift round"} schedule (${s.stageLabel})`,
         createdById: actorId,
       })),
     });
@@ -107,8 +111,41 @@ async function syncRoundsToDeadlines(actorId: string): Promise<number> {
               lte: new Date(s.deadlineAt.getTime() + halfDay),
             },
             status: "open",
+            // Scoped to auto-synced rows, matching Step 1. Without it an
+            // admin who hand-creates a window (the POST route hardcodes
+            // status "open") has it silently demoted on the next page
+            // load — and nothing promoted it back, so it never opened.
+            note: { startsWith: "Auto-synced" },
           },
           data: { status: "scheduled" },
+        }),
+      ),
+    );
+  }
+
+  // ── Step 3b: promote windows whose opening moment has passed ───
+  // The mirror of Step 3, and the reason this was only ever half a
+  // sync. A window created while still in the future is born
+  // "scheduled", and NOTHING promoted it: the submit gate accepts only
+  // "open"/"extended", and the reopen endpoint refuses any row that is
+  // not "closed". A round configured even a day early was therefore
+  // permanently dead — the admin table showed the right date beside a
+  // grey badge while every applicant got "no open funding window".
+  const toOpen = specs.filter((s) => specStatus(s) === "open");
+  if (toOpen.length > 0) {
+    await Promise.all(
+      toOpen.map((s) =>
+        prisma.equipDeadline.updateMany({
+          where: {
+            stream: s.stream,
+            deadlineAt: {
+              gte: new Date(s.deadlineAt.getTime() - halfDay),
+              lte: new Date(s.deadlineAt.getTime() + halfDay),
+            },
+            status: "scheduled",
+            note: { startsWith: "Auto-synced" },
+          },
+          data: { status: "open" },
         }),
       ),
     );

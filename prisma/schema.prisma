@@ -3819,14 +3819,19 @@ model EquipDeadline {
   /// Stored as plain text so adding a third stream is a code-only
   /// change, not a migration.
   stream             String
-  /// The currently active deadline. Submissions are blocked when
-  /// `status = "closed"` OR (`status = "open"` AND now > deadlineAt).
+  /// The currently active deadline. Submissions are allowed ONLY when
+  /// `status` is "open" or "extended" AND now <= deadlineAt — see
+  /// nextOpenDeadline in lib/equip/deadlines.ts, which is the gate the
+  /// submit route actually consults. "scheduled" blocks just as
+  /// "closed" does; that is what gives rounds their boundaries.
   deadlineAt         DateTime
   /// The original deadlineAt at creation time. Stays put when an
   /// admin extends the window — the audit trail says "shipped
   /// originally at X, extended to Y".
   originalDeadlineAt DateTime
-  /// "open" | "closed" | "extended" — see model header.
+  /// "open" | "scheduled" | "closed" | "extended" — see model header.
+  /// "scheduled" = configured but its opening moment has not arrived;
+  /// the daily-maintenance cron promotes it to "open" on the day.
   status             String    @default("open")
   /// Free-form label admins use to find the right window in the
   /// admin list view. Examples: "May 2026 cycle", "Q2 2026",

@@ -195,19 +195,33 @@ const VC_DEADLINES: { date: string; round?: number }[] = [
 /** Returns one DerivedDeadlineSpec per published VC monthly window.
  *  Idempotent — call it repeatedly and you'll get the same set. */
 export function venturConnectMonthlyDeadlines(): DerivedDeadlineSpec[] {
-  return VC_DEADLINES.map(({ date }) => {
+  return VC_DEADLINES.map(({ date, round }, i) => {
     const [y, m] = date.split("-").map((s) => parseInt(s, 10));
     const monthName = new Date(Date.UTC(y, m - 1, 1)).toLocaleString("en-CA", {
       month: "long",
       timeZone: "UTC",
     });
-    // Window opens on the 1st of the month, closes on the published deadline.
-    const opensAt = noonEasternOn(`${y}-${String(m).padStart(2, "0")}-01`);
+    // A window opens the instant the PREVIOUS one closes, not on the
+    // 1st of its own month. Opening on the 1st left a dead gap after
+    // every round: August closes on the 27th, September would not have
+    // opened until the 1st, and for those five days VentureConnect
+    // accepted nothing at all — `nextOpenDeadline` returns null and the
+    // submit route answers "there's no open funding window". Handing
+    // over at the exact closing instant means there is always precisely
+    // one open VC window and never two.
+    const prev = i > 0 ? VC_DEADLINES[i - 1] : null;
+    const opensAt = prev
+      ? noonEasternOn(prev.date)
+      : noonEasternOn(`${y}-${String(m).padStart(2, "0")}-01`);
     return {
       stream: "venture_connect",
       deadlineAt: noonEasternOn(date),
       opensAt,
-      cycleLabel: `${monthName} ${y}`,
+      // The round number is real BHN vocabulary — the award history in
+      // recipients.ts runs "VC R1" through "VC R15" and this list
+      // continues the series. It was parsed and then dropped, so no
+      // surface ever said which round an applicant was applying to.
+      cycleLabel: round ? `Round ${round} · ${monthName} ${y}` : `${monthName} ${y}`,
       stageKey: "pre_screening_deadline",
       stageLabel: `${monthName} ${y} VC deadline`,
     };

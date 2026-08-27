@@ -18,7 +18,13 @@ import { cache } from "react";
 import { prisma } from "@/lib/prisma";
 import type { EquipStream } from "@/lib/equip/types";
 
-export type DeadlineStatus = "open" | "closed" | "extended";
+/** "scheduled" is a real, load-bearing value the sync writes for a
+ *  window whose opening moment has not arrived. It blocks submissions
+ *  exactly as "closed" does — which is what gives the platform round
+ *  BOUNDARIES: on Sep 25 the September window has fallen out on date
+ *  and October is still "scheduled", so a late applicant is refused
+ *  rather than silently counted into the next round. */
+export type DeadlineStatus = "open" | "closed" | "extended" | "scheduled";
 
 export interface DeadlineRow {
   id: string;
@@ -31,16 +37,6 @@ export interface DeadlineRow {
   closedAt: Date | null;
   extendedAt: Date | null;
   createdAt: Date;
-}
-
-/** Is the given row effectively accepting submissions right now?
- *  Closed → never. Open / extended → yes if deadlineAt is in the
- *  future (we let admins create future-dated open windows so the
- *  applicant page can show "next deadline" copy without re-opening
- *  every cycle). */
-export function isOpenForSubmissions(row: Pick<DeadlineRow, "status" | "deadlineAt">, now: Date = new Date()): boolean {
-  if (row.status === "closed") return false;
-  return row.deadlineAt.getTime() >= now.getTime();
 }
 
 /**

@@ -30,6 +30,7 @@
  * Auth: Vercel cron bearer secret OR admin session.
  */
 import { NextRequest, NextResponse } from "next/server";
+import { reconcileDeadlineStatuses } from "@/lib/equip/sync-deadlines";
 import { requireRole } from "@/lib/auth";
 import { sweepExpiredPhantoms } from "@/lib/phantom";
 import { runDailyMaintenance } from "@/lib/credits/expiry";
@@ -57,7 +58,8 @@ async function handle(req: NextRequest) {
       notifications?: { notificationsSent: number; notificationsSkipped: number };
       error?: string;
     };
-  } = { phantoms: {}, credits: {} };
+    equipDeadlines: { opened?: number; scheduled?: number; closed?: number; error?: string };
+  } = { phantoms: {}, credits: {}, equipDeadlines: {} };
 
   try {
     const r = await sweepExpiredPhantoms();
@@ -71,6 +73,18 @@ async function handle(req: NextRequest) {
     results.credits = { sweep: r.sweep, notifications: r.notifications };
   } catch (err) {
     results.credits = { error: (err as Error).message };
+  }
+
+  // EQUIP funding windows open and close on a clock. Until now the only
+  // thing that moved their status was an admin happening to load
+  // /admin/equip/deadlines — so a round could close on schedule and its
+  // successor sit "scheduled" indefinitely, answering every applicant
+  // with "there's no open funding window". Reconciling here means the
+  // handover happens whether or not anyone is looking.
+  try {
+    results.equipDeadlines = await reconcileDeadlineStatuses();
+  } catch (err) {
+    results.equipDeadlines = { error: (err as Error).message };
   }
 
   return NextResponse.json({
