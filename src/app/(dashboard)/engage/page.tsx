@@ -52,8 +52,8 @@ export default function EngageProgramFaqPage() {
             <p>
               On-demand courses are asynchronous — start whenever you like and work at your
               own pace. Enrol from the <L href="/courses">catalogue</L>; the course then
-              appears under <L href="/my-courses">My Courses</L> and in your{" "}
-              <L href="/progress">Progress Tracker</L>.
+              appears in your <L href="/progress">Progress Tracker</L>, where you can pick
+              it back up whenever you like.
             </p>
           </AccordionItem>
 

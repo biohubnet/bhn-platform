@@ -41,10 +41,10 @@ export default async function CertificatesPage() {
             </p>
           </div>
           <Link
-            href="/my-courses"
+            href="/progress"
             className="inline-flex items-center gap-1.5 bg-brand-600 text-white text-sm font-bold px-4 py-2 rounded-md hover:bg-brand-700 transition-colors"
           >
-            See my courses
+            Open Progress Tracker
           </Link>
         </div>
       ) : (

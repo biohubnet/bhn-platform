@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── ENGAGE · My Courses folded into the Progress Tracker
+  {
+    title: "My Courses and the Progress Tracker are now one page",
+    body: "Two menu items were splitting one job. The Progress Tracker held your credits and a list of course titles you couldn't click; My Courses held the list you could actually act on. Which meant that to get back into a course you had to know which of the two tabs had the button.\n\nIt's one page now — **Progress Tracker** — and My Courses has left the menu. Every course you're enrolled in gets a row with a Resume button, your progress, your score, and how long it runs. Finished courses still export as a PDF.\n\nTwo things that were quietly missing have been fixed on the way: a course you **didn't pass** used to vanish from the Progress Tracker altogether, and a course **waiting on admin approval** never appeared at all. Both now have their own section. Courses you've withdrawn from are listed too, at the bottom, so nothing you've enrolled in is unaccounted for.\n\nCourses awaiting approval and ones you've left no longer show a Resume button — those weren't yours to start.\n\nOld /my-courses links and bookmarks still work; they land on the Progress Tracker.\n\nThe credit panel also lost its awarded/used footer — the total is already the label at the right end of the bar, and used is what the bar itself shows.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Design system · Wayfinding page header
   {
     title: "Page headers are now a signage plate, not a banner",

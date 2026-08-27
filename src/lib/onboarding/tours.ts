@@ -30,9 +30,20 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.09.13a";
+export const TOUR_VERSION = "2026.09.14a";
 
 export const TOUR_STEPS: TourStep[] = [
+  // ─── ENGAGE · My Courses folded into the Progress Tracker — Sep 2026
+  {
+    id: "engage.progress-absorbs-my-courses",
+    title: "Your courses now live in the Progress Tracker",
+    body: "My Courses is gone from the menu — everything it did happens here instead. Each course you're enrolled in gets a row with a Resume button, so you can pick up where you left off without hunting for the right tab. Courses you didn't pass and ones waiting on admin approval now show up too; before, they were missing from this page entirely. Your credits still sit at the top.",
+    path: "/progress",
+    placement: "center",
+    roles: ["trainee", "evaluating", "instructor", "admin", "superadmin"],
+    cta: { label: "Open Progress Tracker", href: "/progress" },
+    since: "2026.09.14a",
+  },
   // ─── Design system · Wayfinding page header — Sep 2026
   {
     id: "design-system.wayfinding-header",
@@ -1826,7 +1837,7 @@ export const TOUR_STEPS: TourStep[] = [
   {
     id: "keyboard-shortcuts",
     title: "New: keyboard shortcuts",
-    body: "Press ? from anywhere to see the cheat-sheet. Default bindings: X flips between your real role and trainee-view (admin / superadmin), 1-4 jump to Dashboard / Catalog / My Courses / Events. Rebind any of them at Profile · Shortcuts — settings live on this device. Admin extras: there's also a new admin-only 'Leave' button on /my-courses for fast cleanup after testing player flows, and the trainee 3-course cap is now tunable at /admin/settings.",
+    body: "Press ? from anywhere to see the cheat-sheet. Default bindings: X flips between your real role and trainee-view (admin / superadmin), ? opens this help. Rebind either at Profile · Shortcuts — settings live on this device. Admin extras: there's also an admin-only 'Leave' button on every course row in the Progress Tracker for fast cleanup after testing player flows, and the trainee 3-course cap is tunable at /admin/settings.",
     placement: "center",
     since: "2026.05.12f",
     cta: { label: "Open Shortcuts", href: "/profile/shortcuts" },

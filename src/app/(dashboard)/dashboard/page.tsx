@@ -383,7 +383,7 @@ export default async function DashboardPage() {
               {/* Actions — white primary + frosted ghost. */}
               <div className="mt-5 flex flex-wrap gap-3">
                 <Link
-                  href={inProgress > 0 ? "/my-courses" : "/courses"}
+                  href={inProgress > 0 ? "/progress" : "/courses"}
                   // `text-[#0f172a]` is a literal hex (Tailwind arbitrary
                   // value), NOT `text-slate-900`. Voltage theme globally
                   // overrides `.text-slate-900` to lift it to slate-100 so

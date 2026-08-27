@@ -34,7 +34,7 @@ New code lives next to its peers. Don't invent a new top-level folder without ch
 
 - **Components**: PascalCase (`LaunchReadinessDashboard`, `ShowcasePanel`)
 - **Functions / variables / non-component exports**: camelCase (`extractThumbnailMotifs`, `spawnShowcase`)
-- **Routes**: kebab-case (`/my-courses`, `/admin/course-thumbnails`, `/admin/launch-readiness`). Never snake_case in URLs.
+- **Routes**: kebab-case (`/talent-pool`, `/admin/course-thumbnails`, `/admin/launch-readiness`). Never snake_case in URLs.
 - **DB columns / Prisma fields**: camelCase (`createdAt`, `displayOrder`, `magicToken`). The repo doesn't use `@map`, so Postgres columns are also quoted camelCase identifiers.
 - **Files**: PascalCase for component files (`MerchClaimDialog.tsx`), kebab-case for routes / scripts (`auto-thumbnail-courses.ts`), camelCase for lib modules (`mail.ts`, `r2.ts`).
 

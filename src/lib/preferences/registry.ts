@@ -135,9 +135,8 @@ export const FEATURES: FeatureDef[] = [
   { id: "engage-faq",          label: "ENGAGE · Program details & FAQ", description: "How training, credits and enrolment work.",                                          group: "learn",      defaultEnabled: true },
   { id: "mentorship-faq",      label: "1:1 Mentorship · Program details & FAQ", description: "How mentor pairing works and how it differs from an advisor session.",       group: "learn",      defaultEnabled: true },
   { id: "learn-courses",       label: "Course catalog",            description: "Browse and enrol in courses. Filter by topic, skill, language, level.",                   group: "learn",      defaultEnabled: true },
-  { id: "learn-my-courses",    label: "My Courses",                description: "Your active + completed enrolments. Resume where you left off.",                          group: "learn",      defaultEnabled: true },
   { id: "learn-pathways",      label: "Pathways",                  description: "Curated multi-course tracks for specific roles + skill sets.",                            group: "learn",      defaultEnabled: true },
-  { id: "learn-progress",      label: "Progress Tracker",          description: "Credit utilisation, milestone dates, completed + in-flight courses.",                       group: "learn",      defaultEnabled: true },
+  { id: "learn-progress",      label: "Progress Tracker",          description: "Every enrolment — resume, review or retry — plus credit utilisation and milestone dates.",   group: "learn",      defaultEnabled: true },
   { id: "learn-gradebook",     label: "Gradebook",                 description: "Per-course assessment scores + completion status.",                                       group: "learn",      defaultEnabled: false },
   { id: "learn-certificates",  label: "Certificates",              description: "Every credential you've earned; each has a public verify link.",                          group: "learn",      defaultEnabled: true },
   { id: "learn-credits",       label: "My Credits",                description: "Balance + grant/spend log + apply-for-more.",                                              group: "learn",      defaultEnabled: true },
@@ -179,7 +178,10 @@ export const FEATURES: FeatureDef[] = [
 
 /** Deprecated ids — preserved here so user prefs containing them
  *  don't get treated as unknown garbage. Drop after one release. */
-export const DEPRECATED_FEATURE_IDS: string[] = [];
+// "learn-my-courses" — My Courses was folded into the Progress
+// Tracker (Sep 2026). Parked here for a release so a user who had it
+// hidden or reordered does not see their prefs silently rewritten.
+export const DEPRECATED_FEATURE_IDS: string[] = ["learn-my-courses"];
 
 /** Quick lookup. */
 export const FEATURES_BY_ID = new Map(FEATURES.map((f) => [f.id, f]));
@@ -189,7 +191,7 @@ export const FEATURES_BY_ID = new Map(FEATURES.map((f) => [f.id, f]));
 export const MINIMAL_PRESET = new Set([
   "learn-dashboard",
   "learn-courses",
-  "learn-my-courses",
+  "learn-progress",
   "profile-master",
   "profile-resumes",
   "account-preferences",
