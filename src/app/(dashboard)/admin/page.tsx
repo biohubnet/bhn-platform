@@ -75,13 +75,16 @@ export default async function AdminPage() {
           { label: "Credits in Circulation", value: totalCredits.toLocaleString(), icon: Coins, color: "orange" },
         ].map((stat) => {
           const Icon = stat.icon;
+          // -700 on -50, not -600: the -600 shades do not clear 4.5:1
+          // against their own -50 background (see statusColor in
+          // lib/utils for the measured ratios).
           const colors: Record<string, string> = {
-            blue: "bg-brand-50 text-brand-600",
-            amber: "bg-amber-50 text-amber-600",
-            green: "bg-green-50 text-green-600",
-            purple: "bg-purple-50 text-purple-600",
-            indigo: "bg-indigo-50 text-indigo-600",
-            orange: "bg-orange-50 text-orange-600",
+            blue: "bg-brand-50 text-brand-700",
+            amber: "bg-amber-50 text-amber-700",
+            green: "bg-green-50 text-green-700",
+            purple: "bg-purple-50 text-purple-700",
+            indigo: "bg-indigo-50 text-indigo-700",
+            orange: "bg-orange-50 text-orange-700",
           };
           return (
             <div key={stat.label} className="bg-card rounded-xl border border-line p-5">

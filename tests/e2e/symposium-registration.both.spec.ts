@@ -79,8 +79,34 @@ test("trainee can submit registration → admin approves → trainee sees confir
     // submit — workshop picks optional and we want to assert the
     // base "no workshops picked → cross-prompt fires" path on the
     // success page.
-    await expect(trainee.getByText(/not guaranteed until admin approval/i)).toBeVisible();
-    await trainee.getByRole("button", { name: /submit for approval/i }).click();
+    // The register page renders ONE OF TWO forms, and they word the
+    // approval gate differently:
+    //
+    //   RegistrationForm       — signed in AND the event has active
+    //                            workshops. Banner: "Your spot is not
+    //                            guaranteed until admin approval".
+    //                            Button: "Submit for approval".
+    //   SimpleRegistrationForm — everyone else. Banner: "Pending admin
+    //                            approval." Button: "Request a spot".
+    //
+    // This spec was pinned to the rich variant's wording. Both seeded
+    // 2026 events currently have ZERO workshops (the symposium and
+    // Training Week were split into separate events), so the simple
+    // form is what actually renders and the assertions could not match
+    // any wording on the page. What this step is really checking is
+    // "the approval gate is disclosed before submit" — true of both —
+    // so match either, and record which one ran so a silent switch
+    // between variants stays visible in the report.
+    const richBanner = trainee.getByText(/not guaranteed until admin approval/i);
+    const simpleBanner = trainee.getByText(/pending admin approval/i);
+    await expect(richBanner.or(simpleBanner).first()).toBeVisible();
+
+    const variant = (await richBanner.count()) > 0 ? "RegistrationForm (workshops)" : "SimpleRegistrationForm (no workshops)";
+    test.info().annotations.push({ type: "form-variant", description: variant });
+
+    await trainee
+      .getByRole("button", { name: /submit for approval|request a spot/i })
+      .click();
 
     // ── 3. Success page in pending state
     await trainee.waitForURL(new RegExp(SUCCESS_PATH.replace(/\//g, "\\/")));

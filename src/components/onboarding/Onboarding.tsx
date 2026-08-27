@@ -313,7 +313,23 @@ interface CardProps {
 function CardBody({ step, stepIdx, total, onNext, onBack, onMinimize, onDismiss, onCta, showNavHint }: CardProps) {
   const isLast = stepIdx === total - 1;
   return (
-    <div className="bg-card rounded-2xl shadow-2xl shadow-brand-900/15 border border-line p-5 max-w-sm w-full animate-slide-up-in">
+    // role="region" + a name, NOT role="dialog": this card is non-modal
+    // (Minimize keeps it around, the page underneath stays usable, and
+    // focus is never trapped), so announcing it as a dialog would
+    // promise modality the component does not implement.
+    //
+    // The name is also what makes it a landmark. The card portals to
+    // <body>, outside the layout's <main>, so its heading and body text
+    // were page content owned by no landmark at all — axe's `region`
+    // rule fired on every audited route, since the tour opens over all
+    // of them. An unnamed role="region" is NOT a landmark, so the label
+    // is load-bearing here, not decoration. Same shape the cookie
+    // consent banner already uses to satisfy this rule.
+    <div
+      role="region"
+      aria-label={`Product tour, step ${stepIdx + 1} of ${total}`}
+      className="bg-card rounded-2xl shadow-2xl shadow-brand-900/15 border border-line p-5 max-w-sm w-full animate-slide-up-in"
+    >
       <div className="flex items-start gap-2 mb-3">
         <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 text-white flex items-center justify-center shadow-sm shrink-0">
           <Sparkles size={14} />
