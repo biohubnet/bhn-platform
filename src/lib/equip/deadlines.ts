@@ -51,7 +51,26 @@ export const nextOpenDeadline = cache(async (stream: EquipStream): Promise<Deadl
   const rows = await prisma.equipDeadline.findMany({
     where: {
       stream,
-      status: { in: ["open", "extended"] },
+      // Everything except a window an admin deliberately shut.
+      //
+      // This used to require status "open"/"extended", which made the
+      // gate depend on a background job having already flipped the row
+      // — so a round could be genuinely open for hours while the
+      // database still said "scheduled" and applicants were refused.
+      //
+      // It is safe to include "scheduled" ONLY because windows now hand
+      // over at the exact instant the previous one closes (see
+      // venturConnectMonthlyDeadlines in calendar.ts). Given that, the
+      // earliest non-closed row whose deadline is still ahead IS the
+      // live round, by construction: its predecessor's deadline has
+      // passed, which is the same moment this one opened. Under the old
+      // opens-on-the-1st scheme this would have been wrong — it would
+      // have let someone submit during the gap between rounds.
+      //
+      // Reconciliation still runs on the cron, but for the BADGES the
+      // admin sees. Whether an applicant can submit no longer waits on
+      // it.
+      status: { not: "closed" },
       deadlineAt: { gte: now },
     },
     orderBy: { deadlineAt: "asc" },
@@ -66,7 +85,8 @@ export const nextOpenDeadlines = cache(async (): Promise<Record<EquipStream, Dea
   const now = new Date();
   const rows = await prisma.equipDeadline.findMany({
     where: {
-      status: { in: ["open", "extended"] },
+      // Same rule as nextOpenDeadline above — see the reasoning there.
+      status: { not: "closed" },
       deadlineAt: { gte: now },
     },
     orderBy: { deadlineAt: "asc" },
