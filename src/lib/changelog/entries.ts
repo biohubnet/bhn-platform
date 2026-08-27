@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Security · course package files now require an active enrolment
+  {
+    title: "Course files are no longer readable without an enrolment",
+    body: "Course packages — the actual lesson files behind an interactive course — were being served to anyone who had the link, with no check that they were signed in, let alone enrolled. Some of those courses cost 3,500 credits.\n\nThey're now behind your enrolment. When you open a course, the platform checks that your enrolment is active and issues a short-lived pass for that course's files; everything the course loads after that is checked against it. You'll see a brief \"Preparing your course…\" moment at launch where previously the player started immediately.\n\nIf your enrolment isn't active — waiting on approval, or you've left the course — the player now explains that instead of failing with a broken-package error.",
+    kind: "fix",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Security · course access checks the enrolment, not just its existence
   {
     title: "Course access now checks whether your enrolment is actually active",

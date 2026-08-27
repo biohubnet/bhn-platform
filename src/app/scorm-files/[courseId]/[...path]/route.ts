@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { GetObjectCommand } from "@aws-sdk/client-s3";
 import { r2, R2_BUCKET } from "@/lib/r2";
 import { Readable } from "stream";
+import { getSession } from "@/lib/auth";
+import { verifyGrant, grantCookieName } from "@/lib/scorm/grant";
 
 export const runtime = "nodejs";
 
@@ -18,18 +20,47 @@ export const runtime = "nodejs";
 // keys (api/courses/[id]/upload-scorm/route.ts:59-60), and the assets are
 // fetched by the package's own internal relative links, so there is no URL to
 // hang a version on. A long TTL would pin stale course content at the edge with
-// no way to bust it. One hour matches the staleness this route already had, and
-// still absorbs essentially the whole launch burst. If you ever need a long TTL,
-// version the prefix first (`scorm/<courseId>/<version>/...`) so relative links
-// resolve under it, then this can safely become immutable.
-const CACHE_CONTROL = "public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400";
+// no way to bust it.
+//
+// `private`, NOT `public`: these responses are now authorised per viewer, so a
+// shared cache must never hold one. This route previously served every asset of
+// every package to anyone who knew a courseId, with `public, s-maxage`, which
+// meant paid course content was readable without logging in AND was being
+// handed out by the edge without a function ever running. Losing `s-maxage` is
+// the real cost of fixing that — the browser cache still absorbs repeats within
+// a sitting, and the per-asset check below is an HMAC verify with no database
+// round trip, so the remaining cost is function time rather than query load.
+const CACHE_CONTROL = "private, max-age=3600, stale-while-revalidate=86400";
 
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ courseId: string; path: string[] }> }
 ) {
-  if (!r2) return new NextResponse("R2 not configured", { status: 500 });
   const { courseId, path } = await params;
+
+  // Entitlement. The grant cookie is minted once per launch by
+  // /api/scorm/grant, which does the real enrollment check; here we only
+  // verify a signature and an expiry, so this costs no database work
+  // however many hundreds of files a package contains.
+  //
+  // The session is still required: the grant is bound to a user id, so a
+  // cookie lifted from one account is useless in another.
+  const session = await getSession();
+  const userId = (session?.user as { id?: string } | undefined)?.id;
+  if (!userId) return new NextResponse("Unauthorized", { status: 401 });
+
+  const granted = verifyGrant(
+    req.cookies.get(grantCookieName(courseId))?.value,
+    userId,
+    courseId,
+    Date.now(),
+  );
+  if (!granted) return new NextResponse("Forbidden", { status: 403 });
+
+  // After the entitlement check, deliberately — an anonymous caller has
+  // no business learning whether our storage is configured.
+  if (!r2) return new NextResponse("R2 not configured", { status: 500 });
+
   const key = `scorm/${courseId}/${path.join("/")}`;
   const inm = req.headers.get("if-none-match") ?? undefined;
 

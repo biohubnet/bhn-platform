@@ -1,7 +1,7 @@
 "use client";
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ExternalLink } from "lucide-react";
+import { ArrowLeft, ExternalLink, Loader2, ShieldAlert } from "lucide-react";
 import Link from "next/link";
 
 interface ScormPlayerProps {
@@ -38,6 +38,31 @@ export function ScormPlayer({
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const dataRef = useRef<Record<string, string>>({});
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Package assets are served behind a signed, per-course grant cookie
+  // (see lib/scorm/grant.ts). It has to exist BEFORE the iframe starts
+  // fetching, or the package's first request 403s and the loader shows
+  // its "didn't return a usable response" error. So the iframe is held
+  // back one round trip rather than raced against the grant.
+  const [grant, setGrant] = useState<"pending" | "ok" | "denied">("pending");
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/scorm/grant", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ courseId }),
+    })
+      .then((r) => {
+        if (!cancelled) setGrant(r.ok ? "ok" : "denied");
+      })
+      .catch(() => {
+        if (!cancelled) setGrant("denied");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [courseId]);
 
   const saveData = useCallback(async (data: Record<string, string>) => {
     const isScorm12 = scormVersion === "SCORM_12";
@@ -256,14 +281,38 @@ export function ScormPlayer({
        * navigation is handled by the SCORM content internally
        * (it's a self-contained subapp) and the LMS Back button
        * in the top bar covers exit. */}
-      <iframe
-        ref={iframeRef}
-        src={loaderUrl}
-        className="flex-1 w-full border-0"
-        title={courseTitle}
-        allow="fullscreen"
-        sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
-      />
+      {grant === "pending" && (
+        <div className="flex-1 w-full flex items-center justify-center gap-3 text-sm text-white/70">
+          <Loader2 size={16} className="animate-spin" />
+          Preparing your course…
+        </div>
+      )}
+      {grant === "denied" && (
+        <div className="flex-1 w-full flex flex-col items-center justify-center gap-3 px-6 text-center">
+          <ShieldAlert size={28} className="text-amber-400" />
+          <p className="text-white text-sm font-medium">This course isn&apos;t open to you right now.</p>
+          <p className="text-white/70 text-sm max-w-md">
+            Your enrolment isn&apos;t active — it may be waiting on admin approval, or you may have
+            left the course. Open the course page to see where it stands.
+          </p>
+          <Link
+            href={`/courses/${courseId}`}
+            className="mt-1 inline-flex items-center gap-1.5 bg-white/10 hover:bg-white/15 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+          >
+            Back to course
+          </Link>
+        </div>
+      )}
+      {grant === "ok" && (
+        <iframe
+          ref={iframeRef}
+          src={loaderUrl}
+          className="flex-1 w-full border-0"
+          title={courseTitle}
+          allow="fullscreen"
+          sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
+        />
+      )}
     </div>
   );
 }
