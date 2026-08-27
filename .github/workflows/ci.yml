@@ -1,0 +1,157 @@
+name: CI
+
+# The three gates the stack description claimed existed and did not:
+# build/typecheck, unit, and a schema check. E2E is covered separately by
+# e2e-playwright.yml, which waits on the Vercel preview.
+#
+# Runs on PRs and on pushes to main. Pushes matter here: main is pushed to
+# directly in this repo, so a PR-only gate would let most changes through
+# ungated.
+
+on:
+  pull_request:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: "Build + typecheck"
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "npm"
+      - name: Install deps
+        # --ignore-scripts skips prisma's postinstall, which wants a live
+        # database. We generate the client explicitly in the next step.
+        run: npm ci --ignore-scripts
+      - name: Generate Prisma client
+        run: npx prisma generate
+      - name: Typecheck
+        run: npx tsc --noEmit
+      - name: Build
+        # NOT `npm run build` — that script is `prisma generate && prisma
+        # migrate deploy && next build`, and the migrate step would run
+        # against whatever DATABASE_URL resolves to. `next build` alone
+        # needs no database: only 10 of ~667 routes prerender and none of
+        # them reads Prisma, so an unreachable host is fine and is the
+        # point — it proves the build cannot silently depend on one.
+        run: npx next build
+        env:
+          DATABASE_URL: "postgresql://nobody:nobody@127.0.0.1:1/nodb"
+          DIRECT_URL: "postgresql://nobody:nobody@127.0.0.1:1/nodb"
+          NEXTAUTH_SECRET: "ci-build-only-not-a-real-secret"
+          NEXTAUTH_URL: "http://localhost:3001"
+
+  unit:
+    name: "Unit tests"
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "npm"
+      - run: npm ci --ignore-scripts
+      - name: Generate Prisma client
+        # The unit suite imports route modules, which transitively import
+        # the Prisma client.
+        run: npx prisma generate
+      - name: Run unit tests
+        run: npm run test:page-review
+        env:
+          DATABASE_URL: "postgresql://nobody:nobody@127.0.0.1:1/nodb"
+          DIRECT_URL: "postgresql://nobody:nobody@127.0.0.1:1/nodb"
+          NEXTAUTH_SECRET: "ci-unit-only-not-a-real-secret"
+
+  schema:
+    name: "Schema + migrations (clean Postgres 16)"
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # ADVISORY — and it currently FAILS. That is the finding, not a bug in
+    # this job. Rehearsed against Postgres 16.14 + pgvector before adding
+    # it: the chain stops at migration 29 of 135 with
+    #   column "accountKind" does not exist
+    # because three migrations dated 2026-05-13 (drop_sandbox_kind,
+    # clear_hr_demo_data, clear_demo_workspaces) reference a column that
+    # 20260516000000_sandbox_and_demo_accounts creates three days LATER.
+    # Production is fine — it was migrated forward in real time, so the
+    # column existed when those ran — but a database built from history
+    # cannot be stood up. No staging, no fresh local DB, no rebuild from
+    # schema alone.
+    #
+    # It is NOT fixable by editing those three files: _prisma_migrations
+    # stores a checksum per migration, and `migrate deploy` refuses a
+    # migration whose content changed after it was applied. Editing them
+    # would break deploys on production instead. The real fix is to
+    # baseline — snapshot the current schema as an initial migration for
+    # fresh environments — which is a deliberate decision, not a drive-by.
+    #
+    # Kept and left running so the breakage is visible on every PR rather
+    # than forgotten. Flip continue-on-error off the day it goes green.
+    continue-on-error: true
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: bhn_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      # Throwaway container. Deliberately NOT a secret and deliberately not
+      # the production URL — this job's whole purpose is to prove the
+      # migration chain replays from nothing.
+      DATABASE_URL: "postgresql://postgres:postgres@127.0.0.1:5432/bhn_ci"
+      DIRECT_URL: "postgresql://postgres:postgres@127.0.0.1:5432/bhn_ci"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "npm"
+      - run: npm ci --ignore-scripts
+
+      - name: Enable pgvector
+        # Two migrations do `CREATE EXTENSION IF NOT EXISTS vector`, which
+        # needs the extension available in the image. postgres:16 does not
+        # ship it, so install it before replaying.
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-16-pgvector || true
+          PGPASSWORD=postgres psql -h 127.0.0.1 -U postgres -d bhn_ci \
+            -c 'CREATE EXTENSION IF NOT EXISTS vector' || echo "pgvector unavailable in image; migrations will report if they need it"
+
+      - name: Validate schema
+        run: npx prisma validate
+
+      - name: Replay every migration on an empty database
+        # The real check: 135 hand-written SQL migrations, applied in order
+        # to a database with nothing in it. Catches a migration that only
+        # works against the current production state.
+        run: npx prisma migrate deploy
+
+      - name: Schema drift check
+        # After replaying, the database must match schema.prisma exactly.
+        # A non-empty diff means someone edited the schema without adding
+        # the migration for it — the failure mode this job exists to catch.
+        run: |
+          npx prisma migrate diff \
+            --from-url "$DATABASE_URL" \
+            --to-schema-datamodel prisma/schema.prisma \
+            --exit-code \
+          && echo "No drift: migrations reproduce schema.prisma exactly."
