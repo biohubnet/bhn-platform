@@ -50,6 +50,11 @@ jobs:
         # point — it proves the build cannot silently depend on one.
         run: npx next build
         env:
+          # Same heap story as the typecheck step above — next build on
+          # ~667 routes exceeds the runner's default and dies with
+          # "Ineffective mark-compacts near heap limit". The runner has
+          # 16 GB; this asks for half.
+          NODE_OPTIONS: "--max-old-space-size=8192"
           DATABASE_URL: "postgresql://nobody:nobody@127.0.0.1:1/nodb"
           DIRECT_URL: "postgresql://nobody:nobody@127.0.0.1:1/nodb"
           NEXTAUTH_SECRET: "ci-build-only-not-a-real-secret"
