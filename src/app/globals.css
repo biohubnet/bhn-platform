@@ -4399,3 +4399,28 @@ h1, h2, h3 {
   .ds-wayfinding__routes,
   .ds-wayfinding__field { display: none; }
 }
+
+/* ════════════════════════════════════════════════════════════════
+ * Recessed detail panel
+ * ════════════════════════════════════════════════════════════════
+ *
+ * The half of a split row that carries facts rather than actions —
+ * the enrolment details beside a pathway programme, for instance.
+ *
+ * `bg-raised` was the obvious choice and is wrong in one theme.
+ * Measured across all seventeen: raised sits darker than the card on
+ * the light themes and lighter on the dark ones, which is correct —
+ * on a dark theme a DARKER panel sinks into the page background
+ * instead of separating from it. But Mist is glass: its card,
+ * elevated and raised all resolve to white, so the panel vanished
+ * there entirely.
+ *
+ * Mixing a little foreground into the card gets the right direction
+ * everywhere from one rule, because every theme's `--fg` is already
+ * the opposite end of its own surface: dark ink on the light themes,
+ * light ink on the dark ones, and on Mist a slate that finally gives
+ * the panel an edge.
+ */
+.detail-panel {
+  background: color-mix(in srgb, var(--fg) 7%, var(--card-solid));
+}

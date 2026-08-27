@@ -112,10 +112,11 @@ function Detail({ label, children }: { label: string; children: React.ReactNode 
  * enrolment facts — when it runs, when to apply by, what it costs, how
  * it is delivered and by whom.
  *
- * The panel is `bg-raised`, the deepest surface token, rather than a
- * literal grey. Literal grey would be a light slab on Dark, Nightfall
- * and Hitech; the token is the same ROLE — recessed relative to the
- * card — in every theme.
+ * The panel uses `.detail-panel` rather than a literal grey, which
+ * would be a light slab on Dark, Nightfall and Hitech. See its
+ * definition in globals.css for why it mixes foreground into the card
+ * instead of using `bg-raised` — Mist's surfaces are all white, so
+ * `bg-raised` made the partition disappear there.
  */
 function ProgrammeRow({ p }: { p: PathwayProgramme }) {
   return (
@@ -150,7 +151,7 @@ function ProgrammeRow({ p }: { p: PathwayProgramme }) {
         </div>
 
         {/* Enrolment detail — the recessed half */}
-        <div className="flex-1 min-w-0 p-3.5 bg-raised border-t sm:border-t-0 sm:border-l border-line">
+        <div className="flex-1 min-w-0 p-3.5 detail-panel border-t sm:border-t-0 sm:border-l border-line">
           <div className="grid grid-cols-2 gap-x-4 gap-y-3">
             <Detail label="Session dates">
               {p.sessionDates ?? <span className="text-muted">To be announced</span>}
