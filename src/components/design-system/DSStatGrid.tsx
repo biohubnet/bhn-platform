@@ -14,6 +14,7 @@
  */
 import type { ReactNode } from "react";
 import { useDesignSystem } from "@/components/ui/DesignSystemProvider";
+import { inheritsFrom } from "@/lib/design-system/registry";
 
 const GRADIENT_TONES = ["brand", "violet", "rose", "emerald", "amber"] as const;
 export type StatTone = (typeof GRADIENT_TONES)[number];
@@ -21,7 +22,7 @@ export type StatTone = (typeof GRADIENT_TONES)[number];
 /** Wraps a row of <DSStat> children. Use this so the layout switch
  *  happens in ONE place, not on every stat. */
 export function DSStatGrid({ children }: { children: ReactNode }) {
-  const { designSystem } = useDesignSystem();
+  const designSystem = inheritsFrom(useDesignSystem().designSystem);
   if (designSystem === "studio") {
     // Studio tiles use the asymmetric blob-corner radius (organic-card /
     // organic-card-alt) and a translucent backdrop-blur fill. The
@@ -115,7 +116,7 @@ export function DSStat({
   accent,
   onDark = false,
 }: StatProps) {
-  const { designSystem } = useDesignSystem();
+  const designSystem = inheritsFrom(useDesignSystem().designSystem);
   const formatted = typeof value === "number" ? value.toLocaleString() : value;
 
   if (designSystem === "studio") {

@@ -62,6 +62,13 @@ export const DESIGN_SYSTEMS = [
       "Organic, kinetic, employer-portal vibe. Full-bleed gradient mesh hero with drifting blobs + a curve-down divider, asymmetric blob-cornered stat tiles (organic-card / organic-card-alt), gradient icon disks. Extracted from the HR overview; auto-applied to /employer/* and the HR-preview admin block.",
     category: "foundation",
   },
+  {
+    id: "wayfinding",
+    name: "Wayfinding",
+    description:
+      "Cinematic everywhere except the page header, which becomes a calm ruled signage plate: hairline-bordered card, tracked eyebrow on a measured rule, Karla display title, and a small routing diagram whose three feeder lines slowly reconfigure and converge on one terminal node. Nordic hospital wayfinding, not a dashboard banner.",
+    category: "foundation",
+  },
 ] as const;
 
 export const DESIGN_SYSTEM_CATEGORIES = {
@@ -90,3 +97,27 @@ export function isValidDesignSystem(id: string | null | undefined): id is Design
  *  route-scopes itself to Studio via its own layout, and every other
  *  surface inherits this default. */
 export const DEFAULT_DESIGN_SYSTEM: DesignSystemId = "cinematic";
+
+/** Some design systems are *deltas* rather than whole vocabularies.
+ *  "Wayfinding" is one: it re-art-directs the page header only and
+ *  leaves every other primitive exactly as Cinematic renders it.
+ *
+ *  Rather than teach four primitives about a fourth id (and risk
+ *  each one silently falling through to Classic — the documented
+ *  default for unknown ids — which would have dropped the whole
+ *  platform back to the plain look the moment an admin switched),
+ *  every primitive EXCEPT DSPageHeader resolves the active id
+ *  through this map first. DSPageHeader is the one place that
+ *  branches on the raw id.
+ *
+ *  Adding another delta system: add it here, and only implement the
+ *  primitives it actually overrides. */
+const INHERITS: Partial<Record<DesignSystemId, DesignSystemId>> = {
+  wayfinding: "cinematic",
+};
+
+/** Resolve a design-system id to the id whose rendering a
+ *  non-overriding primitive should use. Identity for foundations. */
+export function inheritsFrom(id: DesignSystemId): DesignSystemId {
+  return INHERITS[id] ?? id;
+}

@@ -12,6 +12,7 @@
  */
 import type { ReactNode } from "react";
 import { useDesignSystem } from "@/components/ui/DesignSystemProvider";
+import { inheritsFrom } from "@/lib/design-system/registry";
 import { DSEyebrow } from "./DSEyebrow";
 
 interface Props {
@@ -30,7 +31,7 @@ interface Props {
 }
 
 export function DSSection({ title, eyebrow, icon, tint = false, children }: Props) {
-  const { designSystem } = useDesignSystem();
+  const designSystem = inheritsFrom(useDesignSystem().designSystem);
 
   if (designSystem === "studio") {
     // Studio sections mirror the HR-overview list cards: rounded-2xl

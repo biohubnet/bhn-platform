@@ -21,9 +21,10 @@
  *               prop where context warrants)
  */
 import { useDesignSystem } from "@/components/ui/DesignSystemProvider";
+import { inheritsFrom } from "@/lib/design-system/registry";
 
 export function DSEyebrow({ children, tone }: { children: React.ReactNode; tone?: "default" | "onDark" }) {
-  const { designSystem } = useDesignSystem();
+  const designSystem = inheritsFrom(useDesignSystem().designSystem);
   const isDark = tone === "onDark";
 
   if (designSystem === "cinematic") {

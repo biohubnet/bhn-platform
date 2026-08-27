@@ -12,6 +12,14 @@
  *                 reads them and the existing per-theme contrast
  *                 layer (bottom scrim + light-hero text overrides
  *                 for icecream) ensures readable text everywhere.
+ *   Wayfinding  — a calm ruled signage plate instead of a banner:
+ *                 hairline-bordered card, accent mark + tracked
+ *                 eyebrow on a measured rule, Karla display title,
+ *                 and a small routing diagram at the right whose
+ *                 feeder lines slowly reconfigure and converge on
+ *                 one terminal node. All colour comes from theme
+ *                 tokens (see `.ds-wayfinding` in globals.css) so
+ *                 it holds across all seventeen themes.
  *   Studio      — full-bleed gradient-mesh hero with two drifting
  *                 blob shapes + a curve-down divider. Eyebrow on
  *                 brand-light text, gradient-text accent on the
@@ -28,7 +36,7 @@
  *     description="Health, helpfulness, and findings for AutoPipette."
  *   />
  */
-import type { ReactNode } from "react";
+import { useId, type ReactNode } from "react";
 import { useDesignSystem } from "@/components/ui/DesignSystemProvider";
 import { DSEyebrow } from "./DSEyebrow";
 import { LayoutBannersSlot } from "@/components/layout/LayoutBanners";
@@ -64,6 +72,10 @@ interface Props {
 
 export function DSPageHeader({ eyebrow, title, description, icon, aside, actions }: Props) {
   const { designSystem } = useDesignSystem();
+
+  if (designSystem === "wayfinding") {
+    return <WayfindingHeader {...{ eyebrow, title, description, icon, aside, actions }} />;
+  }
 
   if (designSystem === "studio") {
     return (
@@ -358,6 +370,128 @@ export function DSPageHeader({ eyebrow, title, description, icon, aside, actions
     {/* Platform rule: hero is the absolute top. Layout-level
         banners render immediately after via the context slot. */}
     <LayoutBannersSlot />
+    </>
+  );
+}
+
+/** The three routing configurations. They differ in feeder COUNT and
+ *  in where each feeder merges, which is what makes the crossfade
+ *  read as a graph branching and merging rather than as lines
+ *  sliding around. Config 1 is the approved static routing and is
+ *  what reduced-motion users see. Geometry is in the 96x76 viewBox
+ *  of the diagram; the trunk always runs the same line (y=38) so the
+ *  spine stays put while the tributaries change. */
+const ROUTE_CONFIGS: readonly (readonly { readonly kind: "feed" | "trunk"; readonly d: string }[])[] = [
+  [
+    { kind: "feed", d: "M0 9 H40 Q48 9 48 17 V30 Q48 38 56 38" },
+    { kind: "feed", d: "M0 67 H24 Q32 67 32 59 V46 Q32 38 40 38" },
+    { kind: "trunk", d: "M0 38 H83" },
+  ],
+  [
+    { kind: "feed", d: "M0 5 H30 Q38 5 38 13 V30 Q38 38 46 38" },
+    { kind: "feed", d: "M0 30 H14 Q22 30 22 36 Q22 38 30 38" },
+    { kind: "feed", d: "M0 71 H46 Q54 71 54 63 V46 Q54 38 62 38" },
+    { kind: "trunk", d: "M0 38 H83" },
+  ],
+  [
+    { kind: "feed", d: "M0 20 H52 Q60 20 60 28 V32 Q60 38 68 38" },
+    { kind: "trunk", d: "M0 38 H83" },
+    { kind: "feed", d: "M56 38 Q64 38 64 46 V56 Q64 62 72 62" },
+  ],
+];
+
+/** Routing diagram. Purely decorative — `aria-hidden`, so the
+ *  animation carries no information a screen-reader user loses. */
+function RouteDiagram() {
+  // The mask needs document-unique ids. A page renders one header,
+  // but `useId` costs nothing and removes the whole class of bug
+  // where a second header (or a Studio/Wayfinding preview grid on
+  // /admin/design-system) silently steals the first one's mask.
+  const uid = useId().replace(/:/g, "");
+  const gradId = `ds-wf-grad-${uid}`;
+  const maskId = `ds-wf-mask-${uid}`;
+
+  return (
+    <svg
+      className="ds-wayfinding__routes"
+      viewBox="0 0 96 76"
+      width="96"
+      height="76"
+      fill="none"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <defs>
+        {/* Fade the routes in from the left edge so they emerge out
+            of the plate rather than being cut off by it. */}
+        <linearGradient id={gradId} gradientUnits="userSpaceOnUse" x1="-8" y1="0" x2="26" y2="0">
+          <stop offset="0" stopColor="#000000" />
+          <stop offset="1" stopColor="#ffffff" />
+        </linearGradient>
+        <mask id={maskId} maskUnits="userSpaceOnUse" x="0" y="0" width="96" height="76">
+          <rect x="0" y="0" width="96" height="76" fill={`url(#${gradId})`} />
+        </mask>
+      </defs>
+
+      <g mask={`url(#${maskId})`}>
+        {ROUTE_CONFIGS.map((paths, i) => (
+          <g key={i} className={`ds-wayfinding__cfg-${i + 1}`}>
+            {paths.map((path) => (
+              <path
+                key={path.d}
+                d={path.d}
+                className={path.kind === "trunk" ? "ds-wayfinding__trunk" : "ds-wayfinding__feed"}
+              />
+            ))}
+          </g>
+        ))}
+      </g>
+
+      {/* Terminal node — outside the mask and outside the crossfade.
+          Every configuration converges here, so it must never blink. */}
+      <circle cx="90" cy="38" r="5" className="ds-wayfinding__node" />
+      <circle cx="90" cy="38" r="2" className="ds-wayfinding__node-dot" />
+    </svg>
+  );
+}
+
+function WayfindingHeader({ eyebrow, title, description, icon, aside, actions }: Props) {
+  return (
+    <>
+      <header className="ds-wayfinding mb-8">
+        <span className="ds-wayfinding__field" aria-hidden="true" />
+
+        <div className="ds-wayfinding__label">
+          {/* The icon, when a page supplies one, BECOMES the accent
+              mark rather than sitting next to it — two marks in a row
+              at this size reads as noise. */}
+          {icon ? (
+            <span className="inline-flex items-center justify-center shrink-0 text-brand-600" aria-hidden="true">
+              {icon}
+            </span>
+          ) : (
+            <span className="ds-wayfinding__mark" aria-hidden="true" />
+          )}
+          {eyebrow && <DSEyebrow>{eyebrow}</DSEyebrow>}
+          <span className="ds-wayfinding__rule" aria-hidden="true" />
+        </div>
+
+        <div className="ds-wayfinding__body">
+          <div className="ds-wayfinding__text">
+            <h1 className="ds-wayfinding__title">{title}</h1>
+            {description && <p className="ds-wayfinding__desc">{description}</p>}
+            {actions && <div className="mt-5 flex flex-wrap items-center gap-3">{actions}</div>}
+          </div>
+          <RouteDiagram />
+        </div>
+
+        {aside && (
+          <div className="mt-6 pt-6 border-t border-line">{aside}</div>
+        )}
+      </header>
+      {/* Platform rule: hero is the absolute top. Layout-level
+          banners render immediately after via the context slot. */}
+      <LayoutBannersSlot />
     </>
   );
 }

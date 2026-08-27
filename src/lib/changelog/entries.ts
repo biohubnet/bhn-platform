@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Design system · Wayfinding page header
+  {
+    title: "Page headers are now a signage plate, not a banner",
+    body: "Every page opens on a new header. Instead of a full-bleed gradient it's a quiet ruled plate: an accent mark and the section name on a measured rule across the top, the page title below it, and at the right a small routing diagram whose feeder lines converge on a single node.\n\nThe diagram reconfigures on a slow loop — the number of branches and where they merge changes roughly every fourteen seconds — which is meant to sit under reading rather than pull at it. If your system asks for reduced motion it holds still.\n\nThe plate takes its colours from whichever theme you're on, so it reads the same way on Light as it does on Dark or Nightfall. Admins can switch back to the previous look from Admin → Design system.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── ENGAGE · Pathways expand to their programmes
   {
     title: "Pathways open up to show what's actually running",

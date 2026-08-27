@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist } from "next/font/google";
+import { Geist, Karla } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
 import { ThemeScript } from "@/components/ui/ThemeProvider";
@@ -7,6 +7,17 @@ import { I18nScript } from "@/lib/i18n/I18nProvider";
 import { getActiveDesignSystem } from "@/lib/settings";
 
 const geist = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
+
+/** Display face for the "Wayfinding" design system's page header.
+ *  One weight, latin only (~15 KB woff2, self-hosted by next/font so
+ *  there is no render-blocking Google request and no layout shift).
+ *  Karla is load-bearing for that direction rather than decorative:
+ *  its slightly condensed, flat-terminal grotesque is what makes the
+ *  header read as signage instead of as a dashboard title. Every
+ *  other design system stays on Geist — the variable is only
+ *  consumed by `.ds-wayfinding__title`, so this costs nothing on
+ *  Classic / Cinematic / Studio pages. */
+const karla = Karla({ variable: "--font-karla", subsets: ["latin"], weight: ["600"], display: "swap" });
 
 /** Pin `metadataBase` to the production canonical URL so Next.js
  *  resolves the auto-discovered `opengraph-image.tsx` route to an
@@ -66,7 +77,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html
       lang="en"
-      className={`${geist.variable} h-full antialiased`}
+      className={`${geist.variable} ${karla.variable} h-full antialiased`}
       data-design-system={activeDesignSystem}
       suppressHydrationWarning
     >

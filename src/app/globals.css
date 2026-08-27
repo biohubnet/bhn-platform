@@ -4187,3 +4187,209 @@ h1, h2, h3 {
   .print-section { break-inside: avoid; }
   .page-break { break-before: page; }
 }
+
+/* ════════════════════════════════════════════════════════════════
+ * "Wayfinding" design system — page-header plate
+ * ════════════════════════════════════════════════════════════════
+ *
+ * A Nordic hospital signage plate rather than a dashboard banner:
+ * a calm ruled field where three quiet routes converge on one
+ * terminal node. Used only by DSPageHeader's `wayfinding` branch.
+ *
+ * The original art direction committed to a fixed bone-and-pine
+ * palette (#F7F9F8 plate, #245049 accent). That cannot ship as-is
+ * on a platform with seventeen colour themes — a hardcoded light
+ * plate is a bright slab on Dark / Midnight / Hitech. Every colour
+ * below is therefore mapped to the theme tokens that play the same
+ * ROLE, so the composition, rhythm and type carry the direction and
+ * each theme supplies its own ink:
+ *
+ *   plate      #F7F9F8  →  var(--card-solid)
+ *   border     #D3DAD7  →  var(--line)   (bottom: --line-strong)
+ *   title      #17211F  →  var(--fg)
+ *   body       #414D4A  →  var(--fg-muted)
+ *   eyebrow    #2A5A50  →  var(--brand-700)   [via DSEyebrow]
+ *   trunk/node #245049  →  var(--brand-600)
+ *   feeders    #8E9E99  →  var(--fg-subtle)
+ *   ruled field         →  --brand-600 at 8%, masked to fade left
+ */
+.ds-wayfinding {
+  /* Accent routed through local vars so a theme whose brand ramp
+   * misbehaves on this surface can be corrected in ONE place (see
+   * the Aurora block below) instead of at five usage sites. */
+  --wf-accent: var(--brand-600);
+  --wf-eyebrow: var(--brand-700);
+  position: relative;
+  isolation: isolate;
+  padding: 22px 30px 24px;
+  background: var(--card-solid);
+  border: 1px solid var(--line);
+  border-bottom-color: var(--line-strong);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+/* Ruled field — 10px horizontal rules on the right third, faded in
+ * from the left so they never run under the description text. The
+ * z-index:-1 keeps it behind content within the plate's own stacking
+ * context (established by `isolation: isolate` above), so it cannot
+ * escape behind the page background. */
+.ds-wayfinding__field {
+  position: absolute;
+  inset: 0 0 0 auto;
+  z-index: -1;
+  width: min(46%, 380px);
+  pointer-events: none;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--wf-accent) 8%, transparent) 0,
+    color-mix(in srgb, var(--wf-accent) 8%, transparent) 1px,
+    transparent 1px,
+    transparent 10px
+  );
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 72%);
+  mask-image: linear-gradient(to right, transparent 0%, #000 72%);
+}
+
+.ds-wayfinding__label { display: flex; align-items: center; gap: 10px; }
+
+/* DSEyebrow paints itself `text-brand-700`, which is right on
+ * sixteen themes. This unlayered rule re-points it at the local var
+ * so the Aurora correction below reaches it — unlayered beats a
+ * Tailwind utility regardless of specificity, and the default value
+ * is `--brand-700`, so nothing changes anywhere else. */
+.ds-wayfinding__label > p { color: var(--wf-eyebrow); }
+
+/* Aurora inverts its brand ramp: on this plate, brand-400/600/700
+ * measure 1.79 / 1.86 / 1.45 against the card — the eyebrow is
+ * effectively invisible and the routing diagram nearly so. Only
+ * brand-500 clears AA there (5.20), so Aurora alone takes the
+ * lighter step. Measured across all seventeen themes; every other
+ * one is >= 4.21 on the accent and >= 7.0 on the eyebrow. */
+[data-theme="aurora"] .ds-wayfinding {
+  --wf-accent: var(--brand-500);
+  --wf-eyebrow: var(--brand-500);
+}
+
+/* Square accent mark. Sized to the 12px eyebrow the platform
+ * standardised on — the source direction used a 10.5px eyebrow with
+ * a 5px mark; both scale up together so the optical weight holds. */
+.ds-wayfinding__mark {
+  flex: 0 0 auto;
+  width: 6px;
+  height: 6px;
+  border-radius: 1.5px;
+  background: var(--wf-accent);
+}
+
+/* Measured rule running out to the plate edge, with a single tick
+ * near its end — the detail that makes it read as a signage rule
+ * rather than a generic divider. */
+.ds-wayfinding__rule {
+  position: relative;
+  flex: 1 1 auto;
+  height: 1px;
+  margin-left: 5px;
+  background: var(--line);
+}
+.ds-wayfinding__rule::after {
+  content: "";
+  position: absolute;
+  right: 6px;
+  top: 0;
+  width: 1px;
+  height: 7px;
+  background: var(--line-strong);
+}
+
+.ds-wayfinding__body {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 28px;
+  margin-top: 16px;
+}
+.ds-wayfinding__text { flex: 1 1 auto; min-width: 0; }
+
+.ds-wayfinding__title {
+  margin: 0;
+  font-family: var(--font-karla), var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  font-weight: 600;
+  font-size: clamp(1.5rem, 1.15rem + 1.4vw, 1.8125rem);
+  line-height: 1.1;
+  letter-spacing: -0.021em;
+  color: var(--fg);
+}
+.ds-wayfinding__desc {
+  margin: 9px 0 0;
+  max-width: 54ch;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--fg-muted);
+  text-wrap: pretty;
+}
+
+/* ── Routing diagram ─────────────────────────────────────────── */
+.ds-wayfinding__routes {
+  flex: 0 0 auto;
+  display: block;
+  width: 96px;
+  height: 76px;
+  margin-bottom: 2px;
+}
+.ds-wayfinding__feed {
+  fill: none;
+  stroke: var(--fg-subtle);
+  stroke-width: 1.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.ds-wayfinding__trunk {
+  fill: none;
+  stroke: var(--wf-accent);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.ds-wayfinding__node { fill: none; stroke: var(--wf-accent); stroke-width: 1.4; }
+.ds-wayfinding__node-dot { fill: var(--wf-accent); }
+
+/* Motion: three routing CONFIGURATIONS crossfade over 42 s. The
+ * point is that the feeder count and merge points differ between
+ * them (2 feeders → 3 feeders → 1 feeder plus a split past the
+ * node), so the graph visibly branches and merges rather than
+ * just drifting. Each config holds still for ~9 s and takes ~4.5 s
+ * to hand over, which puts a state change roughly every 14 s —
+ * slow enough to sit under reading without pulling focus.
+ *
+ * Declared here rather than as Tailwind utilities on purpose:
+ * `@keyframes` cannot be expressed inline, and the unlayered
+ * `[data-theme] *` transition rule further up this file overrides
+ * layered transition utilities (it does not touch `animation`,
+ * which is why animation works here where `transition-*` would
+ * not). */
+@keyframes ds-wf-cfg1 { 0%, 22% { opacity: 1 } 33%, 89% { opacity: 0 } 100% { opacity: 1 } }
+@keyframes ds-wf-cfg2 { 0%, 22% { opacity: 0 } 33%, 55% { opacity: 1 } 66%, 100% { opacity: 0 } }
+@keyframes ds-wf-cfg3 { 0%, 55% { opacity: 0 } 66%, 89% { opacity: 1 } 100% { opacity: 0 } }
+.ds-wayfinding__cfg-1 { animation: ds-wf-cfg1 42s ease-in-out infinite; }
+.ds-wayfinding__cfg-2 { animation: ds-wf-cfg2 42s ease-in-out infinite; }
+.ds-wayfinding__cfg-3 { animation: ds-wf-cfg3 42s ease-in-out infinite; }
+
+/* Reduced motion: hold configuration 1 — the approved static
+ * routing — and stop the crossfade entirely. */
+@media (prefers-reduced-motion: reduce) {
+  .ds-wayfinding__cfg-1 { animation: none; opacity: 1; }
+  .ds-wayfinding__cfg-2,
+  .ds-wayfinding__cfg-3 { animation: none; opacity: 0; }
+}
+
+/* Narrow plates: drop both decorations. The routes diagram has no
+ * room, and the ruled field would sit directly behind the
+ * description — the copy runs the full width at this size, so
+ * there is no column left for the rules to occupy. Texture behind
+ * body text is exactly the thing not to ship. */
+@media (max-width: 560px) {
+  .ds-wayfinding { padding: 20px 20px 22px; }
+  .ds-wayfinding__routes,
+  .ds-wayfinding__field { display: none; }
+}

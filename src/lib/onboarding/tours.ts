@@ -30,9 +30,20 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.09.12a";
+export const TOUR_VERSION = "2026.09.13a";
 
 export const TOUR_STEPS: TourStep[] = [
+  // ─── Design system · Wayfinding page header — Sep 2026
+  {
+    id: "design-system.wayfinding-header",
+    title: "A calmer page header",
+    body: "The gradient banner at the top of every page has been replaced by a ruled signage plate — section name on a measured rule, title below, and a small routing diagram at the right that slowly reconfigures as it converges on one node. It follows your theme, and it holds still if you've asked your system for reduced motion.",
+    path: "/pathways",
+    placement: "center",
+    roles: ["trainee", "evaluating", "employer", "instructor", "admin", "superadmin"],
+    cta: { label: "See it on Learning Pathways", href: "/pathways" },
+    since: "2026.09.13a",
+  },
   // ─── Workspace · Website Review → overview home — Sep 2026
   {
     id: "workspace.website-review.index",
