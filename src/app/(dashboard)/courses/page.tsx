@@ -44,7 +44,12 @@ export default async function CoursesPage({
   // because getCourseFilterOptions() below reads the rows this may create.
   await ensureCourseFilterOptions();
 
-  const subtitleDefault = "Self-paced modules, SCORM-backed simulations, and instructor-led series — all in one library. Filter by topic, delivery, provider, or run a search.";
+  // Plain description of what is here and how to narrow it. The old
+  // copy led with "SCORM-backed", which names an authoring standard
+  // rather than anything a trainee experiences, and it did not mention
+  // that the special programs and workshops live in this list too —
+  // people were not finding them.
+  const subtitleDefault = "Self-paced modules, instructor-led series and hands-on simulations, all in one place. Filter by topic, delivery mode or provider — and the special programs and workshops are in here too.";
 
   // Signed-in user's favorite course IDs. Every card is tagged with
   // `isFavorite` so the heart renders in the right state.
@@ -134,7 +139,7 @@ export default async function CoursesPage({
     <div>
       <PageHero
         eyebrow={<><BookOpen size={12} /> ENGAGE</>}
-        title={`${courses.length} courses to explore`}
+        title="Course Catalog"
         description={
           <EditableText
             copyKey="courses.subtitle"

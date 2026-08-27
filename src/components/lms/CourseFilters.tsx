@@ -87,11 +87,15 @@ export function CourseFilters({
     <section
       aria-label="Course filters"
       className={cn(
-        "rounded-2xl p-3 sm:p-4 mb-4",
-        // Dark surface, independent of theme — the filter panel reads
-        // as a control strip floating above the bright course cards.
-        "bg-slate-900 text-slate-100 ring-1 ring-slate-800",
-        "shadow-modal",
+        "rounded-xl p-3 sm:p-4 mb-4",
+        // A quiet recessed surface, not a dark slab. It used to be
+        // bg-slate-900 with a modal shadow, theme-independent — which
+        // made a row of controls read as a title block announcing
+        // itself above the catalogue. Filters are chrome; they should
+        // sit UNDER the content in the visual hierarchy, not over it.
+        // Tokens, so it recedes correctly in all seventeen themes
+        // rather than being a navy rectangle in every one.
+        "bg-elevated text-fg border border-line",
       )}
     >
       {/* Compact header row: title + featured special toggle + clear-all.
@@ -99,21 +103,22 @@ export function CourseFilters({
           reads as the loud headline action, not one more chip. */}
       <div className="flex items-center gap-2 sm:gap-3 flex-wrap mb-3">
         <div className="flex items-center gap-2 min-w-0">
-          <Filter size={13} className="text-slate-400 shrink-0" />
-          <h2 className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-300 whitespace-nowrap">
-            Filter the catalog
+          <Filter size={15} className="text-subtle shrink-0" />
+          <h2 className="text-[14px] font-bold text-fg whitespace-nowrap">
+            Filter
           </h2>
           {totalActive > 0 && (
-            <span className="text-[10px] font-semibold tabular-nums text-amber-300 whitespace-nowrap">
+            <span className="text-[11px] font-semibold tabular-nums text-brand-700 whitespace-nowrap">
               · {totalActive} active
             </span>
           )}
         </div>
 
-        {/* Featured: Special programs & workshops. Amber on dark =
-            instantly the brightest thing on the panel. When off, a soft
-            amber glow keeps it visible without being obnoxious; when on,
-            the solid amber fill + outer glow + scale make it loud. */}
+        {/* Featured: Special programs & workshops — the one loud
+            control on an otherwise quiet panel, because it is the thing
+            people were not finding. Amber against the recessed surface
+            rather than against the old dark slab: soft amber when off,
+            solid fill + glow + scale when on. */}
         <button
           type="button"
           onClick={toggleSpecial}
@@ -122,8 +127,8 @@ export function CourseFilters({
             "group ml-auto inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full transition-all",
             "ring-2 ring-inset",
             selected.special
-              ? "bg-amber-400 text-slate-900 ring-amber-300 shadow-amber-glow-strong scale-[1.02]"
-              : "bg-amber-500/10 text-amber-300 ring-amber-500/50 hover:bg-amber-500/20 hover:text-amber-200 hover:ring-amber-400 shadow-amber-glow",
+              ? "bg-amber-400 text-amber-950 ring-amber-300 shadow-amber-glow-strong scale-[1.02]"
+              : "bg-amber-50 text-amber-800 ring-amber-300 hover:bg-amber-100 hover:ring-amber-400",
           )}
         >
           <Sparkles
@@ -143,7 +148,7 @@ export function CourseFilters({
           <button
             type="button"
             onClick={clearAll}
-            className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 hover:text-slate-200 px-2 py-1 rounded-full ring-1 ring-inset ring-slate-700 hover:ring-slate-500 transition-colors"
+            className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-muted hover:text-fg px-2 py-1 rounded-full ring-1 ring-inset ring-line hover:ring-line-strong transition-colors"
           >
             <X size={10} /> Clear
           </button>
@@ -153,7 +158,7 @@ export function CourseFilters({
       {/* Three-column chip grid. Mobile stacks; md+ uses unequal widths
           so Topic (the longest cloud) gets the lion's share. Dividers
           are a subtle 1px slate line — visible on dark but not loud. */}
-      <div className="md:grid md:grid-cols-[1.8fr_1fr_1.3fr] md:divide-x md:divide-slate-800 space-y-3 md:space-y-0">
+      <div className="md:grid md:grid-cols-[1.8fr_1fr_1.3fr] md:divide-x md:divide-line space-y-3 md:space-y-0">
         <div className="md:pr-4">
           <ChipGroup
             label="Topic"
@@ -198,16 +203,16 @@ function ChipGroup({
   const sel = new Set(selected);
   return (
     <div>
-      <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-slate-400 mb-1.5">
+      <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle mb-1.5">
         {label}
         {selected.length > 0 && (
-          <span className="ml-2 text-amber-300 normal-case tracking-normal font-semibold">
+          <span className="ml-2 text-brand-700 normal-case tracking-normal font-semibold">
             · {selected.length}
           </span>
         )}
       </p>
       {values.length === 0 ? (
-        <p className="text-xs text-slate-500">No options yet.</p>
+        <p className="text-xs text-subtle">No options yet.</p>
       ) : (
         <div className="flex flex-wrap gap-1">
           {values.map((v) => {
@@ -222,12 +227,12 @@ function ChipGroup({
                   "text-[11px] px-2.5 py-0.5 rounded-full transition-colors ring-1 ring-inset",
                   on
                     ? "bg-brand-500 text-white ring-brand-400 font-semibold shadow-sm"
-                    : "bg-slate-800/60 text-slate-300 ring-slate-700 hover:bg-slate-700 hover:text-white hover:ring-slate-600",
+                    : "bg-card-solid text-fg ring-line hover:bg-raised hover:ring-line-strong",
                 )}
               >
                 {v}
                 {counts && (
-                  <span className={cn("ml-1 tabular-nums", on ? "text-white/80" : "text-slate-500")}>
+                  <span className={cn("ml-1 tabular-nums", on ? "text-white/80" : "text-subtle")}>
                     ({counts[v] ?? 0})
                   </span>
                 )}
