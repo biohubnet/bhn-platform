@@ -41,7 +41,7 @@ export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   // ── ENGAGE · Progress Tracker + course card
   {
     title: "Your credit balance is now the headline",
-    body: "The Progress Tracker used to open with how much you'd spent and leave the balance in a sentence — so the number you actually came for was one you had to work out. It leads with **credits remaining** now, at full size, with awarded and used kept underneath as supporting figures.\n\nThe bar fills once when the page opens and slows as it passes the 2,500 mark, which is the point the credit policy turns on. If you've crossed it, the marker acknowledges it as the fill goes by.\n\nCourse cards changed too: the metadata column on the right no longer sits on a dark panel, just a dividing line, and its labels now follow whichever theme you're using. And when a course description is cut short, it ends with […] so you can tell there's more to read.",
+    body: "The Progress Tracker used to open with how much you'd spent and leave the balance in a sentence — so the number you actually came for was one you had to work out. It leads with **credits remaining** now, at full size.\n\nThe bar fills once when the page opens and slows as it passes the 2,500 mark, which is the point the credit policy turns on. If you've crossed it, the marker acknowledges it as the fill goes by.\n\nCourse cards changed too: the metadata column on the right no longer sits on a dark panel, just a dividing line, and its labels now follow whichever theme you're using. And when a course description is cut short, it ends with […] so you can tell there's more to read.",
     kind: "improvement",
     visibleTo: ALL,
     daysAgo: 0,

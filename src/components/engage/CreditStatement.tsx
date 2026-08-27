@@ -19,7 +19,7 @@ import { cn } from "@/lib/utils";
  *   • The threshold marker gives exactly ONE tick as the fill crosses it.
  *     Not a loop: ambient pulsing draws the eye permanently, ages badly,
  *     and would compete with everything else on the page.
- *   • The figures count in step with the bar so the number and the fill
+ *   • The balance counts in step with the bar so the number and the fill
  *     arrive together rather than racing.
  *
  * The bar animates `transform: scaleX()`, never `width` — width reflows on
@@ -56,10 +56,9 @@ export function CreditStatement({
   const tickRef = useRef<HTMLDivElement | null>(null);
   const rafRef = useRef<number | null>(null);
 
-  // Seeded with the true values so the server render, a no-JS render and a
+  // Seeded with the true value so the server render, a no-JS render and a
   // reduced-motion render are all already correct.
   const [shownBalance, setShownBalance] = useState(balance);
-  const [shownUsed, setShownUsed] = useState(used);
 
   const fraction = total > 0 ? Math.min(1, Math.max(0, used / total)) : 0;
   const thresholdPct = total > 0 ? (threshold / total) * 100 : 0;
@@ -85,7 +84,6 @@ export function CreditStatement({
     const step = (now: number) => {
       const t = Math.min(1, (now - start) / FILL_MS);
       const eased = 1 - Math.pow(1 - t, 4);
-      setShownUsed(Math.round(used * eased));
       setShownBalance(Math.round(total - (total - balance) * eased));
       if (t < 1) rafRef.current = requestAnimationFrame(step);
     };
@@ -167,23 +165,6 @@ export function CreditStatement({
         <p className="absolute right-0 text-[10px] font-semibold text-subtle tabular-nums">
           {total.toLocaleString()}
         </p>
-      </div>
-
-      {/* Ledger foot — the two supporting figures, demoted beneath the rule
-          so the balance above keeps the headline to itself. */}
-      <div className="mt-5 pt-3.5 border-t border-line flex items-start justify-between gap-4">
-        <div>
-          <p className="text-[10px] uppercase tracking-[0.16em] font-semibold text-subtle">Awarded</p>
-          <p className="mt-0.5 text-base font-semibold tabular-nums text-fg">
-            {total.toLocaleString()}
-          </p>
-        </div>
-        <div className="text-right">
-          <p className="text-[10px] uppercase tracking-[0.16em] font-semibold text-subtle">Used</p>
-          <p className="mt-0.5 text-base font-semibold tabular-nums text-fg">
-            {shownUsed.toLocaleString()}
-          </p>
-        </div>
       </div>
     </div>
   );
