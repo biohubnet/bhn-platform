@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Design · leading hairline removed from every section label
+  {
+    title: "Section labels lost the little dash in front of them",
+    body: "Every section label on the platform used to start with a short gradient hairline — a small dash before words like UTILISATION or NEEDS YOUR ATTENTION. At that size it didn't read as an accent, it read as a stray mark, and it pushed the label out of line with the heading underneath it.\n\nIt's gone everywhere. Labels are a little larger now and line up with their headings.\n\nThe section heading and its label were also sharing a single line on some pages, which is why an icon could end up sitting on top of the label text. They stack properly now.\n\nOn the dashboard's opportunities board, the four pillars used to be told apart by the colour of that dash. The colour moved onto the label itself, so each pillar still reads as its own.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── ENGAGE · My Courses folded into the Progress Tracker
   {
     title: "My Courses and the Progress Tracker are now one page",

@@ -44,7 +44,7 @@ export function DSSection({ title, eyebrow, icon, tint = false, children }: Prop
           <header className="px-5 py-4 border-b border-line">
             {eyebrow && <div className="mb-1"><DSEyebrow>{eyebrow}</DSEyebrow></div>}
             {title && (
-              <h2 className="font-semibold text-fg inline-flex items-center gap-2 text-base">
+              <h2 className="font-semibold text-fg flex items-center gap-2 text-base">
                 {icon}
                 {title}
               </h2>
@@ -59,14 +59,14 @@ export function DSSection({ title, eyebrow, icon, tint = false, children }: Prop
   if (designSystem === "cinematic") {
     // Cinematic sections are their own rounded-3xl panel so they
     // visually rhyme with the cinematic DSPageHeader (which is also
-    // a rounded panel). The eyebrow uses the HR-overview vocabulary
-    // — subtle text colour with a sky→violet gradient hairline — so
-    // section markers read as a layer DOWN from the brand-anchored
-    // page eyebrow inside DSPageHeader.
+    // a rounded panel).
     //
-    // We don't reuse DSEyebrow here because its cinematic branch is
-    // tuned for the page header (brand-700 colour, brand-fade
-    // gradient). Section eyebrows want a subordinate look.
+    // The eyebrow used to be a local copy carrying a sky→violet
+    // gradient hairline before the label. That hairline is gone —
+    // at eyebrow size it read as a stray dash, and it pushed the
+    // label off the left edge the title aligns to. The subordinate
+    // look it existed for is now `DSEyebrow tone="subtle"`, so there
+    // is one eyebrow implementation and the style cannot regrow here.
     return (
       <section
         className="rounded-3xl bg-card border border-line overflow-hidden"
@@ -76,21 +76,9 @@ export function DSSection({ title, eyebrow, icon, tint = false, children }: Prop
         } : undefined}
       >
         <div className="px-6 sm:px-10 lg:px-14 py-8 sm:py-10">
-          {eyebrow && (
-            <p className="text-[10px] uppercase tracking-[0.28em] font-bold text-subtle mb-4 inline-flex items-center gap-2">
-              <span
-                aria-hidden
-                className="block h-px w-6"
-                style={{
-                  background:
-                    "linear-gradient(90deg, rgb(56,189,248), rgb(124,58,237))",
-                }}
-              />
-              {eyebrow}
-            </p>
-          )}
+          {eyebrow && <div className="mb-4"><DSEyebrow tone="subtle">{eyebrow}</DSEyebrow></div>}
           {title && (
-            <h2 className="text-xl sm:text-2xl font-bold text-fg tracking-tight inline-flex items-center gap-2 mb-5">
+            <h2 className="text-xl sm:text-2xl font-bold text-fg tracking-tight flex items-center gap-2 mb-5">
               {icon}
               {title}
             </h2>
@@ -106,7 +94,7 @@ export function DSSection({ title, eyebrow, icon, tint = false, children }: Prop
     <section className="rounded-2xl border border-line bg-card surface-shadow p-5 space-y-4">
       {eyebrow && <DSEyebrow>{eyebrow}</DSEyebrow>}
       {title && (
-        <h2 className="text-sm font-bold text-fg inline-flex items-center gap-2">
+        <h2 className="text-sm font-bold text-fg flex items-center gap-2">
           {icon}
           {title}
         </h2>

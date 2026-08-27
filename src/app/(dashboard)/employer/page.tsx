@@ -819,14 +819,7 @@ export default async function EmployerHomePage() {
 
 function SectionEyebrow({ children }: { children: React.ReactNode }) {
   return (
-    <p className="text-[10px] uppercase tracking-[0.28em] font-bold text-subtle mb-4 inline-flex items-center gap-2">
-      <span
-        aria-hidden
-        className="w-6 h-px"
-        style={{
-          background: "linear-gradient(90deg, rgb(56,189,248), rgb(124,58,237))",
-        }}
-      />
+    <p className="text-[12px] uppercase tracking-[0.2em] font-bold text-subtle mb-4">
       {children}
     </p>
   );
@@ -903,15 +896,7 @@ function CoverBanner() {
         aria-hidden
         className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-b from-transparent via-transparent to-black/40"
       />
-      <div className="absolute top-5 left-6 sm:left-10 flex items-center gap-2 text-[10px] uppercase tracking-[0.28em] font-bold text-white/70">
-        <span
-          aria-hidden
-          className="w-6 h-px"
-          style={{
-            background:
-              "linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,0.7))",
-          }}
-        />
+      <div className="absolute top-5 left-6 sm:left-10 flex items-center gap-2 text-[12px] uppercase tracking-[0.2em] font-bold text-white/70">
         Brand stage
       </div>
     </div>

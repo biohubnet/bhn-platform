@@ -558,19 +558,24 @@ function SectionEyebrow({
   children: React.ReactNode;
   tone?: EyebrowTone;
 }) {
-  const gradient =
+  // The tone used to pick a gradient for a hairline dash rendered
+  // before the label. The dash is gone — at eyebrow size it read as a
+  // stray mark rather than an accent. The tone now colours the LABEL
+  // itself, so the four-pillar board keeps its per-pillar identity
+  // with one less piece of chrome. Classes are static strings so
+  // Tailwind's scanner picks them up.
+  const toneClass =
     tone === "amber"
-      ? "linear-gradient(90deg, rgb(245,158,11), rgb(244,63,94))"
+      ? "text-amber-700"
       : tone === "emerald"
-        ? "linear-gradient(90deg, rgb(16,185,129), rgb(56,189,248))"
+        ? "text-emerald-700"
         : tone === "sky"
-          ? "linear-gradient(90deg, rgb(14,165,233), rgb(99,102,241))"
+          ? "text-sky-700"
           : tone === "violet"
-            ? "linear-gradient(90deg, rgb(139,92,246), rgb(244,114,182))"
-            : "linear-gradient(90deg, rgb(56,189,248), rgb(124,58,237))";
+            ? "text-violet-700"
+            : "text-brand-700";
   return (
-    <p className="text-[10px] uppercase tracking-[0.28em] font-bold text-subtle inline-flex items-center gap-2">
-      <span aria-hidden className="block h-px w-6" style={{ background: gradient }} />
+    <p className={`text-[12px] uppercase tracking-[0.2em] font-bold ${toneClass}`}>
       {children}
     </p>
   );

@@ -23,9 +23,20 @@
 import { useDesignSystem } from "@/components/ui/DesignSystemProvider";
 import { inheritsFrom } from "@/lib/design-system/registry";
 
-export function DSEyebrow({ children, tone }: { children: React.ReactNode; tone?: "default" | "onDark" }) {
+export function DSEyebrow({ children, tone }: { children: React.ReactNode; tone?: "default" | "onDark" | "subtle" }) {
   const designSystem = inheritsFrom(useDesignSystem().designSystem);
   const isDark = tone === "onDark";
+  // `subtle` is for SECTION eyebrows, which should read a layer down
+  // from the brand-anchored page eyebrow. It used to justify a second,
+  // hand-rolled eyebrow inside DSSection; sharing one component instead
+  // is what stops the leading-hairline style growing back.
+  if (tone === "subtle") {
+    return (
+      <p className="text-[12px] uppercase tracking-[0.2em] font-bold text-subtle">
+        {children}
+      </p>
+    );
+  }
 
   if (designSystem === "cinematic") {
     return (

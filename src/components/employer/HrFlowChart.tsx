@@ -652,8 +652,7 @@ export function HrFlowChart() {
     <section aria-label="HR module interactive flowchart" className="space-y-6">
       {/* Header */}
       <div>
-        <p className="text-[10px] uppercase tracking-[0.28em] font-bold text-subtle mb-1.5 inline-flex items-center gap-2">
-          <span aria-hidden className="w-6 h-px" style={{ background: "linear-gradient(90deg,rgb(56,189,248),rgb(124,58,237))" }} />
+        <p className="text-[12px] uppercase tracking-[0.2em] font-bold text-subtle mb-1.5">
           Interactive Flowchart
         </p>
         <h2 className="text-xl font-bold text-fg">HR module — every route & feature</h2>

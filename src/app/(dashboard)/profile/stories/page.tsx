@@ -227,15 +227,8 @@ function SectionEyebrow({
   tone?: "default" | "amber";
 }) {
   const textClass = tone === "amber" ? "text-amber-800" : "text-subtle";
-  const gradient =
-    tone === "amber"
-      ? "linear-gradient(90deg, rgb(245,158,11), transparent)"
-      : "linear-gradient(90deg, rgb(56,189,248), rgb(124,58,237))";
   return (
-    <p
-      className={`text-[10px] uppercase tracking-[0.28em] font-bold inline-flex items-center gap-2 ${textClass}`}
-    >
-      <span aria-hidden className="block h-px w-6" style={{ background: gradient }} />
+    <p className={`text-[12px] uppercase tracking-[0.2em] font-bold ${textClass}`}>
       {children}
     </p>
   );

@@ -239,9 +239,8 @@ function NewDeadlineForm() {
           "linear-gradient(180deg, color-mix(in srgb, var(--brand-50) 30%, var(--card)) 0%, var(--card) 60%)",
       }}
     >
-      <div className="flex items-center gap-2 mb-3">
-        <span aria-hidden className="block h-px w-5 bg-gradient-to-r from-brand-300 to-transparent" />
-        <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-subtle">
+      <div className="mb-3">
+        <p className="text-[12px] uppercase tracking-[0.2em] font-bold text-subtle">
           Create a new funding window
         </p>
       </div>
