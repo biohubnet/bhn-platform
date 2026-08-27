@@ -113,8 +113,11 @@ export default async function ProgressTrackerPage() {
   ) => {
     const rows = buckets[key];
     if (rows.length === 0 && !opts?.always) return null;
+    // A bare numeral makes a poor eyebrow — next to a section icon it
+    // reads as a stray glyph rather than a count. Name the unit.
+    const eyebrow = `${rows.length} ${rows.length === 1 ? "course" : "courses"}`;
     return (
-      <DSSection key={key} title={title} eyebrow={`${rows.length}`} icon={icon}>
+      <DSSection key={key} title={title} eyebrow={eyebrow} icon={icon}>
         {opts?.note && <p className="text-sm text-muted mb-3">{opts.note}</p>}
         {opts?.children}
         {rows.length === 0 ? (
@@ -203,7 +206,7 @@ export default async function ProgressTrackerPage() {
 
         {/* ── Courses ──────────────────────────────────────────── */}
         {enrollments.length === 0 ? (
-          <DSSection title="Your courses" eyebrow="0" icon={<PlayCircle size={15} />}>
+          <DSSection title="Your courses" eyebrow="0 courses" icon={<PlayCircle size={15} />}>
             <div className="text-center py-10 px-6 rounded-2xl border border-dashed border-line space-y-3">
               <span className="inline-flex w-12 h-12 rounded-xl bg-brand-50 text-brand-700 items-center justify-center ring-1 ring-inset ring-brand-200">
                 <GraduationCap size={20} />
@@ -248,8 +251,14 @@ export default async function ProgressTrackerPage() {
             {section("failed", "Did not pass", <XCircle size={15} />, {
               note: "Retry when you are ready — your best attempt is the one that counts.",
             })}
-            {section("withdrawn", "Withdrawn", <LogOut size={15} />, {
-              note: "You left these. Re-enrol from the catalogue if you want to pick one back up.",
+            {/* "withdrawn" is written by two very different events: the
+                trainee leaving a course, AND an admin declining a gated
+                request (api/admin/enrollments/[id]/review sets the same
+                status for `reject`). Copy that says "you left these"
+                would be a flat lie to someone who was turned down, so
+                the section names the state rather than the cause. */}
+            {section("withdrawn", "No longer active", <LogOut size={15} />, {
+              note: "Courses you left, and requests that weren't approved. Re-enrol from the catalogue if you want to pick one back up.",
             })}
           </>
         )}

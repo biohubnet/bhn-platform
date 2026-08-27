@@ -20,6 +20,7 @@ import { prisma } from "@/lib/prisma";
 import { ROLE_RANK } from "@/lib/auth";
 import {
   FEATURES, FEATURES_BY_ID, MINIMAL_PRESET, DEFAULT_PRESET, FULL_PRESET,
+  FEATURE_SUCCESSORS,
 } from "./registry";
 
 /** Staff (admin + superadmin) always see every sidebar item their role
@@ -127,6 +128,16 @@ export function foldEffective(raw: FeaturePrefs): EffectivePrefs {
     if (!orderedSet.has(id)) hiddenSet.add(id);
   }
   for (const id of raw.hidden) hiddenSet.add(id);
+  // Hand a retired feature's visibility to whatever replaced it. If the
+  // user could see the retired item (absent from `hidden`) but its
+  // successor is hidden, un-hide the successor — otherwise retiring a
+  // feature silently takes its replacement away too. See
+  // FEATURE_SUCCESSORS for why stored presets make this necessary.
+  for (const [retired, successor] of Object.entries(FEATURE_SUCCESSORS)) {
+    if (!raw.hidden.includes(retired) && hiddenSet.has(successor)) {
+      hiddenSet.delete(successor);
+    }
+  }
   // Don't keep ids that the registry doesn't know about.
   for (const id of Array.from(hiddenSet)) {
     if (!FEATURES_BY_ID.has(id)) hiddenSet.delete(id);

@@ -178,6 +178,29 @@ export const FEATURES: FeatureDef[] = [
 
 /** Deprecated ids — preserved here so user prefs containing them
  *  don't get treated as unknown garbage. Drop after one release. */
+/** Retired id → the feature that took over its job.
+ *
+ *  Swapping an id inside MINIMAL_PRESET only changes what a preset does
+ *  NEXT time someone applies it. Presets are stored as a snapshot: the
+ *  moment a user clicked "Minimal", every feature absent from the set —
+ *  including `learn-progress` — was written into their `hidden` array,
+ *  and nothing rewrites that column afterwards. So when My Courses was
+ *  retired, those users were left with the retired item gone from the
+ *  nav AND its replacement still explicitly hidden: no route to their
+ *  own enrolments at all.
+ *
+ *  `foldEffective` reads this at render time. If the stored prefs show
+ *  the user could SEE the retired feature (it is absent from `hidden`)
+ *  while the successor is hidden, the successor is un-hidden — the
+ *  retired item's visibility passes to whatever replaced it. A user who
+ *  deliberately hid BOTH keeps both hidden.
+ *
+ *  This is a read-time fold, not a migration, so it needs no backfill
+ *  and is idempotent. */
+export const FEATURE_SUCCESSORS: Record<string, string> = {
+  "learn-my-courses": "learn-progress",
+};
+
 // "learn-my-courses" — My Courses was folded into the Progress
 // Tracker (Sep 2026). Parked here for a release so a user who had it
 // hidden or reordered does not see their prefs silently rewritten.
