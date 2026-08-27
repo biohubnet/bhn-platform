@@ -35,7 +35,12 @@ jobs:
       - name: Generate Prisma client
         run: npx prisma generate
       - name: Typecheck
+        # tsc OOMs at the default heap on a codebase this size (exit 134,
+        # "Ineffective mark-compacts near heap limit"). The runner has far
+        # more RAM than Node will take by default.
         run: npx tsc --noEmit
+        env:
+          NODE_OPTIONS: "--max-old-space-size=6144"
       - name: Build
         # NOT `npm run build` — that script is `prisma generate && prisma
         # migrate deploy && next build`, and the migrate step would run
@@ -100,7 +105,12 @@ jobs:
     continue-on-error: true
     services:
       postgres:
-        image: postgres:16
+        # pgvector/pgvector:pg16 is stock Postgres 16 with the vector
+        # extension already present. Installing postgresql-16-pgvector on
+        # the RUNNER does nothing — the database runs in a service
+        # container with its own filesystem, which is how the first
+        # version of this job failed.
+        image: pgvector/pgvector:pg16
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
@@ -127,14 +137,11 @@ jobs:
       - run: npm ci --ignore-scripts
 
       - name: Enable pgvector
-        # Two migrations do `CREATE EXTENSION IF NOT EXISTS vector`, which
-        # needs the extension available in the image. postgres:16 does not
-        # ship it, so install it before replaying.
+        # Two migrations do CREATE EXTENSION IF NOT EXISTS vector. The
+        # image ships it; this just turns it on for the database.
         run: |
-          sudo apt-get update
-          sudo apt-get install -y postgresql-16-pgvector || true
           PGPASSWORD=postgres psql -h 127.0.0.1 -U postgres -d bhn_ci \
-            -c 'CREATE EXTENSION IF NOT EXISTS vector' || echo "pgvector unavailable in image; migrations will report if they need it"
+            -c 'CREATE EXTENSION IF NOT EXISTS vector'
 
       - name: Validate schema
         run: npx prisma validate
