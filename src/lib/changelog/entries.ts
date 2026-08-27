@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Dashboard + pathways · layout pass
+  {
+    title: "Training Week and the Symposium are on the calendar",
+    body: "Two events are now listed, separately rather than as one long week: **Training Week 2026** (26–28 October) and the **Annual Symposium 2026** (29 October). They're in the Coming up column on your dashboard and on the events page.\n\nA few other changes on the way past:\n\n**The note from the team** now sits at the top of the dashboard, under the welcome, rather than at the bottom.\n\n**\"How should we address you?\"** asks in a dialog instead of a card wedged into the page. Skipping it is still remembered.\n\n**Programme boxes inside a learning pathway** have been rebuilt. Squarer corners, and the right-hand half is now a recessed panel holding the enrolment facts — session dates, the deadline to apply, what it costs, how it's delivered and by whom — so the left side is just the programme and the button.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Dashboard · where you stand, what's open, what's coming up
   {
     title: "Your dashboard now shows where you stand",

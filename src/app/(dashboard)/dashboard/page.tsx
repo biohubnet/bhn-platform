@@ -480,20 +480,60 @@ export default async function DashboardPage() {
           The /credits/apply page and the admin review queue are
           untouched; only this entry point is gone. */}
 
-      {/* First-time prompt — only shows for users who haven't picked
-          a preferredName yet. Smart suggestion chips derived from
-          their full name + a custom field. Dismissible (skip for
-          now). After they save or dismiss, the card disappears on
-          subsequent loads. The pencil next to the welcome above
-          stays available for later edits. */}
-      <div className="max-w-screen-2xl mx-auto px-6 -mt-2">
-        <PreferredNameEditor
-          mode="card"
-          fullName={fullName}
-          initial={preferredName}
-          dismissKey={userId}
-        />
-      </div>
+      {/* First-time prompt — only for users who haven't picked a
+          preferredName yet. It asks in a DIALOG rather than as a card
+          in the flow: it is a question, and a question parked between
+          two other sections competes with them and gets scrolled past.
+          Dismissible, and the skip is remembered per user. The pencil
+          next to the welcome above stays available for later edits. */}
+      <PreferredNameEditor
+        mode="modal"
+        fullName={fullName}
+        initial={preferredName}
+        dismissKey={userId}
+      />
+
+      {/* ── A NOTE FROM THE TEAM ────────────────────────────────────
+            Hand-set editorial blurb from the BHN founders to the
+            trainee, sitting just under the hero. Italic serif body
+            on a faint brand-tone wash, signed off with the four-
+            petal LogoMark + uppercase team attribution. Standard
+            section padding so it pairs with the rest of the page;
+            `max-w-2xl mr-auto` caps the line length for comfortable
+            reading WHILE anchoring the whole block to the left edge
+            of the section. */}
+      <section
+        className="border-t border-line py-5 sm:py-7 px-5 sm:px-8 relative overflow-hidden"
+        style={{
+          backgroundImage:
+            "linear-gradient(120deg, rgba(56,189,248,0.045) 0%, rgba(99,102,241,0.03) 55%, rgba(244,114,182,0.045) 100%)",
+        }}
+      >
+        {/* Left-aligned treatment — eyebrow + body + signature
+            stack on the left edge of the section. `mr-auto` (NOT
+            `mx-auto`) pushes the 2xl column against the left edge
+            so the block ITSELF is left-aligned on the page; the
+            max-w-5xl cap still keeps the measure readable — widened
+            from 2xl on request, now that this note is the only thing
+            below the hero. */}
+        <div className="relative max-w-5xl mr-auto">
+          <SectionEyebrow tone="brand">A note from the team</SectionEyebrow>
+          <p className="mt-3 font-serif italic text-base sm:text-lg text-fg leading-relaxed">
+            Welcome, <span className="not-italic font-bold">{firstName}</span>. We hope
+            BHN does what we built it for — keeps the next move within reach. We hope a
+            course re-frames something you thought you knew, a placement that opens a
+            door, a funding round that gets your idea moving, and a few people whose
+            company you&apos;d keep beyond the platform.{" "}
+            <span className="not-italic font-bold">We&apos;re rooting for you.</span>
+          </p>
+          <div className="mt-4 flex items-center gap-2.5">
+            <LogoMark size={20} className="shrink-0" />
+            <span className="text-[10px] uppercase tracking-[0.28em] font-bold text-fg-muted">
+              — The BioHubNet team
+            </span>
+          </div>
+        </div>
+      </section>
 
       {/* Committee badge — recognition surface. Auto-hides for
           non-members. Wrapped in the standard dashboard width +
@@ -660,48 +700,6 @@ export default async function DashboardPage() {
           </aside>
         </div>
       </div>
-
-      {/* ── A NOTE FROM THE TEAM ────────────────────────────────────
-            Hand-set editorial blurb from the BHN founders to the
-            trainee, sitting just under the hero. Italic serif body
-            on a faint brand-tone wash, signed off with the four-
-            petal LogoMark + uppercase team attribution. Standard
-            section padding so it pairs with the rest of the page;
-            `max-w-2xl mr-auto` caps the line length for comfortable
-            reading WHILE anchoring the whole block to the left edge
-            of the section. */}
-      <section
-        className="border-t border-line py-5 sm:py-7 px-5 sm:px-8 relative overflow-hidden"
-        style={{
-          backgroundImage:
-            "linear-gradient(120deg, rgba(56,189,248,0.045) 0%, rgba(99,102,241,0.03) 55%, rgba(244,114,182,0.045) 100%)",
-        }}
-      >
-        {/* Left-aligned treatment — eyebrow + body + signature
-            stack on the left edge of the section. `mr-auto` (NOT
-            `mx-auto`) pushes the 2xl column against the left edge
-            so the block ITSELF is left-aligned on the page; the
-            max-w-5xl cap still keeps the measure readable — widened
-            from 2xl on request, now that this note is the only thing
-            below the hero. */}
-        <div className="relative max-w-5xl mr-auto">
-          <SectionEyebrow tone="brand">A note from the team</SectionEyebrow>
-          <p className="mt-3 font-serif italic text-base sm:text-lg text-fg leading-relaxed">
-            Welcome, <span className="not-italic font-bold">{firstName}</span>. We hope
-            BHN does what we built it for — keeps the next move within reach. We hope a
-            course re-frames something you thought you knew, a placement that opens a
-            door, a funding round that gets your idea moving, and a few people whose
-            company you&apos;d keep beyond the platform.{" "}
-            <span className="not-italic font-bold">We&apos;re rooting for you.</span>
-          </p>
-          <div className="mt-4 flex items-center gap-2.5">
-            <LogoMark size={20} className="shrink-0" />
-            <span className="text-[10px] uppercase tracking-[0.28em] font-bold text-fg-muted">
-              — The BioHubNet team
-            </span>
-          </div>
-        </div>
-      </section>
 
       {/* Everything below the team note was removed for the trainee
           view: the four-pillar OPEN OPPORTUNITIES board, the

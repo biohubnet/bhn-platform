@@ -8,6 +8,13 @@
  *                    opens an inline popover with smart name chips
  *                    + custom field + Save / Cancel.
  *
+ *   mode="modal"   — the same prompt, but as a dialog over the page.
+ *                    Asking someone's name is a question, and a
+ *                    question is better put in front of the reader
+ *                    than parked in the flow where it competes with
+ *                    everything else and gets scrolled past. Same
+ *                    dismissal key as the card, so skipping it is
+ *                    remembered per user.
  *   mode="card"    — a small dismissible card shown at the top of
  *                    the dashboard for users who haven't set a
  *                    preferred name yet ("How should we address
@@ -22,10 +29,11 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { Modal } from "@/components/ui/Modal";
 import { Pencil, Check, X, Sparkles } from "lucide-react";
 import { suggestDisplayNames, HONORIFIC_SUGGESTIONS } from "@/lib/user/display-name";
 
-type Mode = "pencil" | "card";
+type Mode = "pencil" | "card" | "modal";
 
 interface Props {
   mode: Mode;
@@ -48,9 +56,11 @@ export function PreferredNameEditor({ mode, fullName, initial, dismissKey }: Pro
   const [dismissed, setDismissed] = useState(false);
   const popoverRef = useRef<HTMLDivElement | null>(null);
 
-  // Read the local-storage dismissal once on mount (card mode only).
+  // Read the local-storage dismissal once on mount. Both the card and
+  // the modal are dismissible, and a modal that reappears on every
+  // navigation after being skipped is worse than the card ever was.
   useEffect(() => {
-    if (mode !== "card" || !dismissKey) return;
+    if ((mode !== "card" && mode !== "modal") || !dismissKey) return;
     try {
       const v = localStorage.getItem(`bhn:pname-dismiss:${dismissKey}`);
       if (v === "1") setDismissed(true);
@@ -96,12 +106,58 @@ export function PreferredNameEditor({ mode, fullName, initial, dismissKey }: Pro
     setDismissed(true);
   }
 
-  if (mode === "card" && (initial?.trim() || dismissed)) {
-    // Already set or dismissed — card mode renders nothing.
+  if ((mode === "card" || mode === "modal") && (initial?.trim() || dismissed)) {
+    // Already set or dismissed — nothing to ask.
     return null;
   }
 
   // ─── Card mode ──────────────────────────────────────────────
+  if (mode === "modal") {
+    return (
+      <Modal open onClose={dismiss} title="How should we address you?">
+        <p className="text-[13px] text-fg-muted">
+          We&apos;ll use this in greetings across the platform — your records and
+          certificates still use{" "}
+          <span className="font-semibold text-fg">{fullName ?? "your full name"}</span>.
+        </p>
+        <ChipRow
+          suggestions={suggestions}
+          value={value}
+          setValue={setValue}
+          disabled={busy}
+        />
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <input
+            type="text"
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            placeholder="Or type your own…"
+            maxLength={80}
+            disabled={busy}
+            className="text-[13px] px-2.5 py-1.5 rounded-md border border-line bg-card-solid text-fg focus:outline-none focus:ring-2 focus:ring-brand-400 flex-1 min-w-[10rem]"
+          />
+          <button
+            type="button"
+            onClick={() => save(value.trim() || null)}
+            disabled={busy || !value.trim()}
+            className="inline-flex items-center gap-1 text-[13px] px-3.5 py-1.5 rounded-md bg-brand-600 text-white font-semibold disabled:opacity-50 hover:bg-brand-700 transition-colors"
+          >
+            <Check size={12} /> Save
+          </button>
+          <button
+            type="button"
+            onClick={dismiss}
+            disabled={busy}
+            className="text-[12.5px] text-fg-muted hover:text-fg px-2 py-1.5 rounded-md"
+          >
+            Skip for now
+          </button>
+        </div>
+        {error && <p className="mt-2 text-[12px] text-rose-700">{error}</p>}
+      </Modal>
+    );
+  }
+
   if (mode === "card") {
     return (
       <div className="rounded-2xl border border-line/70 bg-card-solid px-4 py-3 sm:px-5 sm:py-4 flex flex-wrap items-start gap-3 shadow-card-rest">

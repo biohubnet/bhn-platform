@@ -94,78 +94,52 @@ const EXIT_EASE = "cubic-bezier(.55, 0, 1, .45)";
 
 const NEUTRAL_FALLBACK = "from-slate-400 to-slate-600";
 
-function Chip({ label, tone }: { label: string; tone: "credit" | "delivery" }) {
+/** One labelled figure inside the enrolment panel. */
+function Detail({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <span
-      className={cn(
-        "inline-flex items-center whitespace-nowrap rounded-full px-2.5 py-1",
-        "text-[10.5px] font-semibold leading-tight text-fg ring-1 ring-inset",
-        tone === "credit"
-          ? "bg-emerald-100 ring-emerald-200"
-          : "bg-sky-100 ring-sky-200",
-      )}
-    >
-      {label}
-    </span>
+    <div className="min-w-0">
+      <p className="text-[10px] uppercase tracking-[0.16em] font-semibold text-subtle">{label}</p>
+      <div className="mt-0.5 text-[12.5px] leading-snug text-fg">{children}</div>
+    </div>
   );
 }
 
+/**
+ * A programme inside an expanded pathway.
+ *
+ * Split into two halves that do different jobs: the LEFT carries the
+ * identity and the thing you press, the RIGHT is a recessed panel of
+ * enrolment facts — when it runs, when to apply by, what it costs, how
+ * it is delivered and by whom.
+ *
+ * The panel is `bg-raised`, the deepest surface token, rather than a
+ * literal grey. Literal grey would be a light slab on Dark, Nightfall
+ * and Hitech; the token is the same ROLE — recessed relative to the
+ * card — in every theme.
+ */
 function ProgrammeRow({ p }: { p: PathwayProgramme }) {
   return (
-    <li className="rounded-md border border-line bg-card-solid overflow-hidden">
+    <li className="rounded-sm border border-line bg-card-solid overflow-hidden">
       <div className="flex flex-col sm:flex-row">
-        {/* Identity */}
-        <div className="sm:w-[38%] sm:shrink-0 p-3.5 sm:border-r border-line">
-          <p className="text-sm font-semibold text-fg leading-snug">
-            {p.title}
-            {p.provider && (
-              <span className="font-normal text-muted"> [{p.provider}]</span>
-            )}
-          </p>
-          <p className="mt-1.5 flex items-center gap-1.5 text-[11px] font-semibold">
-            <span
-              aria-hidden="true"
-              className={cn("h-1.5 w-1.5 rounded-full", p.isOpen ? "bg-emerald-500" : "bg-rose-500")}
-            />
-            <span className={p.isOpen ? "text-emerald-700" : "text-rose-700"}>
-              {p.isOpen ? "Open" : "Closed"}
-            </span>
-          </p>
-        </div>
-
-        {/* Schedule + action */}
-        <div className="flex-1 p-3.5 flex flex-col gap-3 min-w-0">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0 space-y-2">
-              <div>
-                <p className="text-[10px] uppercase tracking-[0.16em] font-semibold text-subtle">
-                  Session dates
-                </p>
-                <p className="mt-0.5 text-[12.5px] text-fg-muted leading-snug">
-                  {p.sessionDates ?? "To be announced"}
-                </p>
-              </div>
-              <div>
-                <p className="text-[10px] uppercase tracking-[0.16em] font-semibold text-subtle">
-                  Enroll by
-                </p>
-                <p className="mt-0.5 text-[12.5px] font-semibold text-brand-700">
-                  {p.enrollByLabel ?? "TBD"}
-                </p>
-              </div>
-            </div>
-            <div className="flex flex-col items-end gap-1.5 shrink-0">
-              {p.creditCost > 0 && (
-                <Chip tone="credit" label={`Credit ${p.creditCost.toLocaleString()}`} />
-              )}
-              {p.delivery && <Chip tone="delivery" label={p.delivery} />}
-            </div>
+        {/* Identity + the action */}
+        <div className="sm:w-[46%] sm:shrink-0 p-3.5 flex flex-col gap-3">
+          <div>
+            <p className="text-sm font-semibold text-fg leading-snug">{p.title}</p>
+            <p className="mt-1.5 flex items-center gap-1.5 text-[11px] font-semibold">
+              <span
+                aria-hidden="true"
+                className={cn("h-1.5 w-1.5 rounded-full", p.isOpen ? "bg-emerald-500" : "bg-rose-500")}
+              />
+              <span className={p.isOpen ? "text-emerald-700" : "text-rose-700"}>
+                {p.isOpen ? "Open" : "Closed"}
+              </span>
+            </p>
           </div>
 
           <Link
             href={`/courses/${p.id}`}
             className={cn(
-              "inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-2",
+              "mt-auto inline-flex items-center justify-center gap-1.5 rounded-sm px-3 py-2",
               "bg-brand-600 text-white text-xs font-semibold",
               "hover:bg-brand-700 transition-colors",
               "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600",
@@ -173,6 +147,39 @@ function ProgrammeRow({ p }: { p: PathwayProgramme }) {
           >
             Course info &amp; application <ArrowRight size={13} />
           </Link>
+        </div>
+
+        {/* Enrolment detail — the recessed half */}
+        <div className="flex-1 min-w-0 p-3.5 bg-raised border-t sm:border-t-0 sm:border-l border-line">
+          <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+            <Detail label="Session dates">
+              {p.sessionDates ?? <span className="text-muted">To be announced</span>}
+            </Detail>
+            <Detail label="Enroll by">
+              {p.enrollByLabel ? (
+                <span className="font-semibold text-brand-700">{p.enrollByLabel}</span>
+              ) : (
+                <span className="text-muted">TBD</span>
+              )}
+            </Detail>
+            <Detail label="Cost">
+              {p.creditCost > 0 ? (
+                <span className="font-semibold tabular-nums">
+                  {p.creditCost.toLocaleString()} credits
+                </span>
+              ) : (
+                <span className="text-muted">No credit cost</span>
+              )}
+            </Detail>
+            <Detail label="Delivery">
+              {p.delivery ?? <span className="text-muted">To be confirmed</span>}
+            </Detail>
+            {p.provider && (
+              <div className="col-span-2">
+                <Detail label="Delivered by">{p.provider}</Detail>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </li>
