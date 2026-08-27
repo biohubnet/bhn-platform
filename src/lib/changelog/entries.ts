@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── EQUIP · all 41 partner institutions on the VentureConnect form
+  {
+    title: "All 41 partner institutions are now on the EQUIP form",
+    body: "The institution list only had 14 entries — the Ontario institutions funded for VentureLift. But VentureConnect is open to **all 41 BioHubNet partners across Canada**, so anyone from the other 27 simply couldn't find themselves in the list and had to pick \"Other\".\n\nAll 41 are there now, grouped the way biohubnet.ca groups them: British Columbia, Prairies, Ontario, Quebec and Atlantic Canada.\n\nThe two grants have different reach, and the form now knows the difference. VentureConnect is open to every partner institution until January 2027. VentureLift runs at 14 of them through March 2028 — and if you pick VentureLift from an institution it doesn't cover, the wizard says so and offers VentureConnect instead, rather than letting you fill in a form that couldn't be funded.\n\nWorth knowing if you're in Ontario: six Ontario institutions are VentureConnect-only, so this isn't a province rule.",
+    kind: "fix",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── EQUIP · VentureConnect September round
   {
     title: "VentureConnect: the September round is open",
