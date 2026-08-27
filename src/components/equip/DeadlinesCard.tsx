@@ -61,7 +61,13 @@ function DeadlineTile({
   }
 
   const deadline = new Date(row.deadlineAt);
-  const daysUntil = Math.max(0, Math.ceil((deadline.getTime() - Date.now()) / (24 * 60 * 60 * 1000)));
+  // CALENDAR days in Toronto, not elapsed milliseconds. Ceil-ing the
+  // raw difference made anything under 24 hours away round up to 1, so
+  // a deadline thirty minutes from now announced "Closes tomorrow" —
+  // telling an applicant they had another day on the morning it closed.
+  // Deadlines are a wall-clock promise ("noon Eastern on the 24th"), so
+  // the countdown has to be measured in the same terms.
+  const daysUntil = Math.max(0, torontoDayDiff(new Date(), deadline));
   const soon = daysUntil <= 7;
   const veryClose = daysUntil <= 2;
 
@@ -91,4 +97,15 @@ function DeadlineTile({
       )}
     </div>
   );
+}
+
+/** Whole calendar days from `from` to `to`, both read in Toronto. Returns
+ *  0 when they fall on the same Toronto date, whatever the clock says. */
+function torontoDayDiff(from: Date, to: Date): number {
+  const day = (d: Date) => d.toLocaleDateString("en-CA", { timeZone: "America/Toronto" });
+  const asUtcMidnight = (iso: string) => {
+    const [y, m, dd] = iso.split("-").map((n) => parseInt(n, 10));
+    return Date.UTC(y, m - 1, dd);
+  };
+  return Math.round((asUtcMidnight(day(to)) - asUtcMidnight(day(from))) / (24 * 60 * 60 * 1000));
 }
