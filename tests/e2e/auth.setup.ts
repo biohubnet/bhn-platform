@@ -76,6 +76,36 @@ setup("authenticate as admin", async ({ request }) => {
 });
 
 /**
+ * Proves the consent seed above actually suppresses the banner.
+ *
+ * Without this, a VERSION bump in ConsentProvider would quietly stop
+ * matching, the banner would come back, and the symptom would be specs
+ * timing out on clicks near the bottom of the page — which reads as a
+ * broken feature, not a stale constant. That misdiagnosis is the whole
+ * reason this check exists: it turns drift into one named failure here
+ * instead of scattered 60s timeouts downstream.
+ */
+setup("consent seed suppresses the cookie banner", async ({ browser }) => {
+  const statePath = path.join(AUTH_DIR, "admin.json");
+  const context = await browser.newContext({ storageState: statePath });
+  const page = await context.newPage();
+  try {
+    await page.goto("/dashboard");
+    const banner = page.getByRole("region", { name: /respect your privacy/i });
+    await expect(
+      banner,
+      `The cookie banner is still showing despite the seeded consent in ` +
+        `${statePath}. CONSENT_SEED.version ("${CONSENT_SEED.version}") no ` +
+        `longer matches VERSION in src/components/consent/ConsentProvider.tsx — ` +
+        `update it here. Left unfixed, the banner covers the bottom of the ` +
+        `viewport and any spec clicking a low CTA will time out instead.`,
+    ).toBeHidden();
+  } finally {
+    await context.close();
+  }
+});
+
+/**
  * POST to the gated auth-bypass route. Callers decide how to react to a
  * non-OK response — the trainee test treats 404 (account doesn't exist
  * on this DB) as a soft skip; the admin test always hard-fails, since a
@@ -93,6 +123,41 @@ async function mintSession(
   });
 }
 
+/**
+ * Consent payload seeded into every saved storage state.
+ *
+ * The cookie banner is `fixed bottom-3 z-50`, so it sits over the last
+ * ~80px of the viewport. Playwright scrolls a click target to the
+ * nearest edge — for anything below the fold that means the BOTTOM
+ * edge, i.e. directly underneath the banner — so the click never lands
+ * and the spec burns its whole timeout on actionability retries. That
+ * is exactly how the symposium registration spec failed: the form
+ * assertions passed, then `Request a spot` was covered by the banner.
+ *
+ * This is not the banner's fault and not worth working around per
+ * spec — every future flow whose CTA sits low on the page would hit
+ * it. Deciding consent up front means specs exercise the app instead
+ * of the consent gate. The banner's own behaviour stays covered by the
+ * accessibility audit, which still sees it (an undecided banner is
+ * what the audit renders, and it passes: role="region" + a name).
+ *
+ * MUST stay in sync with ConsentProvider — `version` is compared with
+ * === against its VERSION const, and a mismatch silently means "not
+ * decided", which brings the banner back. Deliberately not imported
+ * from src/: no test here reaches into app source, and the alias
+ * resolution is not worth risking in CI for one string. The
+ * assertNoConsentBanner check below is what stops drift from turning
+ * into another round of mystery timeouts.
+ */
+const CONSENT_STORAGE_KEY = "bhn-consent";
+const CONSENT_SEED = {
+  necessary: true,
+  analytics: false, // decline the optional ones — least surprising default
+  marketing: false,
+  version: "1.0", // ← ConsentProvider VERSION
+  acceptedAt: "2026-01-01T00:00:00.000Z", // fixed: keeps the file stable across runs
+};
+
 /** storageState() captures cookies + localStorage; we only need cookies
  *  for NextAuth, but storing both keeps future flows compatible. */
 async function persistStorageState(
@@ -101,4 +166,23 @@ async function persistStorageState(
 ) {
   const outPath = path.join(AUTH_DIR, `${role}.json`);
   await request.storageState({ path: outPath });
+
+  // request.storageState() only ever yields cookies — an APIRequestContext
+  // has no DOM and therefore no localStorage — so the consent entry has to
+  // be merged in by hand against the origin the suite actually runs on.
+  const origin = new URL(process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:3001").origin;
+  const state = JSON.parse(fs.readFileSync(outPath, "utf8")) as {
+    cookies: unknown[];
+    origins?: { origin: string; localStorage: { name: string; value: string }[] }[];
+  };
+  state.origins = [
+    ...(state.origins ?? []).filter((o) => o.origin !== origin),
+    {
+      origin,
+      localStorage: [
+        { name: CONSENT_STORAGE_KEY, value: JSON.stringify(CONSENT_SEED) },
+      ],
+    },
+  ];
+  fs.writeFileSync(outPath, JSON.stringify(state, null, 2));
 }

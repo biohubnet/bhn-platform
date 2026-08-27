@@ -75,10 +75,12 @@ test("trainee can submit registration → admin approves → trainee sees confir
     }
 
     // ── 2. Trainee fills the form
-    // Default attendeeType ("trainee") is already checked. Just
-    // submit — workshop picks optional and we want to assert the
-    // base "no workshops picked → cross-prompt fires" path on the
-    // success page.
+    // Nothing to fill: the form ships with a usable default selected
+    // ("Just attending" — NOT "trainee", as this comment used to
+    // claim; the page snapshot from the failing run showed otherwise)
+    // and every other field is optional. Submitting as-is is also the
+    // path we want, because picking no workshops is what makes the
+    // cross-prompt fire on the success page below.
     // The register page renders ONE OF TWO forms, and they word the
     // approval gate differently:
     //
