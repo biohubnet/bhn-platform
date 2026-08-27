@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Security · course API no longer returns lesson content to anyone
+  {
+    title: "Lesson content is no longer readable straight from the course API",
+    body: "A course endpoint was returning everything about a published course to anyone who asked — no sign-in required. That included the full text of every lesson, any video and file links, and the instructor's email address.\n\nIt now needs you to be signed in, and it only returns lesson content to people whose enrolment is active. Everyone else still gets the syllabus — module titles, order and length — because seeing what a course covers before you enrol is reasonable, and the catalogue already shows it.\n\nNothing in the platform used this endpoint, so nothing you do changes.",
+    kind: "fix",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Security · course package files now require an active enrolment
   {
     title: "Course files are no longer readable without an enrolment",

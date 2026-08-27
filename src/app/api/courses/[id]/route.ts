@@ -1,11 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getSession, requireRole, requireCourseOwner } from "@/lib/auth";
+import { getSession, requireRole, requireCourseOwner, isStaff as checkIsStaff } from "@/lib/auth";
+import { canAccessCourseContent } from "@/lib/courses/enrollment-status";
 
+/**
+ * GET a course.
+ *
+ * Two tiers, because this route used to have none. It called
+ * `getSession()` without a null check and gated only on course status,
+ * so an ANONYMOUS caller received, for any published course: every
+ * Module row including `content` (the lesson body itself), `videoUrl`
+ * and `fileUrl`; the SCORM package record; and the instructor's email
+ * address. Several published courses cost 1000-3500 credits. Nothing in
+ * the app calls this endpoint — the course detail page is a server
+ * component that reads Prisma directly — so it was pure exposure.
+ *
+ * Now: a session is required, and the lesson payload is released only
+ * to someone entitled to it. Everyone else still gets the syllabus —
+ * module titles, order, duration — because browsing what a course
+ * contains before enrolling is a legitimate thing to want, and it is
+ * what the catalogue already shows.
+ */
 export async function GET(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();
+  const userId = (session?.user as { id?: string })?.id;
   const userRole = (session?.user as { role?: string })?.role;
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const course = await prisma.course.findUnique({
     where: { id },
@@ -21,6 +42,36 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ id: st
   if (!course) return NextResponse.json({ error: "Not found" }, { status: 404 });
   if (course.status !== "published" && userRole !== "admin" && userRole !== "instructor") {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  const isStaff = checkIsStaff(userRole ?? "learner");
+  if (!isStaff) {
+    const enrollment = await prisma.enrollment.findUnique({
+      where: { userId_courseId: { userId, courseId: id } },
+      select: { status: true },
+    });
+    if (!canAccessCourseContent(enrollment?.status)) {
+      // Syllabus only. Strip the three module fields that ARE the
+      // course, drop the SCORM record (its paths are a map of the
+      // package), and reduce the instructor to a public identity.
+      const { scormPackage, instructor, modules, ...rest } = course;
+      return NextResponse.json({
+        ...rest,
+        hasScormPackage: scormPackage !== null,
+        instructor: instructor
+          ? { id: instructor.id, name: instructor.name }
+          : null,
+        modules: modules.map((m) => ({
+          id: m.id,
+          title: m.title,
+          description: m.description,
+          order: m.order,
+          type: m.type,
+          duration: m.duration,
+          isRequired: m.isRequired,
+        })),
+      });
+    }
   }
 
   return NextResponse.json(course);
