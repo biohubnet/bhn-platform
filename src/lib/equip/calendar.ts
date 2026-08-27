@@ -380,3 +380,25 @@ export function holidayDateSet(): Map<string, UofTHoliday> {
   }
   return m;
 }
+
+/**
+ * Whole CALENDAR days from `from` to `to`, both read in Toronto.
+ * Returns 0 when they land on the same Toronto date, whatever the
+ * clock says.
+ *
+ * Exists because two separate surfaces had independently written
+ * `Math.ceil((deadline - now) / 86400000)`, which rounds ANY deadline
+ * under 24 hours away up to 1 — so a window closing in thirty minutes
+ * announced "closes tomorrow" to the applicant reading it. Deadlines
+ * here are a wall-clock promise ("noon Eastern on the 24th"), so the
+ * countdown has to be counted the same way. One copy, so a third
+ * surface cannot reinvent the bug.
+ */
+export function torontoDayDiff(from: Date, to: Date): number {
+  const day = (d: Date) => d.toLocaleDateString("en-CA", { timeZone: "America/Toronto" });
+  const asUtcMidnight = (iso: string) => {
+    const [y, m, dd] = iso.split("-").map((n) => parseInt(n, 10));
+    return Date.UTC(y, m - 1, dd);
+  };
+  return Math.round((asUtcMidnight(day(to)) - asUtcMidnight(day(from))) / 86_400_000);
+}

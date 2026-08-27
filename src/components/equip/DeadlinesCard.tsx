@@ -10,6 +10,7 @@
  */
 import { CalendarClock, AlertCircle } from "lucide-react";
 import { nextOpenDeadlines, formatDeadlineEastern, type DeadlineRow } from "@/lib/equip/deadlines";
+import { torontoDayDiff } from "@/lib/equip/calendar";
 import { STREAM_META, type EquipStream } from "@/lib/equip/types";
 
 export async function DeadlinesCard() {
@@ -99,13 +100,3 @@ function DeadlineTile({
   );
 }
 
-/** Whole calendar days from `from` to `to`, both read in Toronto. Returns
- *  0 when they fall on the same Toronto date, whatever the clock says. */
-function torontoDayDiff(from: Date, to: Date): number {
-  const day = (d: Date) => d.toLocaleDateString("en-CA", { timeZone: "America/Toronto" });
-  const asUtcMidnight = (iso: string) => {
-    const [y, m, dd] = iso.split("-").map((n) => parseInt(n, 10));
-    return Date.UTC(y, m - 1, dd);
-  };
-  return Math.round((asUtcMidnight(day(to)) - asUtcMidnight(day(from))) / (24 * 60 * 60 * 1000));
-}

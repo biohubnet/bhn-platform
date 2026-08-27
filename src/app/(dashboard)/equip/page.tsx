@@ -23,7 +23,7 @@ import { prisma } from "@/lib/prisma";
 import { DSPageHeader } from "@/components/design-system/DSPageHeader";
 import { STREAM_META, STATUS_META, type EquipStatus, type EquipStream } from "@/lib/equip/types";
 import { DeadlinesCard } from "@/components/equip/DeadlinesCard";
-import { derivedDeadlineSpecs, type DerivedDeadlineSpec } from "@/lib/equip/calendar";
+import { torontoDayDiff, derivedDeadlineSpecs, type DerivedDeadlineSpec } from "@/lib/equip/calendar";
 import { formatDeadlineEastern } from "@/lib/equip/deadlines";
 
 export const dynamic = "force-dynamic";
@@ -54,7 +54,10 @@ function nextDeadlineByStream(): Partial<Record<EquipStream, DerivedDeadlineSpec
 }
 
 function daysUntilLabel(d: Date): string {
-  const days = Math.max(0, Math.ceil((d.getTime() - Date.now()) / 86_400_000));
+  // Calendar days in Toronto — see torontoDayDiff. The millisecond
+  // version this replaced said "tomorrow" about a deadline thirty
+  // minutes away.
+  const days = Math.max(0, torontoDayDiff(new Date(), d));
   return days === 0 ? "today" : days === 1 ? "tomorrow" : `in ${days} days`;
 }
 
