@@ -22,7 +22,13 @@
  */
 import { test, expect } from "@playwright/test";
 
-const EVENT_SLUG = "2025-annual-symposium";
+// The seeded event this flow runs against. Overridable so the suite can
+// be pointed at a different cohort without editing the spec.
+//
+// Was hardcoded to "2025-annual-symposium", which does not exist — the
+// seeded events are 2026. The spec failed in 11s looking for approval
+// copy on a 404, which read like a UI regression and was not one.
+const EVENT_SLUG = process.env.E2E_EVENT_SLUG ?? "2026-annual-symposium";
 const REGISTER_PATH = `/events/${EVENT_SLUG}/register`;
 const SUCCESS_PATH = `/events/${EVENT_SLUG}/register/success`;
 
