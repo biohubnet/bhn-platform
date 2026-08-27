@@ -190,25 +190,6 @@ export function EligibilityWizard({
               className="mt-3 w-full bg-card-solid border border-line rounded-lg px-3 py-2 text-sm text-fg placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500"
             />
           )}
-          {streamBlocked && (
-            <div className="mt-3 rounded-xl border border-amber-300 bg-amber-50 p-3">
-              <p className="text-xs font-bold text-amber-900">
-                VentureLift isn&apos;t open to {blockedName} yet
-              </p>
-              <p className="text-[11px] text-amber-800 leading-snug mt-1">
-                VentureLift runs at 14 partner institutions through March 2028.
-                VentureConnect — up to $5,000 — is open to all 41 BioHubNet
-                partners, including yours, until January 2027.
-              </p>
-              <button
-                type="button"
-                onClick={() => setPickedStream("venture_connect")}
-                className="mt-2 text-[11px] font-bold px-3 py-1.5 rounded-lg bg-brand-600 text-white hover:bg-brand-700 transition-colors"
-              >
-                Switch to VentureConnect
-              </button>
-            </div>
-          )}
         </Step>
       )}
 
@@ -279,6 +260,26 @@ export function EligibilityWizard({
             </div>
           )}
         </Step>
+      )}
+
+      {streamBlocked && (
+        <div className="mt-3 rounded-xl border border-amber-300 bg-amber-50 p-3">
+          <p className="text-xs font-bold text-amber-900">
+            VentureLift isn&apos;t open to {blockedName} yet
+          </p>
+          <p className="text-[11px] text-amber-800 leading-snug mt-1">
+            VentureLift runs at 14 partner institutions through March 2028.
+            VentureConnect — up to $5,000 — is open to all 41 BioHubNet
+            partners, including yours, until January 2027.
+          </p>
+          <button
+            type="button"
+            onClick={() => setPickedStream("venture_connect")}
+            className="mt-2 text-[11px] font-bold px-3 py-1.5 rounded-lg bg-brand-600 text-white hover:bg-brand-700 transition-colors"
+          >
+            Switch to VentureConnect
+          </button>
+        </div>
       )}
 
       {effectiveStream && step === 2 && stage !== "unsure" && (
