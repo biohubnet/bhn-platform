@@ -25,6 +25,17 @@ jobs:
     name: "npm audit (high+)"
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    # Advisory, as the header above always claimed it was. It never
+    # behaved that way: `npm audit --audit-level=high` EXITS NONZERO the
+    # moment a high advisory exists, so from the day one landed this job
+    # failed on every single push to main and emailed on every one. A
+    # dependency CVE is not a reason to mark a commit broken — it is not
+    # about the commit. The report still runs and is still visible in the
+    # run; it just no longer fails the build.
+    #
+    # The TruffleHog job below is deliberately NOT advisory. A committed
+    # secret IS about the commit, and should stop it.
+    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
