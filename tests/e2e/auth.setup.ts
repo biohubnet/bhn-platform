@@ -53,6 +53,7 @@ setup("authenticate as trainee", async ({ request }) => {
       `Make sure E2E_AUTH_SECRET is set on the target deployment and ` +
       `matches the value in this runner's env.`,
   ).toBeTruthy();
+  await dismissOnboardingTour(request);
   await persistStorageState(request, "trainee");
 });
 
@@ -72,6 +73,7 @@ setup("authenticate as admin", async ({ request }) => {
       `Make sure E2E_AUTH_SECRET is set on the target deployment and ` +
       `matches the value in this runner's env.`,
   ).toBeTruthy();
+  await dismissOnboardingTour(request);
   await persistStorageState(request, "admin");
 });
 
@@ -85,7 +87,7 @@ setup("authenticate as admin", async ({ request }) => {
  * reason this check exists: it turns drift into one named failure here
  * instead of scattered 60s timeouts downstream.
  */
-setup("consent seed suppresses the cookie banner", async ({ browser }) => {
+setup("first-run chrome does not cover the app", async ({ browser }) => {
   const statePath = path.join(AUTH_DIR, "admin.json");
   const context = await browser.newContext({ storageState: statePath });
   const page = await context.newPage();
@@ -99,6 +101,24 @@ setup("consent seed suppresses the cookie banner", async ({ browser }) => {
         `longer matches VERSION in src/components/consent/ConsentProvider.tsx — ` +
         `update it here. Left unfixed, the banner covers the bottom of the ` +
         `viewport and any spec clicking a low CTA will time out instead.`,
+    ).toBeHidden();
+
+    // The tour backdrop covers the whole viewport, so if it is up, every
+    // click in every admin spec fails on actionability rather than on
+    // anything the spec is actually asserting.
+    // Matched by its landmark name, NOT by the backdrop's utility classes:
+    // `div.fixed.inset-0.z-40` also matches unrelated drawer backdrops
+    // (the sidebar keeps an md:hidden one in the DOM on every page), and
+    // a count assertion cannot tell those apart from a tour that is
+    // genuinely open.
+    await expect(
+      page.getByRole("region", { name: /product tour/i }),
+      "The onboarding tour is still up despite the dismissal " +
+        "PATCH in auth setup. It intercepts pointer events across the " +
+        "entire viewport, so specs will hang on clicks that have nothing " +
+        "to do with what they test. Check PATCH /api/onboarding still " +
+        "accepts { dismissed: true } and that the auto-start guard in " +
+        "Onboarding.tsx still honours it.",
     ).toBeHidden();
   } finally {
     await context.close();
@@ -121,6 +141,36 @@ async function mintSession(
       : undefined,
     data: { email },
   });
+}
+
+/**
+ * Dismiss the product tour for the account we just signed in as.
+ *
+ * Second piece of first-run chrome that blocks clicks, and the more
+ * damaging one: the tour renders `fixed inset-0 z-40` as a backdrop
+ * (Onboarding.tsx), so while it is open it swallows pointer events for
+ * the ENTIRE viewport, not just the bottom strip. It auto-starts for
+ * any account that has not dismissed or completed it — which is every
+ * freshly seeded e2e user, on every admin route.
+ *
+ * That is what "delete permanently" was hanging on: Playwright logged
+ * 104 retries, each one reporting the backdrop intercepting the click.
+ *
+ * Unlike consent this is server state, not localStorage, so seeding the
+ * storage state cannot reach it — it has to be a call as the signed-in
+ * user. `dismissed: true` is exactly what the Skip button sends, and
+ * the auto-start guard short-circuits on it.
+ *
+ * Best-effort on purpose: a deployment without the route should not
+ * fail auth setup. If it ever silently stops working, the guard test
+ * below is what catches it.
+ */
+async function dismissOnboardingTour(
+  request: import("@playwright/test").APIRequestContext,
+) {
+  try {
+    await request.patch("/api/onboarding", { data: { dismissed: true } });
+  } catch {}
 }
 
 /**
