@@ -4322,7 +4322,13 @@ h1, h2, h3 {
 }
 .ds-wayfinding__desc {
   margin: 9px 0 0;
-  max-width: 54ch;
+  /* Two caps, not one. The ch cap keeps the measure inside the
+   * readable 45-75 band; the percentage cap keeps a long description
+   * from running under the routing diagram on a wide plate. Real
+   * page copy runs to five sentences on Learning Pathways — at a
+   * tighter measure that became a six-line column down the left
+   * third with the rest of the plate empty. */
+  max-width: min(68ch, 60%);
   font-size: 14px;
   line-height: 1.5;
   color: var(--fg-muted);
