@@ -5,7 +5,7 @@ import { LogOut, AlertCircle } from "lucide-react";
 import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 /**
- * Inline "Leave" button shown on /my-courses for admin / superadmin
+ * Inline "Leave" button shown on /progress for admin / superadmin
  * rows. Trainees go through the regular withdrawal flow elsewhere
  * (assessment-aware, support-flagged); admins routinely enrol into
  * courses to test the player and need a one-click way to remove
