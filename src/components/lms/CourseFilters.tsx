@@ -139,7 +139,10 @@ export function CourseFilters({
             )}
           />
           <span>Special programs &amp; workshops</span>
-          <span className="hidden sm:inline text-[10px] opacity-75 font-medium">
+          {/* No opacity-75 here: at 10px this is small text, and the 75%
+              blend against the amber-50 chip measured 4.02:1 — under the
+              4.5:1 floor. Full opacity keeps the same hue and clears it. */}
+          <span className="hidden sm:inline text-[10px] font-medium">
             (instructor-led)
           </span>
         </button>

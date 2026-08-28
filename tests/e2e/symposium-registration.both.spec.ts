@@ -22,7 +22,13 @@
  */
 import { test, expect } from "@playwright/test";
 
-const EVENT_SLUG = "2025-annual-symposium";
+// The seeded event this flow runs against. Overridable so the suite can
+// be pointed at a different cohort without editing the spec.
+//
+// Was hardcoded to "2025-annual-symposium", which does not exist — the
+// seeded events are 2026. The spec failed in 11s looking for approval
+// copy on a 404, which read like a UI regression and was not one.
+const EVENT_SLUG = process.env.E2E_EVENT_SLUG ?? "2026-annual-symposium";
 const REGISTER_PATH = `/events/${EVENT_SLUG}/register`;
 const SUCCESS_PATH = `/events/${EVENT_SLUG}/register/success`;
 
@@ -69,12 +75,40 @@ test("trainee can submit registration → admin approves → trainee sees confir
     }
 
     // ── 2. Trainee fills the form
-    // Default attendeeType ("trainee") is already checked. Just
-    // submit — workshop picks optional and we want to assert the
-    // base "no workshops picked → cross-prompt fires" path on the
-    // success page.
-    await expect(trainee.getByText(/not guaranteed until admin approval/i)).toBeVisible();
-    await trainee.getByRole("button", { name: /submit for approval/i }).click();
+    // Nothing to fill: the form ships with a usable default selected
+    // ("Just attending" — NOT "trainee", as this comment used to
+    // claim; the page snapshot from the failing run showed otherwise)
+    // and every other field is optional. Submitting as-is is also the
+    // path we want, because picking no workshops is what makes the
+    // cross-prompt fire on the success page below.
+    // The register page renders ONE OF TWO forms, and they word the
+    // approval gate differently:
+    //
+    //   RegistrationForm       — signed in AND the event has active
+    //                            workshops. Banner: "Your spot is not
+    //                            guaranteed until admin approval".
+    //                            Button: "Submit for approval".
+    //   SimpleRegistrationForm — everyone else. Banner: "Pending admin
+    //                            approval." Button: "Request a spot".
+    //
+    // This spec was pinned to the rich variant's wording. Both seeded
+    // 2026 events currently have ZERO workshops (the symposium and
+    // Training Week were split into separate events), so the simple
+    // form is what actually renders and the assertions could not match
+    // any wording on the page. What this step is really checking is
+    // "the approval gate is disclosed before submit" — true of both —
+    // so match either, and record which one ran so a silent switch
+    // between variants stays visible in the report.
+    const richBanner = trainee.getByText(/not guaranteed until admin approval/i);
+    const simpleBanner = trainee.getByText(/pending admin approval/i);
+    await expect(richBanner.or(simpleBanner).first()).toBeVisible();
+
+    const variant = (await richBanner.count()) > 0 ? "RegistrationForm (workshops)" : "SimpleRegistrationForm (no workshops)";
+    test.info().annotations.push({ type: "form-variant", description: variant });
+
+    await trainee
+      .getByRole("button", { name: /submit for approval|request a spot/i })
+      .click();
 
     // ── 3. Success page in pending state
     await trainee.waitForURL(new RegExp(SUCCESS_PATH.replace(/\//g, "\\/")));

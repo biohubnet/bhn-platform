@@ -1,5 +1,5 @@
 "use client";
-import { ReactNode, useEffect, useRef, useState, PointerEvent as RPointerEvent } from "react";
+import { ReactNode, useEffect, useId, useRef, useState, PointerEvent as RPointerEvent } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -8,6 +8,13 @@ interface ModalProps {
   open: boolean;
   onClose: () => void;
   title?: ReactNode;
+  /**
+   * Accessible name when there is no `title`, or when `title` is a node
+   * whose flattened text does not describe the dialog. Ignored when
+   * `title` is present — the rendered heading is the better name because
+   * it cannot drift out of sync with what the user sees.
+   */
+  ariaLabel?: string;
   description?: ReactNode;
   footer?: ReactNode;
   size?: "sm" | "md" | "lg" | "xl";
@@ -36,6 +43,7 @@ export function Modal({
   open,
   onClose,
   title,
+  ariaLabel,
   description,
   footer,
   size = "md",
@@ -61,6 +69,9 @@ export function Modal({
   useEffect(() => { setMounted(true); }, []);
 
   const dialogRef = useRef<HTMLDivElement>(null);
+  // Stable per-instance id so aria-labelledby can point at this modal's
+  // own heading even when several modals are mounted at once.
+  const titleId = useId();
   const dragStart = useRef<{ mx: number; my: number; ox: number; oy: number } | null>(null);
   const resizeStart = useRef<{ mx: number; my: number; w: number; h: number } | null>(null);
 
@@ -160,6 +171,15 @@ export function Modal({
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
+        // role="dialog" with no accessible name is a serious WCAG
+        // failure (axe: aria-dialog-name) — a screen reader announces
+        // only "dialog" and the user has no idea what opened. This
+        // component had neither aria-label nor aria-labelledby, so
+        // EVERY modal in the app was unnamed. Point at the rendered
+        // <h2> when there is a title (it stays in sync by construction)
+        // and fall back to the explicit prop when there is not.
+        aria-labelledby={title ? titleId : undefined}
+        aria-label={title ? undefined : ariaLabel}
         style={dialogStyle}
         className={cn(
           "relative w-full bg-card-solid rounded-[var(--radius-xl)] shadow-2xl border border-line",
@@ -179,7 +199,7 @@ export function Modal({
           >
             <div className="flex items-start justify-between gap-3">
               <div className="flex-1 min-w-0">
-                {title && <h2 className="text-lg font-semibold text-fg">{title}</h2>}
+                {title && <h2 id={titleId} className="text-lg font-semibold text-fg">{title}</h2>}
                 {description && <p className="text-sm text-muted mt-0.5">{description}</p>}
               </div>
               <button

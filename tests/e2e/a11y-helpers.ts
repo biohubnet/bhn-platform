@@ -40,7 +40,13 @@ export async function auditPage(page: Page, path: string, testInfo?: TestInfo) {
   // Several dashboard routes poll (AI status, live counts) or animate
   // in on mount; give the DOM a moment to settle before scanning so we
   // don't flag a transient loading-skeleton state.
-  await page.waitForLoadState("networkidle").catch(() => {});
+  // networkidle with NO timeout was the bug: it inherits the 60s test
+  // budget, and the routes this helper exists for are exactly the ones
+  // that never go idle — the comment above says so. /admin and
+  // /employer/profile poll, so every audit of them consumed the full
+  // 60s and failed as a test timeout rather than an accessibility
+  // finding. Cap it: settle if the page can, move on if it cannot.
+  await page.waitForLoadState("networkidle", { timeout: 5_000 }).catch(() => {});
   await page.waitForTimeout(300);
 
   const results = await new AxeBuilder({ page }).withTags(TAGS).analyze();

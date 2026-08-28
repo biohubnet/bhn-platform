@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Accessibility · contrast, dialog names, tour landmark
+  {
+    title: "Status colours, dialog names and the tour are readable to more people",
+    body: "Three accessibility fixes, all in shared components, so they land everywhere at once.\n\n  • **Status pills** — the small coloured labels (Completed, Passed, Failed, Active, Incomplete, Draft, Archived) were failing the WCAG AA contrast minimum at their 12px size. Four of the seven colour pairs were under the bar, the worst reading at 2.5:1 against a 4.5:1 requirement. All of them are darker now. Same colours, same meanings — just legible in bright rooms, on dim laptop screens, and to anyone with reduced contrast sensitivity.\n  • **Dialogs announce themselves** — every modal in the platform was opening without a name attached, so screen readers said only \"dialog\" with no indication of what had appeared. Each one is now announced by its own heading.\n  • **The product tour is reachable** — the tour card sits above the page rather than inside it, which meant screen-reader users navigating by landmark had no way to jump to it. It is now a named landmark that announces which step you are on.\n\nThe automated WCAG 2.2 AA audit that runs on every change had been timing out rather than reporting, so none of this was visible. That is fixed too, and the audit now covers ten screens across admin, employer and trainee views on both desktop and mobile.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── EQUIP · all 41 partner institutions on the VentureConnect form
   {
     title: "All 41 partner institutions are now on the EQUIP form",
