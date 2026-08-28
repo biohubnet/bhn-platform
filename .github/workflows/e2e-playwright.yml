@@ -56,6 +56,23 @@ permissions:
 jobs:
   smoke:
     name: Smoke suite
+    # Dependabot PRs are skipped, and it is not a matter of taste.
+    # Workflows triggered by Dependabot read from a SEPARATE secret
+    # store — the run log says "Secret source: Dependabot" — so
+    # secrets.E2E_AUTH_SECRET and the two E2E_*_EMAIL values arrive
+    # empty no matter how the job is written. auth.setup then cannot
+    # mint a session and every spec fails on authentication, which is
+    # a red check that can never go green and says nothing about the
+    # dependency being bumped. Dependabot's token is also restricted
+    # ("Deployments: read"), which is why the preview-wait step
+    # exhausts its retries first and the failure surfaces as a
+    # confusing "no base URL resolved" rather than an auth error.
+    #
+    # To actually run e2e on these PRs, add the same three secrets
+    # under Settings -> Secrets and variables -> Dependabot, then
+    # delete this condition. Until then a skip is the honest report:
+    # the other seven checks still gate these PRs.
+    if: github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
