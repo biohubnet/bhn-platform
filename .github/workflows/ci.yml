@@ -148,8 +148,6 @@ jobs:
         # squashed. Worth knowing when reading a green result: it proves
         # the baseline reproduces schema.prisma, not that a long history
         # still applies.
-        # to a database with nothing in it. Catches a migration that only
-        # works against the current production state.
         run: npx prisma migrate deploy
 
       - name: Schema drift check
@@ -162,3 +160,49 @@ jobs:
             --to-schema-datamodel prisma/schema.prisma \
             --exit-code \
           && echo "No drift: migrations reproduce schema.prisma exactly."
+
+      - name: Migrations apply on top of main, not just from empty
+        # The step above proves migrations rebuild the schema from
+        # NOTHING. That is not the situation a deploy is ever in: prod
+        # already holds main's state, and `migrate deploy` runs against
+        # it on every Vercel build. A migration can pass a from-empty
+        # replay and still fail in production — adding a NOT NULL column
+        # with no default is the classic one, fine on an empty table and
+        # fatal on a populated one.
+        #
+        # So: wipe, apply MAIN's migrations to get the shape prod is
+        # actually in, then apply only what this PR adds on top, then
+        # re-check drift. That is the upgrade path a deploy takes.
+        #
+        # PR-only. On a push to main the two trees are identical and
+        # this would just replay the same migrations twice.
+        if: github.event_name == 'pull_request'
+        run: |
+          set -euo pipefail
+          PGPASSWORD=postgres psql -h 127.0.0.1 -U postgres -d bhn_ci \
+            -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;' \
+            -c 'CREATE EXTENSION IF NOT EXISTS vector'
+
+          git fetch --depth=1 origin main
+
+          # rm -rf before each checkout is load-bearing. `git checkout
+          # <ref> -- <path>` OVERLAYS that path: it writes the ref's
+          # files but does not delete files the ref lacks. Without the
+          # rm, this PR's brand-new migration directories would survive
+          # into the "main's state" phase and get applied there — which
+          # is precisely the thing this step is trying to hold back.
+          rm -rf prisma/migrations
+          git checkout FETCH_HEAD -- prisma/migrations
+          echo "--- applying main's migrations (the shape production is in) ---"
+          npx prisma migrate deploy
+
+          rm -rf prisma/migrations
+          git checkout HEAD -- prisma/migrations
+          echo "--- applying what this PR adds, on top ---"
+          npx prisma migrate deploy
+
+          npx prisma migrate diff \
+            --from-url "$DATABASE_URL" \
+            --to-schema-datamodel prisma/schema.prisma \
+            --exit-code \
+          && echo "Upgrade path clean: main -> this PR reproduces schema.prisma." 
