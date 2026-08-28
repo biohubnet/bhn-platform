@@ -40,7 +40,6 @@ async function main() {
 
   const domain = process.env.AUTH0_DOMAIN ?? "";
   const clientId = process.env.AUTH0_CLIENT_ID ?? "";
-  const clientSecret = process.env.AUTH0_CLIENT_SECRET ?? "";
   const audience = process.env.AUTH0_AUDIENCE;
   const appBaseUrl = process.env.APP_BASE_URL ?? "";
 
@@ -73,11 +72,48 @@ async function main() {
     fail("Tenant reachable", `${discoveryUrl} — ${(e as Error).message}`);
   }
 
-  // ── 3. Credentials valid ────────────────────────────────────────
-  // A client_credentials grant is the only way to prove the id/secret
-  // pair without a browser. It needs an audience, which is the same
-  // thing RBAC permissions need — so a tenant that cannot do this
-  // cannot deliver permissions either.
+  // ── 3. Client + callback actually accepted ─────────────────────
+  // NOT a client_credentials probe. This is a Regular Web Application
+  // doing Universal Login, so its grant_types are authorization_code +
+  // refresh_token by design — asking it for a client_credentials token
+  // correctly returns "Grant type not allowed for the client", and
+  // adding that grant just to satisfy a preflight would hand a
+  // browser-facing app machine-to-machine powers it has no use for.
+  // The first live run of this script failed on exactly that, and the
+  // tenant was right.
+  //
+  // What CAN be checked without a browser is the pair that actually
+  // breaks logins: is this client_id real, and is this exact
+  // redirect_uri registered. Auth0 answers both on /authorize before
+  // any user interacts — a good client redirects to the login page, a
+  // bad one renders an error instead.
+  const authorize = new URL(`https://${domain.replace(/^https?:\/\//, "")}/authorize`);
+  authorize.searchParams.set("client_id", clientId);
+  authorize.searchParams.set("redirect_uri", `${appBaseUrl.replace(/\/$/, "")}/auth/callback`);
+  authorize.searchParams.set("response_type", "code");
+  authorize.searchParams.set("scope", "openid profile email");
+  if (audience) authorize.searchParams.set("audience", audience);
+
+  try {
+    const res = await fetch(authorize, { redirect: "manual" });
+    const location = res.headers.get("location") ?? "";
+    if (res.status >= 300 && res.status < 400 && /\/u\/login|\/login/.test(location)) {
+      pass("Client + callback URL", "Auth0 accepted the client_id and redirect_uri");
+    } else {
+      const body = await res.text();
+      const reason =
+        /Unauthorized|callback URL mismatch|Unknown client|invalid_request/i.exec(body)?.[0] ??
+        `unexpected ${res.status}`;
+      fail(
+        "Client + callback URL",
+        `${reason}. Check that ${appBaseUrl.replace(/\/$/, "")}/auth/callback is in the ` +
+          `application's Allowed Callback URLs, and that AUTH0_CLIENT_ID matches this tenant.`,
+      );
+    }
+  } catch (e) {
+    fail("Client + callback URL", (e as Error).message);
+  }
+
   if (!audience) {
     fail(
       "AUTH0_AUDIENCE",
@@ -85,31 +121,8 @@ async function main() {
         "and RBAC permissions never appear in it. Roles would still work; " +
         "the permissions half of the requirement would not.",
     );
-  } else if (discovery?.token_endpoint) {
-    try {
-      const res = await fetch(discovery.token_endpoint, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          grant_type: "client_credentials",
-          client_id: clientId,
-          client_secret: clientSecret,
-          audience,
-        }),
-      });
-      const body = (await res.json()) as { access_token?: string; error_description?: string; error?: string };
-      if (!res.ok || !body.access_token) {
-        fail(
-          "Client credentials",
-          body.error_description ?? body.error ?? `token endpoint returned ${res.status}`,
-        );
-      } else {
-        pass("Client credentials", "client_id + client_secret accepted");
-        inspectToken(body.access_token);
-      }
-    } catch (e) {
-      fail("Client credentials", (e as Error).message);
-    }
+  } else {
+    pass("AUTH0_AUDIENCE", `${audience} — permissions can appear in the token`);
   }
 
   // ── 4. Reminders the tenant cannot tell us about ─────────────────
@@ -132,36 +145,6 @@ async function main() {
   report();
 }
 
-/** Look for the permissions claim RBAC is supposed to add. */
-function inspectToken(accessToken: string) {
-  const parts = accessToken.split(".");
-  if (parts.length !== 3) {
-    // Opaque token — exactly what "no audience" produces.
-    fail("Access token format", "opaque, not a JWT — RBAC permissions cannot be read from it");
-    return;
-  }
-  try {
-    const payload: unknown = JSON.parse(
-      Buffer.from(parts[1], "base64url").toString("utf8"),
-    );
-    const perms =
-      typeof payload === "object" && payload !== null && "permissions" in payload
-        ? (payload as { permissions?: unknown }).permissions
-        : undefined;
-    if (Array.isArray(perms)) {
-      pass("RBAC permissions in token", `${perms.length} permission(s) present`);
-    } else {
-      fail(
-        "RBAC permissions in token",
-        "no `permissions` claim. Enable RBAC AND 'Add Permissions in the " +
-          "Access Token' on the API in the Auth0 dashboard.",
-      );
-    }
-  } catch {
-    fail("Access token format", "could not decode the JWT payload");
-  }
-}
-
 function report() {
   const width = Math.max(...checks.map((c) => c.label.length));
   console.log("\nAuth0 preflight\n");
@@ -171,8 +154,9 @@ function report() {
   const failed = checks.filter((c) => !c.ok);
   console.log(
     failed.length === 0
-      ? "\nAll checks passed. The roles claim still needs a real login to verify — " +
-          "sign in once on preview and confirm an admin account reaches /admin.\n"
+      ? "\nAll checks passed. Two things only a real login can prove: that the " +
+          "roles claim arrives, and that RBAC permissions are in the token. Sign " +
+          "in once and confirm an admin reaches /admin and a trainee does not.\n"
       : `\n${failed.length} check(s) failed. Do not cut over production yet.\n`,
   );
   process.exit(failed.length === 0 ? 0 : 1);
