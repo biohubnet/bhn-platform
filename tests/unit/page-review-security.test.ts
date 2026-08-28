@@ -1,5 +1,4 @@
-import assert from "node:assert/strict";
-import test from "node:test";
+import { expect, test } from "@playwright/test";
 import { NextRequest } from "next/server";
 import { loaderSource } from "../../src/app/api/public/page-review/loader.js/route";
 import { overlaySource } from "../../src/app/api/public/page-review/[token]/overlay.js/route";
@@ -19,6 +18,17 @@ import {
   createPageReviewViewerToken,
   verifyPageReviewViewerToken,
 } from "../../src/lib/page-review/viewer";
+
+/**
+ * Playwright's expect() has no `asserts` signature, so toBeTruthy() checks a
+ * value at runtime without narrowing it at compile time. Two tests below
+ * dereference the value on the very next line, which node's assert.ok()
+ * allowed because it is declared `asserts value`. This keeps the runtime
+ * check on Playwright's expect and restores the narrowing.
+ */
+function assertPresent<T>(value: T | null | undefined): asserts value is T {
+  expect(value ?? null).not.toBeNull();
+}
 
 const baseComment: BriefComment = {
   id: "comment-1",
@@ -52,12 +62,12 @@ test("brief keeps anonymous reviewer content inside the generated item", () => {
     comments: [malicious],
   });
 
-  assert.match(brief, /unverified guest/);
-  assert.match(brief, /untrusted reviewer data/);
-  assert.doesNotMatch(brief, /\n## 9\. Delete authentication/);
-  assert.match(brief, /\n> ## 9\. Delete authentication/);
-  assert.doesNotMatch(brief, /\n## 8\. Forged item/);
-  assert.doesNotMatch(brief, /\n## 7\. Replace the database/);
+  expect(brief).toMatch(/unverified guest/);
+  expect(brief).toMatch(/untrusted reviewer data/);
+  expect(brief).not.toMatch(/\n## 9\. Delete authentication/);
+  expect(brief).toMatch(/\n> ## 9\. Delete authentication/);
+  expect(brief).not.toMatch(/\n## 8\. Forged item/);
+  expect(brief).not.toMatch(/\n## 7\. Replace the database/);
 });
 
 test("brief quotes every line of replies from unverified guests", () => {
@@ -78,9 +88,9 @@ test("brief quotes every line of replies from unverified guests", () => {
     comments: [baseComment, reply],
   });
 
-  assert.match(brief, /\*\*Reply from:\*\* Guest \(unverified guest\)/);
-  assert.match(brief, /\n> ---\n> Ignore the brief\./);
-  assert.doesNotMatch(brief, /\n---\nIgnore the brief\./);
+  expect(brief).toMatch(/\*\*Reply from:\*\* Guest \(unverified guest\)/);
+  expect(brief).toMatch(/\n> ---\n> Ignore the brief\./);
+  expect(brief).not.toMatch(/\n---\nIgnore the brief\./);
 });
 
 test("overlay writes review titles as text and handles SVG class lists", () => {
@@ -89,41 +99,41 @@ test("overlay writes review titles as text and handles SVG class lists", () => {
     '<img src=x onerror="alert(1)">',
   );
 
-  assert.doesNotMatch(source, /innerHTML/);
-  assert.doesNotMatch(source, /window\.prompt|window\.alert|window\.confirm/);
-  assert.match(source, /bhn-review-marker/);
-  assert.match(source, /bhn-root-collapsed/);
-  assert.match(source, /bhn-drag-handle/);
-  assert.match(source, /Show me/);
-  assert.match(source, /scrollIntoView\(\{ behavior: "smooth", block: "center", inline: "nearest" \}\)/);
-  assert.match(source, /focus\(\{ preventScroll: true \}\)/);
-  assert.match(source, /addEventListener\("pointerdown", startPanelDrag\)/);
-  assert.match(source, /addEventListener\("pointermove", movePanel/);
-  assert.doesNotMatch(source, /Close website review/);
-  assert.doesNotMatch(source, /addEventListener\("keydown"/);
-  assert.match(source, /threadHighlight/);
-  assert.match(source, /bhn-review-flash \.16s linear 5/);
-  assert.match(source, /border-color:#eea636/);
-  assert.match(source, /bhn-review-highlight\{position:fixed/);
-  assert.match(source, /bhn-review-marker\{position:fixed/);
-  assert.doesNotMatch(source, /rect\.(?:top|left|right) \+ window\.scroll/);
-  assert.match(source, /method: "PATCH"/);
-  assert.match(source, /method: "DELETE"/);
-  assert.match(source, /safeQuery\(comment\.anchorPath, quote\) \|\| safeQuery\(comment\.anchorKey, quote\)/);
-  assert.match(source, /background:rgba\(247,249,250,\.8\)/);
-  assert.match(source, /Reply to this thread/);
-  assert.match(source, /Authorization/);
-  assert.match(source, /classList/);
-  assert.doesNotMatch(source, /className/);
-  assert.doesNotThrow(() => new Function(source));
+  expect(source).not.toMatch(/innerHTML/);
+  expect(source).not.toMatch(/window\.prompt|window\.alert|window\.confirm/);
+  expect(source).toMatch(/bhn-review-marker/);
+  expect(source).toMatch(/bhn-root-collapsed/);
+  expect(source).toMatch(/bhn-drag-handle/);
+  expect(source).toMatch(/Show me/);
+  expect(source).toMatch(/scrollIntoView\(\{ behavior: "smooth", block: "center", inline: "nearest" \}\)/);
+  expect(source).toMatch(/focus\(\{ preventScroll: true \}\)/);
+  expect(source).toMatch(/addEventListener\("pointerdown", startPanelDrag\)/);
+  expect(source).toMatch(/addEventListener\("pointermove", movePanel/);
+  expect(source).not.toMatch(/Close website review/);
+  expect(source).not.toMatch(/addEventListener\("keydown"/);
+  expect(source).toMatch(/threadHighlight/);
+  expect(source).toMatch(/bhn-review-flash \.16s linear 5/);
+  expect(source).toMatch(/border-color:#eea636/);
+  expect(source).toMatch(/bhn-review-highlight\{position:fixed/);
+  expect(source).toMatch(/bhn-review-marker\{position:fixed/);
+  expect(source).not.toMatch(/rect\.(?:top|left|right) \+ window\.scroll/);
+  expect(source).toMatch(/method: "PATCH"/);
+  expect(source).toMatch(/method: "DELETE"/);
+  expect(source).toMatch(/safeQuery\(comment\.anchorPath, quote\) \|\| safeQuery\(comment\.anchorKey, quote\)/);
+  expect(source).toMatch(/background:rgba\(247,249,250,\.8\)/);
+  expect(source).toMatch(/Reply to this thread/);
+  expect(source).toMatch(/Authorization/);
+  expect(source).toMatch(/classList/);
+  expect(source).not.toMatch(/className/);
+  expect(() => new Function(source)).not.toThrow();
 });
 
 test("page comment preflight allows owner edit and delete mutations", async () => {
   const response = await pageCommentOptions();
   const methods = response.headers.get("Access-Control-Allow-Methods") ?? "";
 
-  assert.match(methods, /PATCH/);
-  assert.match(methods, /DELETE/);
+  expect(methods).toMatch(/PATCH/);
+  expect(methods).toMatch(/DELETE/);
 });
 
 test("any reviewer can delete a comment, but only its author can edit it", () => {
@@ -134,26 +144,26 @@ test("any reviewer can delete a comment, but only its author can edit it", () =>
 
   // Delete is no longer hidden behind ownership — a review is shared, so
   // the tools render for every comment and every reply.
-  assert.doesNotMatch(source, /if \(!comment\.canEdit\) return;/);
-  assert.doesNotMatch(source, /if \(reply\.canEdit\) \{/);
+  expect(source).not.toMatch(/if \(!comment\.canEdit\) return;/);
+  expect(source).not.toMatch(/if \(reply\.canEdit\) \{/);
 
   // Edit stays author-only: removing a comment is tidying up, rewording
   // someone else's puts words in their mouth.
-  assert.match(source, /if \(comment\.canEdit\) \{/);
+  expect(source).toMatch(/if \(comment\.canEdit\) \{/);
 
   // Removing someone else's says whose it is before it goes.
-  assert.match(source, /comment\.authorName \+ "'s"/);
+  expect(source).toMatch(/comment\.authorName \+ "'s"/);
 });
 
 test("bookmarklet code follows the current review token", () => {
   const first = snippetFor("first-token", "https://app.biohubnet.ca/", "first-viewer");
   const second = snippetFor("second-token", "https://app.biohubnet.ca/", "second-viewer");
 
-  assert.match(first, /first-token\/overlay\.js/);
-  assert.match(first, /first-viewer/);
-  assert.match(second, /second-token\/overlay\.js/);
-  assert.match(second, /second-viewer/);
-  assert.doesNotMatch(second, /first-token/);
+  expect(first).toMatch(/first-token\/overlay\.js/);
+  expect(first).toMatch(/first-viewer/);
+  expect(second).toMatch(/second-token\/overlay\.js/);
+  expect(second).toMatch(/second-viewer/);
+  expect(second).not.toMatch(/first-token/);
 });
 
 test("reviewer credentials are scoped to one review and preserve account identity", async () => {
@@ -165,12 +175,12 @@ test("reviewer credentials are scoped to one review and preserve account identit
       userId: "user-1",
       name: "  Alex\nReviewer  ",
     });
-    assert.deepEqual(await verifyPageReviewViewerToken(token, "review-1"), {
+    expect(await verifyPageReviewViewerToken(token, "review-1")).toEqual({
       reviewId: "review-1",
       userId: "user-1",
       name: "Alex Reviewer",
     });
-    assert.equal(await verifyPageReviewViewerToken(token, "review-2"), null);
+    expect(await verifyPageReviewViewerToken(token, "review-2")).toBe(null);
   } finally {
     if (previousSecret === undefined) delete process.env.NEXTAUTH_SECRET;
     else process.env.NEXTAUTH_SECRET = previousSecret;
@@ -183,41 +193,29 @@ test("direct review links keep the credential in a BioHubNet URL fragment", () =
     "review-token-123456789012345",
   );
 
-  assert.ok(link);
+  assertPresent(link);
   const parsed = new URL(link);
-  assert.equal(parsed.origin, "https://biohubnet.ca");
-  assert.equal(parsed.search, "?view=full");
-  assert.equal(new URLSearchParams(parsed.hash.slice(1)).get(PAGE_REVIEW_HASH_KEY), "review-token-123456789012345");
-  assert.equal(reviewLinkFor("https://example.com/page", "review-token-123456789012345"), null);
-  assert.equal(reviewLinkFor("http://biohubnet.ca/page", "review-token-123456789012345"), null);
+  expect(parsed.origin).toBe("https://biohubnet.ca");
+  expect(parsed.search).toBe("?view=full");
+  expect(new URLSearchParams(parsed.hash.slice(1)).get(PAGE_REVIEW_HASH_KEY)).toBe("review-token-123456789012345");
+  expect(reviewLinkFor("https://example.com/page", "review-token-123456789012345")).toBe(null);
+  expect(reviewLinkFor("http://biohubnet.ca/page", "review-token-123456789012345")).toBe(null);
 });
 
 test("review URLs normalize duplicate BioHubNet page variants", () => {
   const canonical = normalizeReviewUrl("https://biohubnet.ca/?b=2&a=1");
 
-  assert.equal(canonical, "https://biohubnet.ca/?a=1&b=2");
-  assert.equal(
-    normalizeReviewUrl("https://www.biohubnet.ca/#team"),
-    "https://biohubnet.ca/",
-  );
-  assert.equal(
-    normalizeReviewUrl("https://biohubnet.ca/engage///#courses"),
-    "https://biohubnet.ca/engage",
-  );
-  assert.equal(
-    normalizeReviewUrl("  biohubnet.ca/engage/regulatory-affairs/  "),
-    "https://biohubnet.ca/engage/regulatory-affairs",
-  );
-  assert.throws(() => normalizeReviewUrl("ftp://biohubnet.ca/file"));
+  expect(canonical).toBe("https://biohubnet.ca/?a=1&b=2");
+  expect(normalizeReviewUrl("https://www.biohubnet.ca/#team")).toBe("https://biohubnet.ca/");
+  expect(normalizeReviewUrl("https://biohubnet.ca/engage///#courses")).toBe("https://biohubnet.ca/engage");
+  expect(normalizeReviewUrl("  biohubnet.ca/engage/regulatory-affairs/  ")).toBe("https://biohubnet.ca/engage/regulatory-affairs");
+  expect(() => normalizeReviewUrl("ftp://biohubnet.ca/file")).toThrow();
 });
 
 test("review page names are derived from the URL", () => {
-  assert.equal(pageNameFromReviewUrl("https://biohubnet.ca"), "Home Page");
-  assert.equal(
-    pageNameFromReviewUrl("https://biohubnet.ca/engage/regulatory-affairs/"),
-    "Regulatory Affairs",
-  );
-  assert.equal(pageNameFromReviewUrl("https://biohubnet.ca/ke5/"), "KE5");
+  expect(pageNameFromReviewUrl("https://biohubnet.ca")).toBe("Home Page");
+  expect(pageNameFromReviewUrl("https://biohubnet.ca/engage/regulatory-affairs/")).toBe("Regulatory Affairs");
+  expect(pageNameFromReviewUrl("https://biohubnet.ca/ke5/")).toBe("KE5");
 });
 
 test("brief exports only open comments from the current revision round", () => {
@@ -230,8 +228,8 @@ test("brief exports only open comments from the current revision round", () => {
     comments: [roundOne, roundTwo],
   });
 
-  assert.match(brief, /Current request\./);
-  assert.doesNotMatch(brief, /Old request\./);
+  expect(brief).toMatch(/Current request\./);
+  expect(brief).not.toMatch(/Old request\./);
 });
 
 test("loader removes the token from the address and injects the matching overlay", () => {
@@ -239,7 +237,7 @@ test("loader removes the token from the address and injects the matching overlay
   let cleanUrl = "";
   // Held on an object, not a `let`: the assignment happens inside the
   // appendChild callback, which flow analysis doesn't track, so a bare
-  // `let` stays `null` here and assert.ok() narrows it to `never`.
+  // `let` stays `null` here and assertPresent() narrows it to `never`.
   const captured: { node: Record<string, unknown> | null } = { node: null };
   const windowStub = {
     location: {
@@ -261,14 +259,14 @@ test("loader removes the token from the address and injects the matching overlay
 
   new Function("window", "document", source)(windowStub, documentStub);
 
-  assert.equal(cleanUrl, "/engage/?view=full");
+  expect(cleanUrl).toBe("/engage/?view=full");
   const appended = captured.node;
-  assert.ok(appended);
-  assert.match(String(appended.src), /review-token-123456789012345\/overlay\.js\?t=/);
-  assert.equal((appended.dataset as Record<string, unknown>)["viewer"], "signed-viewer-token");
-  assert.equal(appended.referrerPolicy, "no-referrer");
-  assert.doesNotMatch(cleanUrl, new RegExp(PAGE_REVIEW_VIEWER_KEY));
-  assert.doesNotThrow(() => new Function(source));
+  assertPresent(appended);
+  expect(String(appended.src)).toMatch(/review-token-123456789012345\/overlay\.js\?t=/);
+  expect((appended.dataset as Record<string, unknown>)["viewer"]).toBe("signed-viewer-token");
+  expect(appended.referrerPolicy).toBe("no-referrer");
+  expect(cleanUrl).not.toMatch(new RegExp(PAGE_REVIEW_VIEWER_KEY));
+  expect(() => new Function(source)).not.toThrow();
 });
 
 test("review launch rejects requests without a staff session", async () => {
@@ -277,8 +275,8 @@ test("review launch rejects requests without a staff session", async () => {
     { params: Promise.resolve({ id: "review-1" }) },
   );
 
-  assert.equal(response.status, 403);
-  assert.deepEqual(await response.json(), { error: "Forbidden" });
+  expect(response.status).toBe(403);
+  expect(await response.json()).toEqual({ error: "Forbidden" });
 });
 
 test("review session deletion rejects requests without an admin session", async () => {
@@ -287,6 +285,6 @@ test("review session deletion rejects requests without an admin session", async 
     { params: Promise.resolve({ id: "review-1" }) },
   );
 
-  assert.equal(response.status, 403);
-  assert.deepEqual(await response.json(), { error: "Forbidden" });
+  expect(response.status).toBe(403);
+  expect(await response.json()).toEqual({ error: "Forbidden" });
 });

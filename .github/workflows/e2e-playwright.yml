@@ -23,8 +23,11 @@ name: E2E (Playwright)
 
 on:
   # Per-PR coverage: every push to a PR branch retests the preview.
+  # No `branches:` filter — with one, this only ran on PRs targeting
+  # main, so a PR into any other branch silently skipped the e2e gate
+  # while the other three still reported. "Gates every PR" has to mean
+  # every PR.
   pull_request:
-    branches: [main]
   # Manual smoke against production — for "before tomorrow's release"
   # confidence-check days.
   workflow_dispatch:
@@ -102,7 +105,11 @@ jobs:
           E2E_ADMIN_EMAIL: ${{ secrets.E2E_ADMIN_EMAIL }}
           E2E_TRAINEE_EMAIL: ${{ secrets.E2E_TRAINEE_EMAIL }}
           CI: "true"
-        run: npx playwright test
+        # Browser projects only. The `unit` project lives in the same
+        # config now, and running it here too would make a unit
+        # regression surface as a Smoke suite failure — two gates
+        # reporting one defect.
+        run: npm run test:e2e
 
       # Always upload — green or red. The HTML report is the
       # evidence trail you share when a reviewer asks "what does
