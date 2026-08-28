@@ -127,11 +127,24 @@ moment Auth0 goes live.
 Users are matched on **verified email**, which every existing row has,
 so accounts link on first login with no schema change and no backfill.
 
-The stored password hashes are bcrypt (`bcryptjs`), which Auth0's bulk
-import accepts directly — so people keep their current passwords and
-never see a reset email. Export `email` + `passwordHash` from the
-`User` table and use **User Management → Import Users** with
-`custom_password_hash: { algorithm: "bcrypt", hash: { value: <hash> } }`.
+The stored password hashes are bcrypt, which Auth0's bulk import
+accepts directly — so people keep their current passwords and never see
+a reset email. The column is `User.password` (NOT `passwordHash`, which
+does not exist), and the hashes carry the `$2b$` prefix.
+
+There are currently **5 users, 4 of them with a password**, so this is a
+small hand-checkable import rather than a migration project. Export
+`email` + `password` and use **User Management → Import Users**:
+
+```json
+[{ "email": "…", "email_verified": true,
+   "custom_password_hash": { "algorithm": "bcrypt",
+                             "hash": { "value": "$2b$…" } } }]
+```
+
+`email_verified` must be `true` in the import file. The code refuses a
+login whose token says `email_verified: false`, so importing without it
+locks out every account you just moved.
 
 Two things to know:
 
