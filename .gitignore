@@ -73,3 +73,6 @@ prisma/*.db-journal
 /test-results/
 /blob-report/
 /playwright/.cache/
+
+# Auth0 provisioner output — contains a client secret
+.auth0-provision.local
