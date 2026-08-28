@@ -108,6 +108,37 @@ New code lives next to its peers. Don't invent a new top-level folder without ch
 - Note for unit tests: Playwright's `expect()` has no `asserts` signature, so it does not narrow types the way node's `assert.ok()` did. `tests/unit/page-review-security.test.ts` keeps an `assertPresent()` helper for the cases that dereference a value straight after checking it.
 - Five e2e specs are `test.fixme` stubs with TODO bodies. They report as skipped, not passing — don't read a green run as full coverage.
 
+## CI — what actually gates a PR
+
+Eight checks report on a pull request. **Four are the named gates**; the
+rest are additive, not decorative:
+
+| Check | Workflow | Blocking |
+|---|---|---|
+| Build + typecheck | ci.yml | yes |
+| Unit tests | ci.yml | yes |
+| Schema + migrations (clean Postgres 16) | ci.yml | yes |
+| Smoke suite (e2e) | e2e-playwright.yml | yes |
+| TruffleHog secret scan | security-audit.yml | yes |
+| npm audit (high+) | security-audit.yml | on PRs only — advisory on push to main |
+| Vercel / Vercel Preview Comments | Vercel integration | not ours |
+
+Two things to be precise about, because the wording invites overclaiming:
+
+- **"Gates" means the check turns red, not that GitHub refuses the
+  merge.** No status check is *required*: branch protection and rulesets
+  are plan-gated on a private repo under a free personal account (both
+  APIs return 403). The proof is PR #8 — every check failing, and GitHub
+  still reports `mergeable: MERGEABLE, mergeStateStatus: UNSTABLE`. A
+  required check would report BLOCKED. Closing this needs GitHub Pro or
+  a public repo; until then, red means "do not merge this" by
+  convention, enforced by people.
+- **The e2e gate is skipped on Dependabot PRs.** Those runs read from a
+  separate secret store (`Secret source: Dependabot` in the log), so the
+  E2E auth secrets arrive empty and every spec fails on authentication.
+  To enable it, add the same three secrets under Settings → Secrets and
+  variables → Dependabot and drop the `if:` on the smoke job.
+
 ## Commit rules
 
 - **Conventional Commits.** Scope by module: `feat(events/schema)`, `feat(rewards): …`, `docs(claude): …`, `style(theme): …`, `fix(security): …`.

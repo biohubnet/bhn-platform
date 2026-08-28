@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Karla } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
+import { isAuth0Enabled } from "@/lib/auth/auth0-client";
 import { ThemeScript } from "@/components/ui/ThemeProvider";
 import { I18nScript } from "@/lib/i18n/I18nProvider";
 import { getActiveDesignSystem } from "@/lib/settings";
@@ -86,7 +87,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <I18nScript />
       </head>
       <body className="min-h-full bg-page text-fg">
-        <Providers initialDesignSystem={activeDesignSystem}>{children}</Providers>
+        <Providers initialDesignSystem={activeDesignSystem} auth0Enabled={isAuth0Enabled()}>{children}</Providers>
       </body>
     </html>
   );

@@ -140,7 +140,14 @@ jobs:
         run: npx prisma validate
 
       - name: Replay every migration on an empty database
-        # The real check: 135 hand-written SQL migrations, applied in order
+        # Replays whatever prisma/migrations contains against an empty
+        # pg16. Today that is one squashed baseline (0_init), not the
+        # 135-migration chain this comment used to advertise — that
+        # chain was unreplayable from empty (it died at migration 29 on
+        # a column a later migration created) which is why it was
+        # squashed. Worth knowing when reading a green result: it proves
+        # the baseline reproduces schema.prisma, not that a long history
+        # still applies.
         # to a database with nothing in it. Catches a migration that only
         # works against the current production state.
         run: npx prisma migrate deploy

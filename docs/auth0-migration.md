@@ -141,6 +141,25 @@ before touching production.
   place that reasons about roles outside `getSession()`.
 - Sign out clears the session.
 
+## What the app already does on cutover
+
+No code change is needed at the switch — these are wired and tested:
+
+- **`/login` and `/register` redirect to Universal Login.** Handled in
+  `src/proxy.ts`, before React renders, so there is no flash of the
+  credentials form. NextAuth's `callbackUrl` is translated to Auth0's
+  `returnTo` (which the SDK sanitises against the app base URL).
+- **Sign-out goes to the right provider.** `useSignOut()` in
+  `src/lib/auth/authProvider.tsx` routes to `/auth/logout` under Auth0
+  and to NextAuth's `signOut()` otherwise. Calling the wrong one leaves
+  the session alive while the UI says it ended, which is why the flag is
+  passed down from the server rather than mirrored into a
+  `NEXT_PUBLIC_` variable that could disagree.
+- **The access rules are unit-tested** without a tenant —
+  `tests/unit/auth0-session.test.ts` covers the refusal table
+  (unverified email, no email, no local account, JIT ordering), role
+  precedence, permission mapping, and malformed-claim handling.
+
 ## Known gaps
 
 - **`/api/test/e2e-sign-in` mints a NextAuth JWT.** The e2e suite

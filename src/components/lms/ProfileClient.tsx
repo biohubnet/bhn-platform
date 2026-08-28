@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { signOut } from "next-auth/react";
+import { useSignOut } from "@/lib/auth/authProvider";
 import { useRouter } from "next/navigation";
 import { User as UserIcon, Lock, ShieldQuestion, Save, Check, AlertCircle, Clock, X, Shield, Download, Languages, Trash2 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
@@ -401,6 +401,9 @@ function LanguageSection() {
 
 function PrivacySection() {
   const { t } = useI18n();
+  // Provider-agnostic: routes to Auth0's logout when Auth0 is live,
+  // NextAuth's otherwise. Calling the wrong one leaves the session up.
+  const signOut = useSignOut();
   const { consent, setConsent } = useConsent();
   const [analytics, setAnalytics] = useState(consent.analytics);
   const [marketing, setMarketing] = useState(consent.marketing);
@@ -426,7 +429,7 @@ function PrivacySection() {
         return;
       }
       // Sign out and bounce home
-      await signOut({ callbackUrl: "/" });
+      await signOut("/");
     } finally {
       setBusyDelete(false);
     }
