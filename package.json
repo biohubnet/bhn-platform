@@ -20,7 +20,8 @@
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:report": "playwright show-report",
     "test:unit": "playwright test --project=unit",
-    "auth0:preflight": "tsx scripts/auth0-preflight.ts"
+    "auth0:preflight": "tsx scripts/auth0-preflight.ts",
+    "auth0:provision": "tsx scripts/auth0-provision.ts"
   },
   "dependencies": {
     "@auth/prisma-adapter": "2.11.3",

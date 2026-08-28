@@ -28,6 +28,45 @@ cannot lock anyone out.
 Rollback is the same switch in reverse — unset one variable, redeploy.
 No code change in either direction.
 
+## The short path: provision it with a script
+
+Steps 1–3 below are all Management API calls, and
+`scripts/auth0-provision.ts` makes them. You only need to do by hand the
+one thing that cannot be scripted:
+
+1. Create an Auth0 tenant (account creation).
+2. In it, **Applications → Create → Machine to Machine**, authorised for
+   the **Auth0 Management API**, with these scopes:
+   `create:clients read:clients update:clients read:client_keys`
+   `create:resource_servers read:resource_servers update:resource_servers`
+   `create:roles read:roles update:roles`
+   `create:actions read:actions update:actions`
+   `create:users read:users read:connections`
+
+   Authorising the FIRST M2M app is circular — `POST /api/v2/client-grants`
+   itself needs a token carrying `create:client_grants`. That bootstrap has
+   to happen in the dashboard.
+
+3. Then:
+
+```bash
+export AUTH0_MGMT_DOMAIN=your-tenant.us.auth0.com
+export AUTH0_MGMT_CLIENT_ID=...
+export AUTH0_MGMT_CLIENT_SECRET=...
+
+npm run auth0:provision -- --dry-run        # see what it would do
+npm run auth0:provision                     # API, roles, app, Action
+npm run auth0:provision -- --import-users   # + migrate the bcrypt users
+```
+
+It is idempotent — re-running after a partial failure is the intended
+recovery path. It writes the new application's credentials to
+`.auth0-provision.local` (gitignored, chmod 600) rather than printing
+them.
+
+The rest of this document is the manual equivalent, and the reference for
+what the script is doing and why.
+
 ## 1. Create the tenant and application
 
 1. Create an Auth0 tenant (or use an existing one).
