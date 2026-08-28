@@ -6,7 +6,7 @@ This file captures the rules every Claude Code session should follow when touchi
 
 ## Stack summary
 
-Next.js 16 (App Router) + React 19 + TypeScript strict + Tailwind v4 with CSS-variable theme tokens. Prisma 6.19.3 on Postgres (Neon with PgBouncer pooling) + pgvector. NextAuth for auth (credentials + magic link + TOTP MFA). Cloudflare R2 for object storage; Cloudflare Workers AI (Llama 3.1 + BGE small + SDXL Lightning) for chat / embeddings / image gen, with Gemini Flash as the chat fallback. Vercel for hosting.
+Next.js 16.3.0 (App Router, pinned exact) + React 19.2.8 + TypeScript 5.9.3 strict + Tailwind v4.3.3 with CSS-variable theme tokens. Node 22 (`engines.node`, `.nvmrc`, and CI all agree). Prisma 6.19.3 on Postgres (Neon with PgBouncer pooling) + pgvector. Auth is provider-switched: the credentials provider (NextAuth — credentials + magic link + TOTP MFA) is live today, and Auth0 Universal Login takes over automatically once the AUTH0_* env is complete. See `docs/auth0-migration.md`. Cloudflare R2 for object storage; Cloudflare Workers AI (Llama 3.1 + BGE small + SDXL Lightning) for chat / embeddings / image gen, with Gemini Flash as the chat fallback. Vercel for hosting.
 
 ## Folder structure (mirror exactly)
 
@@ -61,7 +61,7 @@ New code lives next to its peers. Don't invent a new top-level folder without ch
 
 ## Styling
 
-- **Tailwind v4** with CSS-variable theme tokens. Tokens live in `src/app/globals.css` under `[data-theme="…"]` blocks. Thirteen themes ship today; new components must work across all of them.
+- **Tailwind v4** with CSS-variable theme tokens. Tokens live in `src/app/globals.css` under `[data-theme="…"]` blocks. Seventeen themes ship today; new components must work across all of them.
 - **Use theme tokens** (`bg-card`, `text-fg`, `text-muted`, `text-subtle`, `border-line`, `bg-elevated`, `bg-brand-50` … `bg-brand-900`) — never raw hex.
 - **No inline `style={{ color: '#…' }}`** unless the value is computed from a token (e.g. `style={{ borderLeft: '4px solid ' + tier.accent }}` where `accent` is a CSS variable).
 - **No hex colors outside the token file.** The only exceptions are AI prompts that describe colors, deliberate per-tier accents in feature constants (`MERCH_TIERS`), and brand-asset SVGs.
@@ -86,7 +86,8 @@ New code lives next to its peers. Don't invent a new top-level folder without ch
 
 ## Auth
 
-- **NextAuth** with credentials provider, email-code magic link, and TOTP MFA.
+- **Provider-switched at one seam.** `getRawSession()` in `src/lib/auth.ts` picks the implementation: Auth0 Universal Login when `isAuth0Enabled()` (every AUTH0_* var present), otherwise NextAuth with the credentials provider, email-code magic link, and TOTP MFA. Both return the same session shape, so the 519 modules importing `@/lib/auth` are provider-agnostic — keep it that way and add nothing provider-specific to that surface.
+- Auth0's `/auth/*` routes are mounted from `src/proxy.ts`, not from route files. Deleting the proxy makes the callback 404 with no obvious cause.
 - **Session checks at the route level.** Every API route starts with `await requireSession()` or `await requireRole("admin")` (etc.). Server components use `getSession()` from `src/lib/auth.ts`.
 - **RBAC roles found in the codebase**:
   - `trainee` (rank 0)
@@ -100,9 +101,12 @@ New code lives next to its peers. Don't invent a new top-level folder without ch
 
 ## Testing
 
-- **There is no test framework in this repo.** No vitest, no jest, no playwright. No `tests/` directory, no `*.test.ts` files.
-- New code is verified by `npx tsc --noEmit` plus manual smoke testing.
-- If you're tempted to add a test framework, propose it explicitly before installing — it's a stack decision.
+- **Playwright is the test runner, for both unit and e2e.** One config, three project groups:
+  - `unit` (`tests/unit`) — pure Node. Imports route handlers and lib functions directly, never opens a browser, needs no `playwright install`. `npm run test:unit`.
+  - `trainee-chromium` / `admin-chromium` (`tests/e2e`) — browser specs against a deployed preview, each loading a role's saved storage state. `npm run test:e2e`.
+- `npx tsc --noEmit` is still required on every change; the suites are additive, not a replacement.
+- Note for unit tests: Playwright's `expect()` has no `asserts` signature, so it does not narrow types the way node's `assert.ok()` did. `tests/unit/page-review-security.test.ts` keeps an `assertPresent()` helper for the cases that dereference a value straight after checking it.
+- Five e2e specs are `test.fixme` stubs with TODO bodies. They report as skipped, not passing — don't read a green run as full coverage.
 
 ## Commit rules
 

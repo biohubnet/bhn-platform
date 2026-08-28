@@ -1,10 +1,11 @@
-import { NextAuthOptions, getServerSession } from "next-auth";
+import { NextAuthOptions, getServerSession, type Session } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import bcrypt from "bcryptjs";
 import { cookies } from "next/headers";
 import { prisma } from "./prisma";
 import { verifyTotp } from "./security/mfa";
+import { auth0Session, isAuth0Enabled } from "./auth/auth0";
 
 /** Brute-force lockout policy.
  *  • Threshold 5 failed attempts → lock account for LOCKOUT_MINUTES.
@@ -232,8 +233,22 @@ export const authOptions: NextAuthOptions = {
 };
 
 /** Raw session — never modified for impersonation. Use for auth on
- *  endpoints that toggle the act-as cookie itself. */
-export const getRawSession = () => getServerSession(authOptions);
+ *  endpoints that toggle the act-as cookie itself.
+ *
+ *  The provider switch lives here, and only here. When the AUTH0_* env
+ *  is complete the session comes from Auth0 Universal Login; otherwise
+ *  it comes from the credentials provider below. Both return the same
+ *  shape ({ user: { id, email, name, image, role }, expires }), so the
+ *  519 modules importing this file cannot tell which one answered and
+ *  none of them needed to change.
+ *
+ *  Checked per call rather than once at module load so that flipping
+ *  the env on Vercel takes effect on redeploy without a code change,
+ *  and so rollback is the same switch in reverse. */
+export const getRawSession = async (): Promise<Session | null> => {
+  if (isAuth0Enabled()) return auth0Session();
+  return getServerSession(authOptions);
+};
 
 /**
  * getSession(). If the caller is a superadmin and has an active
