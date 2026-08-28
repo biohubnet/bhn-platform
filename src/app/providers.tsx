@@ -13,17 +13,25 @@ import { IceCreamAtmosphere } from "@/components/themes/IceCreamAtmosphere";
 import { CanadaAtmosphere } from "@/components/themes/CanadaAtmosphere";
 import { DemoTourProvider } from "@/lib/demo/tourContext";
 import type { DesignSystemId } from "@/lib/design-system/registry";
+import { AuthProviderFlag } from "@/lib/auth/authProvider";
 
 export function Providers({
   children,
   initialDesignSystem,
+  auth0Enabled,
 }: {
   children: React.ReactNode;
   /** Platform-wide design system id, read server-side from the
    *  PlatformSetting table in the root layout. */
   initialDesignSystem: DesignSystemId;
+  /** Whether Auth0 Universal Login is the live provider, computed
+   *  server-side by isAuth0Enabled(). Passed rather than mirrored into
+   *  a NEXT_PUBLIC var so there is only one source of truth — see
+   *  lib/auth/authProvider for why a disagreement here is dangerous. */
+  auth0Enabled: boolean;
 }) {
   return (
+    <AuthProviderFlag auth0Enabled={auth0Enabled}>
     <SessionProvider>
       <I18nProvider>
         <ConsentProvider>
@@ -68,5 +76,6 @@ export function Providers({
         </ConsentProvider>
       </I18nProvider>
     </SessionProvider>
+    </AuthProviderFlag>
   );
 }

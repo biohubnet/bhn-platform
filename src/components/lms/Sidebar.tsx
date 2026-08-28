@@ -2,7 +2,7 @@
 import { useRef, useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { signOut } from "next-auth/react";
+import { useSignOut } from "@/lib/auth/authProvider";
 import { cn } from "@/lib/utils";
 import { isTraineeOnlyView } from "@/lib/trainee-view";
 import { LogoMark } from "@/components/ui/Logo";
@@ -1297,6 +1297,8 @@ export function Sidebar({
   hiddenFeatures,
   initialUnreadCount = 0,
 }: SidebarProps) {
+  // Provider-agnostic sign-out — see lib/auth/authProvider.
+  const signOut = useSignOut();
   // Helper used wherever the sidebar iterates an item list — drops
   // items the user has hidden via /profile/preferences. When the
   // prop is absent (legacy renders, tests, etc.) nothing is filtered.
@@ -1935,7 +1937,7 @@ export function Sidebar({
           </div>
         </Link>
         <button
-          onClick={() => signOut({ callbackUrl: "/login" })}
+          onClick={() => void signOut("/login")}
           className="p-1.5 rounded-lg text-muted hover:bg-elevated hover:text-fg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/60"
           title={t("nav.signOut")}
           aria-label={t("nav.signOut")}

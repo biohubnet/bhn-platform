@@ -41,7 +41,7 @@ const ROLES_CLAIM = `${CLAIM_NAMESPACE}/roles`;
 const PERMISSIONS_CLAIM = `${CLAIM_NAMESPACE}/permissions`;
 
 /** Reads a namespaced string-array claim without widening to `any`. */
-function claimArray(user: Auth0User, claim: string): string[] {
+export function claimArray(user: Auth0User, claim: string): string[] {
   const raw: unknown = user[claim];
   if (!Array.isArray(raw)) return [];
   return raw.filter((v): v is string => typeof v === "string");
@@ -80,30 +80,80 @@ export interface AppSession {
  * yet, which keeps the platform usable mid-migration instead of
  * demoting everyone to the default role the moment Auth0 goes live.
  */
+/**
+ * Why a user was refused. Kept as distinct reasons rather than a bare
+ * null so the decision can be asserted in tests and, later, logged
+ * without guessing which branch fired.
+ */
+export type Auth0Refusal =
+  | "no-email"
+  | "unverified-email"
+  | "no-local-account";
+
+export type Auth0Decision =
+  | { allow: false; reason: Auth0Refusal }
+  | { allow: true; provision: boolean };
+
+/**
+ * The whole access-control decision for an Auth0 login, as a pure
+ * function of the token claims, whether a local row exists, and
+ * whether JIT provisioning is on.
+ *
+ * Split out from the IO deliberately. These four rules are the entire
+ * security boundary between "authenticated to the tenant" and "has an
+ * account on this platform", and they are worth testing directly —
+ * before a tenant exists, and without mocking Prisma or the SDK.
+ */
+export function auth0AccessDecision(
+  user: Pick<Auth0User, "email" | "email_verified">,
+  hasLocalAccount: boolean,
+  jitProvisionEnabled: boolean,
+): Auth0Decision {
+  if (!user.email) return { allow: false, reason: "no-email" };
+
+  // Identity AND role both hang off this address, so an unverified one
+  // would let anyone who can claim the address inherit that account.
+  if (user.email_verified === false) {
+    return { allow: false, reason: "unverified-email" };
+  }
+
+  if (!hasLocalAccount) {
+    // Deliberately refused by default: this platform grants real
+    // capability by role, and silently creating an account for anyone
+    // who can authenticate to the tenant is a different security
+    // posture than the one it has today.
+    if (!jitProvisionEnabled) return { allow: false, reason: "no-local-account" };
+    return { allow: true, provision: true };
+  }
+
+  return { allow: true, provision: false };
+}
+
 export async function auth0Session(): Promise<AppSession | null> {
   if (!isAuth0Enabled()) return null;
 
   const session: SessionData | null = await auth0Client().getSession();
-  if (!session?.user?.email) return null;
+  if (!session?.user) return null;
 
-  // Unverified emails are refused outright: role and identity both hang
-  // off this address, so accepting an unverified one would let anyone
-  // who can sign up with a claimed address inherit that account.
-  if (session.user.email_verified === false) return null;
+  // Narrowing guard, not a second rule: auth0AccessDecision below owns
+  // the no-email refusal (and is tested on it). This just gives the
+  // compiler a `string` to work with instead of a non-null assertion.
+  const email = session.user.email?.toLowerCase();
+  if (!email) return null;
 
-  const email = session.user.email.toLowerCase();
   const dbUser = await prisma.user.findUnique({
     where: { email },
     select: { id: true, email: true, name: true, image: true, role: true },
   });
 
-  if (!dbUser) {
-    // No local row. Deliberately NOT auto-provisioned by default: this
-    // platform grants real capability by role, and silently creating an
-    // account for anyone who can authenticate to the tenant is a
-    // different security posture than the one it has today. Opt in
-    // explicitly once the tenant's connections are locked down.
-    if (process.env.AUTH0_JIT_PROVISION !== "true") return null;
+  const decision = auth0AccessDecision(
+    session.user,
+    dbUser !== null,
+    process.env.AUTH0_JIT_PROVISION === "true",
+  );
+  if (!decision.allow) return null;
+
+  if (decision.provision) {
     const created = await prisma.user.create({
       data: {
         email,
@@ -116,10 +166,14 @@ export async function auth0Session(): Promise<AppSession | null> {
     return toAppSession(created, session);
   }
 
+  // provision === false only happens when a row was found, but that is
+  // an invariant of the decision table rather than something the
+  // compiler can see.
+  if (!dbUser) return null;
   return toAppSession(dbUser, session);
 }
 
-function toAppSession(
+export function toAppSession(
   dbUser: {
     id: string;
     email: string | null;

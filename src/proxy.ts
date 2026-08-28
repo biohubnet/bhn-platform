@@ -19,8 +19,30 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { auth0Client, isAuth0Enabled } from "@/lib/auth/auth0-client";
 
+/** Pages that render the credentials form Auth0 replaces. */
+const CREDENTIALS_PAGES = new Set(["/login", "/register"]);
+
 export async function proxy(request: NextRequest) {
   if (!isAuth0Enabled()) return NextResponse.next();
+
+  // Send the credentials pages to Universal Login. Done here rather
+  // than inside the page components deliberately: those are client
+  // components, so a redirect from them renders the email/password
+  // form first and replaces it a tick later — a visible flash of a
+  // login form that no longer works. The proxy decides before any
+  // React runs.
+  //
+  // NextAuth spells the post-login destination `callbackUrl`; Auth0
+  // spells it `returnTo` and sanitises it against the app base URL, so
+  // it is translated rather than passed through.
+  const { pathname, searchParams } = request.nextUrl;
+  if (CREDENTIALS_PAGES.has(pathname)) {
+    const target = new URL("/auth/login", request.url);
+    const callbackUrl = searchParams.get("callbackUrl");
+    if (callbackUrl) target.searchParams.set("returnTo", callbackUrl);
+    return NextResponse.redirect(target);
+  }
+
   return auth0Client().middleware(request);
 }
 
