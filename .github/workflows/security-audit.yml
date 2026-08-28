@@ -35,7 +35,16 @@ jobs:
     #
     # The TruffleHog job below is deliberately NOT advisory. A committed
     # secret IS about the commit, and should stop it.
-    continue-on-error: true
+    #
+    # Split by event rather than blanket-advisory. The reasoning above
+    # holds for `push`: an advisory published overnight is not about the
+    # commit that happens to land next, and breaking main over it is
+    # noise. It does NOT hold for a pull request, where the question is
+    # "should this merge while runtime deps carry a known high CVE" —
+    # and there the answer is no. Blanket `true` also made this check
+    # structurally incapable of failing, which is worse than absent: it
+    # occupies a slot in the checks list and reports nothing.
+    continue-on-error: ${{ github.event_name != 'pull_request' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
