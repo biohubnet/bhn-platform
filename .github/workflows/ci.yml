@@ -76,7 +76,11 @@ jobs:
         # the Prisma client.
         run: npx prisma generate
       - name: Run unit tests
-        run: npm run test:page-review
+        # Playwright's runner, project `unit`. No `playwright install`
+        # here on purpose: these tests never request a browser fixture,
+        # so no browser is ever launched (verified by running them with
+        # PLAYWRIGHT_BROWSERS_PATH pointed at an empty directory).
+        run: npm run test:unit
         env:
           DATABASE_URL: "postgresql://nobody:nobody@127.0.0.1:1/nodb"
           DIRECT_URL: "postgresql://nobody:nobody@127.0.0.1:1/nodb"

@@ -2,6 +2,9 @@
   "name": "bhn-training-platform",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
     "dev": "next dev --port 3001",
     "build": "prisma generate && prisma migrate deploy && next build",
@@ -11,12 +14,12 @@
     "eval": "tsx evals/run.ts --save",
     "eval:ci": "tsx evals/run.ts --no-llm --check",
     "eval:baseline": "tsx evals/run.ts --no-llm --write-baseline",
-    "test:e2e": "playwright test",
-    "test:page-review": "tsx --test tests/unit/page-review-security.test.ts",
+    "test:e2e": "playwright test --project=setup --project=trainee-chromium --project=admin-chromium",
     "test:page-review:browser": "tsx tests/browser/page-review-overlay.ts",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",
-    "test:e2e:report": "playwright show-report"
+    "test:e2e:report": "playwright show-report",
+    "test:unit": "playwright test --project=unit"
   },
   "dependencies": {
     "@auth/prisma-adapter": "2.11.3",
@@ -54,9 +57,9 @@
     "leaflet": "^1.9.4",
     "lucide-react": "^1.14.0",
     "mammoth": "^1.12.0",
-    "next": "16.3.3",
+    "next": "16.3.0",
     "next-auth": "4.24.15",
-    "nodemailer": "^7.0.13",
+    "nodemailer": "^9.0.6",
     "otplib": "^12.0.1",
     "prisma": "^6.19.3",
     "qrcode-svg": "^1.1.0",
@@ -91,6 +94,9 @@
     "typescript": "^5"
   },
   "overrides": {
-    "@auth/core": "0.41.3"
+    "@auth/core": "0.41.3",
+    "deepmerge-ts": "^8.0.0",
+    "js-yaml": "^4.3.1",
+    "nodemailer": "^9.0.6"
   }
 }

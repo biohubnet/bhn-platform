@@ -3,7 +3,10 @@ import { defineConfig, devices } from "@playwright/test";
 /**
  * Playwright config for the BHN Training Platform E2E smoke pack.
  *
- * Two project groups:
+ * Project groups:
+ *   • `unit`            — pure-Node unit tests (tests/unit). No browser,
+ *                          no auth, no deployed URL; runs anywhere.
+ * Two browser groups:
  *   • `setup`           — runs auth.setup.ts once, persists storage state
  *                          per role to playwright/.auth/<role>.json.
  *   • `<role>-chromium` — actual test specs, each project depending on
@@ -61,6 +64,23 @@ export default defineConfig({
       : undefined,
   },
   projects: [
+    /**
+     * Unit tests, on the same runner as everything else.
+     *
+     * These are pure Node — they import route handlers and lib functions
+     * directly and never touch a page. Playwright only starts a browser
+     * for tests that actually request a browser fixture, so this project
+     * costs nothing extra and needs no `playwright install`.
+     *
+     * Its own testDir keeps it clear of the e2e matchers, and it takes no
+     * `dependencies`, so it never waits on auth setup or a deployed URL.
+     * Retries are pointless for a deterministic suite, hence 0.
+     */
+    {
+      name: "unit",
+      testDir: "./tests/unit",
+      retries: 0,
+    },
     {
       name: "setup",
       testMatch: /auth\.setup\.ts/,
