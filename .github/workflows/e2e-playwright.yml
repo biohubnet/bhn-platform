@@ -72,7 +72,20 @@ jobs:
     # under Settings -> Secrets and variables -> Dependabot, then
     # delete this condition. Until then a skip is the honest report:
     # the other seven checks still gate these PRs.
-    if: github.actor != 'dependabot[bot]'
+    #
+    # FORK PRs are skipped for the same underlying reason. The repo is
+    # public now, so anyone can open one, and GitHub withholds secrets
+    # from fork-triggered runs by design — otherwise a stranger's PR
+    # could exfiltrate them. So the suite cannot authenticate there
+    # either. The three secret-free gates (build, unit, schema) still
+    # run on fork PRs, and a human reviews a fork PR regardless.
+    #
+    # The workflow_dispatch escape hatch stays open: that event has no
+    # pull_request payload, so it must not be caught by the fork test.
+    if: >-
+      github.actor != 'dependabot[bot]' &&
+      (github.event_name != 'pull_request' ||
+       github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:

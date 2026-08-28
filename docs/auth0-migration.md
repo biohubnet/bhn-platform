@@ -123,6 +123,23 @@ On Vercel, for the environment you are cutting over:
 Optional: `AUTH0_CLAIM_NAMESPACE`, `AUTH0_JIT_PROVISION`,
 `AUTH0_JIT_DEFAULT_ROLE`.
 
+Then, before pointing real users at it:
+
+```bash
+npm run auth0:preflight
+```
+
+It checks the five variables, reaches your tenant's OIDC discovery
+document, proves the client id/secret pair with a client-credentials
+grant, and decodes the resulting token to confirm RBAC permissions
+actually appear in it. It never prints a secret. Exit code is 0 only
+when everything passes.
+
+It cannot see your dashboard settings, so it prints the two it can't
+check — Allowed Callback URLs and Allowed Logout URLs — for you to
+confirm by eye. A missing callback URL only fails at the very end of a
+real login, which is a slow way to find out.
+
 Redeploy. `isAuth0Enabled()` flips on the next boot.
 
 Do this on **preview first**. Verify a real login end to end there

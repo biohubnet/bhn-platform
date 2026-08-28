@@ -113,31 +113,48 @@ New code lives next to its peers. Don't invent a new top-level folder without ch
 Eight checks report on a pull request. **Four are the named gates**; the
 rest are additive, not decorative:
 
-| Check | Workflow | Blocking |
-|---|---|---|
-| Build + typecheck | ci.yml | yes |
-| Unit tests | ci.yml | yes |
-| Schema + migrations (clean Postgres 16) | ci.yml | yes |
-| Smoke suite (e2e) | e2e-playwright.yml | yes |
-| TruffleHog secret scan | security-audit.yml | yes |
-| npm audit (high+) | security-audit.yml | on PRs only — advisory on push to main |
-| Vercel / Vercel Preview Comments | Vercel integration | not ours |
+Two different things get called "blocking", so the columns separate
+them: **fails the run** (the check goes red) versus **blocks the merge**
+(GitHub disables the merge button — only a *required* check does this).
 
-Two things to be precise about, because the wording invites overclaiming:
+| Check | Workflow | Fails the run | Blocks the merge |
+|---|---|---|---|
+| Build + typecheck | ci.yml | yes | **yes — required** |
+| Unit tests | ci.yml | yes | **yes — required** |
+| Schema + migrations (clean Postgres 16) | ci.yml | yes | **yes — required** |
+| Smoke suite (e2e) | e2e-playwright.yml | yes | **yes — required** |
+| TruffleHog secret scan | security-audit.yml | yes | no |
+| npm audit (high+) | security-audit.yml | on PRs; advisory on push | no |
+| Vercel / Vercel Preview Comments | Vercel integration | n/a | no |
 
-- **"Gates" means the check turns red, not that GitHub refuses the
-  merge.** No status check is *required*: branch protection and rulesets
-  are plan-gated on a private repo under a free personal account (both
-  APIs return 403). The proof is PR #8 — every check failing, and GitHub
-  still reports `mergeable: MERGEABLE, mergeStateStatus: UNSTABLE`. A
-  required check would report BLOCKED. Closing this needs GitHub Pro or
-  a public repo; until then, red means "do not merge this" by
-  convention, enforced by people.
-- **The e2e gate is skipped on Dependabot PRs.** Those runs read from a
-  separate secret store (`Secret source: Dependabot` in the log), so the
-  E2E auth secrets arrive empty and every spec fails on authentication.
-  To enable it, add the same three secrets under Settings → Secrets and
-  variables → Dependabot and drop the `if:` on the smoke job.
+The four required ones are exactly the four the stack spec names. The
+other two are deliberately not required: they can go red for reasons
+that are not about the commit (an advisory published overnight), and a
+gate that fires on things outside the author's control trains people to
+override it.
+
+**The four named gates are REQUIRED status checks on `main`.** The repo
+was made public on 2026-08-28 specifically to unlock branch protection
+(it is plan-gated on private repos under a free personal account).
+Verified at the time: PR #8, with five checks red, moved from
+`mergeable: MERGEABLE / UNSTABLE` to `MERGEABLE / BLOCKED`, while green
+PRs report `CLEAN`.
+
+Two caveats that remain true:
+
+- **`enforce_admins` is off.** An admin can still merge a blocked PR
+  through an explicit override. That is deliberate — it keeps an
+  emergency hotfix possible — but it means the gate stops accidents,
+  not a determined owner. Turn it on with
+  `gh api -X POST repos/biohubnet/bhn-platform/branches/main/protection/enforce_admins`.
+- **The e2e gate is skipped on Dependabot and fork PRs.** Both read from
+  a secret store that withholds the E2E credentials (`Secret source:
+  Dependabot` in the log; forks get nothing by design), so the suite
+  cannot authenticate and would fail on auth rather than on the change.
+  GitHub counts a skipped check as satisfied, so those PRs are gated by
+  the other three. For Dependabot you can enable it properly by adding
+  the same three secrets under Settings → Secrets and variables →
+  Dependabot; for forks, review by hand.
 
 ## Commit rules
 
