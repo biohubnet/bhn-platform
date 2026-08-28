@@ -32,6 +32,7 @@ import { PrismaClient } from "@prisma/client";
 
 const DRY = process.argv.includes("--dry-run");
 const DO_USERS = process.argv.includes("--import-users");
+const DO_ROLES = process.argv.includes("--assign-roles");
 
 const DOMAIN = req("AUTH0_MGMT_DOMAIN");
 const MGMT_ID = req("AUTH0_MGMT_CLIENT_ID");
@@ -65,28 +66,60 @@ function req(k: string): string {
   return v;
 }
 
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
 let token = "";
 async function api<T>(method: string, p: string, body?: unknown, raw?: FormData): Promise<T> {
-  const res = await fetch(`https://${DOMAIN}/api/v2${p}`, {
-    method,
-    headers: {
-      authorization: `Bearer ${token}`,
-      ...(raw ? {} : { "content-type": "application/json" }),
-    },
-    body: raw ?? (body === undefined ? undefined : JSON.stringify(body)),
-  });
-  if (res.status === 204) return undefined as T;
-  const text = await res.text();
-  let parsed: unknown = null;
-  try { parsed = text ? JSON.parse(text) : null; } catch { /* non-JSON error body */ }
-  if (!res.ok) {
-    const msg =
-      parsed && typeof parsed === "object" && "message" in parsed
-        ? String((parsed as { message?: unknown }).message)
-        : text.slice(0, 300);
-    throw new Error(`${method} ${p} -> ${res.status}: ${msg}`);
+  // Retry on 429. Auth0 rate-limits the Management API hard — a trial
+  // tenant runs out partway through creating ten roles, which left a
+  // half-provisioned tenant and a stack trace on the first real run.
+  // Idempotency alone was not enough: it made re-running SAFE, but the
+  // operator still had to notice and do it. Honouring the reset header
+  // makes the script finish on its own.
+  for (let attempt = 0; ; attempt++) {
+    const res = await fetch(`https://${DOMAIN}/api/v2${p}`, {
+      method,
+      headers: {
+        authorization: `Bearer ${token}`,
+        ...(raw ? {} : { "content-type": "application/json" }),
+      },
+      body: raw ?? (body === undefined ? undefined : JSON.stringify(body)),
+    });
+
+    if (res.status === 429 && attempt < 8) {
+      // Prefer what the server tells us. Retry-After is in seconds;
+      // X-RateLimit-Reset is an absolute epoch-seconds timestamp, so it
+      // needs subtracting from now rather than using as a duration —
+      // mixing those up produces a script that sleeps until 2057.
+      const retryAfter = Number(res.headers.get("retry-after"));
+      const reset = Number(res.headers.get("x-ratelimit-reset"));
+      let waitMs: number;
+      if (Number.isFinite(retryAfter) && retryAfter > 0) {
+        waitMs = retryAfter * 1000;
+      } else if (Number.isFinite(reset) && reset > 0) {
+        waitMs = reset * 1000 - Date.now();
+      } else {
+        waitMs = 1000 * 2 ** attempt;
+      }
+      waitMs = Math.min(Math.max(waitMs, 1000), 60_000);
+      log(`rate limited — waiting ${Math.ceil(waitMs / 1000)}s, then retrying`);
+      await sleep(waitMs);
+      continue;
+    }
+
+    if (res.status === 204) return undefined as T;
+    const text = await res.text();
+    let parsed: unknown = null;
+    try { parsed = text ? JSON.parse(text) : null; } catch { /* non-JSON error body */ }
+    if (!res.ok) {
+      const msg =
+        parsed && typeof parsed === "object" && "message" in parsed
+          ? String((parsed as { message?: unknown }).message)
+          : text.slice(0, 300);
+      throw new Error(`${method} ${p} -> ${res.status}: ${msg}`);
+    }
+    return parsed as T;
   }
-  return parsed as T;
 }
 
 const log = (s: string) => console.log(`  ${s}`);
@@ -140,16 +173,59 @@ async function ensureApi() {
 }
 
 /** ── Roles ─────────────────────────────────────────────────────────── */
-async function ensureRoles() {
+async function ensureRoles(): Promise<Map<string, string>> {
   step("Roles");
   const existing = await api<{ id: string; name: string }[]>("GET", "/roles?per_page=100");
-  const have = new Set(existing.map((r) => r.name));
+  const byName = new Map(existing.map((r) => [r.name, r.id]));
   for (const name of ROLES) {
-    if (have.has(name)) { log(`exists: ${name}`); continue; }
+    if (byName.has(name)) { log(`exists: ${name}`); continue; }
     if (DRY) { log(`would create: ${name}`); continue; }
-    await api("POST", "/roles", { name, description: `BHN platform role: ${name}` });
+    const made = await api<{ id: string }>("POST", "/roles", { name, description: `BHN platform role: ${name}` });
+    byName.set(name, made.id);
     log(`created: ${name}`);
   }
+  return byName;
+}
+
+/**
+ * Give each imported user the Auth0 role matching the one they already
+ * hold in the database.
+ *
+ * Without this the roles exist but nobody has one, so every login falls
+ * through to the database role — the fallback in auth0Session(). That
+ * fallback is deliberate and useful mid-migration, but leaving it as the
+ * permanent state means Auth0 is not actually the authority for roles,
+ * which is half of what the requirement asks for. Running this makes the
+ * claim in the token real, and the DB value becomes the safety net it
+ * was meant to be.
+ */
+async function assignRoles(roleIds: Map<string, string>) {
+  step("Role assignment");
+  const prisma = new PrismaClient();
+  const rows = await prisma.$queryRawUnsafe<{ email: string; role: string }[]>(
+    `SELECT email, role FROM "User" WHERE password IS NOT NULL AND email NOT LIKE '%@example.com' ORDER BY email`,
+  );
+  await prisma.$disconnect();
+
+  for (const r of rows) {
+    const roleId = roleIds.get(r.role);
+    if (!roleId) { log(`SKIP ${mask(r.email)} — no Auth0 role named "${r.role}"`); continue; }
+    if (DRY) { log(`would assign ${r.role} to ${mask(r.email)}`); continue; }
+
+    const found = await api<{ user_id: string }[]>(
+      "GET", `/users-by-email?email=${encodeURIComponent(r.email.toLowerCase())}`,
+    );
+    if (!found.length) { log(`SKIP ${mask(r.email)} — not found in Auth0 (import it first)`); continue; }
+    // Assigning a role the user already has is a no-op, not an error,
+    // so this stays re-runnable.
+    await api("POST", `/users/${encodeURIComponent(found[0].user_id)}/roles`, { roles: [roleId] });
+    log(`${mask(r.email)} -> ${r.role}`);
+  }
+}
+
+/** Emails are printed to a terminal that may be shared or pasted. */
+function mask(email: string): string {
+  return email.replace(/^(.{3}).*(@.*)$/, "$1***$2");
 }
 
 /** ── The web application ───────────────────────────────────────────── */
@@ -238,7 +314,7 @@ async function ensureAction() {
     const a = await api<{ status: string }>("GET", `/actions/actions/${actionId}`);
     if (a.status === "built") break;
     if (a.status === "failed") throw new Error("action build failed");
-    await new Promise((r) => setTimeout(r, 1000));
+    await sleep(1000);
   }
   await api("POST", `/actions/actions/${actionId}/deploy`, {});
   log("deployed");
@@ -312,7 +388,7 @@ async function importUsers() {
   log(`job ${job.id} submitted`);
 
   for (let i = 0; i < 60; i++) {
-    await new Promise((r) => setTimeout(r, 2000));
+    await sleep(2000);
     const s = await api<{ status: string; summary?: { failed: number; inserted: number; updated: number } }>("GET", `/jobs/${job.id}`);
     if (s.status === "completed" || s.status === "failed") {
       log(`status ${s.status}${s.summary ? ` — inserted ${s.summary.inserted}, updated ${s.summary.updated}, failed ${s.summary.failed}` : ""}`);
@@ -338,10 +414,11 @@ async function main() {
   console.log(`\nAuth0 provision — tenant ${DOMAIN}${DRY ? "  [DRY RUN]" : ""}`);
   await getToken();
   await ensureApi();
-  await ensureRoles();
+  const roleIds = await ensureRoles();
   const client = await ensureClient();
   await ensureAction();
   if (DO_USERS) await importUsers();
+  if (DO_ROLES) await assignRoles(roleIds);
 
   if (client) {
     const out = path.join(process.cwd(), ".auth0-provision.local");
