@@ -123,7 +123,10 @@ async function main() {
     detail:
       `Allowed Callback URLs must contain ${base}/auth/callback; ` +
       `Allowed Logout URLs must contain ${base}. A missing callback URL ` +
-      `fails only at the end of a real login, which is a slow way to find out.`,
+      `fails only at the end of a real login, which is a slow way to find out. ` +
+      `Your Login Action must set the claims ${CLAIM_NAMESPACE}/roles and ` +
+      `${CLAIM_NAMESPACE}/permissions — Auth0 silently drops custom claims ` +
+      `that are not namespaced URIs, so a typo here looks like "no roles".`,
   });
 
   report();
