@@ -2,9 +2,14 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "bhn-training-platform",
+      "name": "bhn-platform",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "--prefix",
+        "/Users/ruilinyuan/Documents/Claude/Projects/bhn-platform"
+      ],
       "port": 3001
     }
   ]
