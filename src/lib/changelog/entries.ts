@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Learning Pathways · the colour column runs the full card
+  {
+    title: "Opening a pathway now extends its colour, instead of stacking a panel underneath",
+    body: "Each learning pathway carries its own colour, shown as a band down the left of the card. Until now that band stopped where the collapsed card stopped \u2014 open the pathway and the programmes appeared in a full-width block below it, so the card visibly broke into two pieces.\n\nThe colour band now runs the whole height of an open card, with the programmes sitting to the right of it. Expanding a pathway extends one shape rather than starting a second one, and it stays clear which pathway you are looking inside of as you scroll down a long list of programmes.\n\nThe artwork itself still only appears at the top. Repeating or stretching it down an open card would have made the picture the loudest thing on screen, exactly when you are trying to read dates and costs.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Learning Pathways · expanded state matches the collapsed one
   {
     title: "Expanded pathways no longer look like a different page",
