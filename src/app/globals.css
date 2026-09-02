@@ -4422,5 +4422,14 @@ h1, h2, h3 {
  * the panel an edge.
  */
 .detail-panel {
-  background: color-mix(in srgb, var(--fg) 7%, var(--card-solid));
+  /* Mixed into --card, not --card-solid. The panel sits inside a
+     programme row that inherits the pathway card's ground, and --card is
+     translucent in every theme while --card-solid is opaque — basing the
+     panel on the opaque token made it read as a separate surface floating
+     on the card rather than a recess within it. Mixing into --card keeps
+     it 7% darker than whatever it actually sits on.
+
+     Still a mix rather than bg-raised: Mist's surfaces are all white, so
+     bg-raised made the partition disappear there entirely. */
+  background: color-mix(in srgb, var(--fg) 7%, var(--card));
 }

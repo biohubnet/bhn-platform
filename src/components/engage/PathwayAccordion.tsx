@@ -120,20 +120,34 @@ function Detail({ label, children }: { label: string; children: React.ReactNode 
  */
 function ProgrammeRow({ p }: { p: PathwayProgramme }) {
   return (
-    <li className="rounded-sm border border-line bg-card-solid overflow-hidden">
+    // No ground of its own. This row used bg-card-solid while its container
+    // uses bg-card, and those are NOT the same surface: every one of the
+    // fourteen themes defines --card translucent (alpha .62–.92) and
+    // --card-solid opaque. Nesting one inside the other put an opaque slab
+    // on a translucent card — in Mist, .62 against .95 — which is why the
+    // expanded state read as a different design language from the collapsed
+    // one. Inheriting the card's ground restores the "one ground throughout"
+    // this file describes; the hairline border is what separates the rows,
+    // and the detail panel stays the single deliberate exception.
+    <li className="rounded-sm border border-line overflow-hidden">
       <div className="flex flex-col sm:flex-row">
         {/* Identity + the action */}
         <div className="sm:w-[46%] sm:shrink-0 p-3.5 flex flex-col gap-3">
           <div>
             <p className="text-sm font-semibold text-fg leading-snug">{p.title}</p>
-            <p className="mt-1.5 flex items-center gap-1.5 text-[11px] font-semibold">
+            {/* Same treatment as the pathway header above: the dot carries
+                the hue, the label stays on a theme token. This row used
+                text-emerald-700 / text-rose-700, which contradicted this
+                file's own note that a fixed label colour cannot hold across
+                seventeen themes — and made the identical Open/Closed status
+                read as two different components depending on whether the
+                pathway was expanded. */}
+            <p className="mt-1.5 flex items-center gap-1.5 text-[11px] font-semibold text-muted">
               <span
                 aria-hidden="true"
                 className={cn("h-1.5 w-1.5 rounded-full", p.isOpen ? "bg-emerald-500" : "bg-rose-500")}
               />
-              <span className={p.isOpen ? "text-emerald-700" : "text-rose-700"}>
-                {p.isOpen ? "Open" : "Closed"}
-              </span>
+              <span>{p.isOpen ? "Open" : "Closed"}</span>
             </p>
           </div>
 
