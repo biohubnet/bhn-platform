@@ -285,7 +285,13 @@ export function PathwayAccordion({ pathways }: { pathways: PathwayEntry[] }) {
                     style={{ backgroundColor: p.accentColor }}
                   />
                 )}
-                <span className="flex-1 min-w-0 font-semibold text-fg text-[15px] leading-snug">
+                {/* The pathway name is the only thing in this row a trainee
+                    is actually choosing between, and at 15px it sat within a
+                    couple of points of the description under it and the
+                    window label beside it — six rows of near-uniform text
+                    with nothing leading. Two steps up separates it from both
+                    without making the collapsed list feel like headings. */}
+                <span className="flex-1 min-w-0 font-semibold text-fg text-[17px] sm:text-[19px] leading-snug">
                   {p.title}
                 </span>
                 {/* Two different facts, so two different marks: the viewer's
