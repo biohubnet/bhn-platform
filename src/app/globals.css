@@ -4435,26 +4435,19 @@ h1, h2, h3 {
 }
 
 /*
- * The media column down the left of a Learning Pathway card — the strip
- * that holds the cover art beside the header and continues, plain, beside
- * the programmes of an open card.
+ * The ground behind a Learning Pathway's cover art, at the top of the
+ * media column. Scope narrowed once the colour moved to the card's
+ * outline: the continuation beside the programmes is now plain card
+ * ground, so this is only what shows through when a pathway has no
+ * artwork of its own — a safety net rather than a surface anyone is
+ * meant to see.
  *
- * Deliberately NOT the pathway's accent colour. Filling this column with
- * the accent hex worked at collapsed height and failed once the column
- * ran the full height of an expanded card: a tall slab of saturated
- * colour outweighed both the artwork above it and the programme detail
- * beside it. The accent still identifies the pathway in the marker next
- * to its title, where a small dose reads as identity rather than as
- * decoration.
- *
- * A dark neutral rather than the .detail-panel treatment above, because
- * this column sits directly beneath a photograph: continuing dark reads
- * as the same region carrying on past the image, where a light grey
- * would read as the card running out of content. Anchored to a fixed
- * charcoal instead of a var(--fg) mix, since fg inverts on the dark
- * themes and would have turned this into a pale slab on exactly the
- * themes it should be quietest. The 14% of --card mixed in keeps it from
- * looking pasted on — Nightfall's column is a shade cooler than Mist's.
+ * Still a dark charcoal, because what normally sits on it is a
+ * photograph and the two should not disagree at the edges of a crop.
+ * Anchored to a fixed value instead of a var(--fg) mix: fg inverts on
+ * the dark themes and a mix would turn this pale on exactly the themes
+ * it should be quietest. The 14% of --card keeps it from looking pasted
+ * on — Nightfall's is a shade cooler than Mist's.
  */
 .pathway-column {
   background: color-mix(in srgb, var(--card) 14%, #2a2d31);
