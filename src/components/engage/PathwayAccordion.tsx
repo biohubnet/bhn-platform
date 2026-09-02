@@ -44,9 +44,11 @@ export interface PathwayEntry {
   title: string;
   description: string | null;
   category: string | null;
-  /** Cover art, or null for the accent-tinted fallback. */
+  /** Cover art, or null to leave the column as plain neutral ground. */
   thumbnail: string | null;
-  /** Identity colour as a hex literal, from the Pathway record. */
+  /** Identity colour as a hex literal, from the Pathway record. Carried by
+   *  the marker beside the title only — see MEDIA_COL for why it no longer
+   *  fills the column. */
   accentColor: string | null;
   /** Enrolment window for the pathway itself. */
   windowLabel: string;
@@ -61,9 +63,6 @@ const TONE_DOT: Record<PathwayEntry["windowTone"], string> = {
   closed: "bg-rose-500",
   full: "bg-amber-500",
 };
-
-/** Neutral fallback when a pathway has neither cover art nor an accent.
- *  Both are normally set, so this is a safety net rather than a design. */
 
 /** `[data-theme] *` in globals.css sets transition-property/duration on every
  *  element, unlayered — so it beats Tailwind's layered transition utilities no
@@ -92,13 +91,19 @@ const OPEN_EASE = "cubic-bezier(.22, 1, .36, 1)";
 const CLOSE_EASE = "cubic-bezier(.4, 0, .2, 1)";
 const EXIT_EASE = "cubic-bezier(.55, 0, 1, .45)";
 
-const NEUTRAL_FALLBACK = "from-slate-400 to-slate-600";
-
-/** Width of the accent column. Declared once because it is now used twice —
- *  the artwork segment beside the header, and the plain-colour continuation
- *  beside the expanded programmes. If those two drift apart the column stops
- *  reading as one column, which is the whole point of it. */
-const ACCENT_COL = "w-28 sm:w-44";
+/** Width of the media column. Declared once because it is used twice — the
+ *  artwork segment beside the header, and the plain continuation beside the
+ *  expanded programmes. If those two drift apart the column stops reading as
+ *  one column, which is the whole point of it.
+ *
+ *  The column is neutral (`.pathway-column`), not the pathway's accent. It
+ *  used to be filled with the accent hex, which was tolerable at collapsed
+ *  height and much too loud once an open card stretched it down past several
+ *  programmes — a ~176px-wide slab of saturated colour became the loudest
+ *  thing on screen, competing with the artwork directly above it. The accent
+ *  still identifies the pathway, in the small marker beside the title, which
+ *  is a dose the colour can carry at any card height. */
+const MEDIA_COL = "w-28 sm:w-44";
 
 /** One labelled figure inside the enrolment panel. */
 function Detail({ label, children }: { label: string; children: React.ReactNode }) {
@@ -239,13 +244,9 @@ export function PathwayAccordion({ pathways }: { pathways: PathwayEntry[] }) {
             <div className="flex items-stretch">
               <div
                 className={cn(
-                  "relative shrink-0 overflow-hidden border-r border-line",
-                  ACCENT_COL,
-                  !p.accentColor && "bg-gradient-to-br " + NEUTRAL_FALLBACK,
+                  "relative shrink-0 overflow-hidden border-r border-line pathway-column",
+                  MEDIA_COL,
                 )}
-                // Inline because the value is data on the Pathway record, not
-                // a design token — the same pattern the merch tiers use.
-                style={p.accentColor ? { backgroundColor: p.accentColor } : undefined}
               >
                 {p.thumbnail && (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -354,28 +355,23 @@ export function PathwayAccordion({ pathways }: { pathways: PathwayEntry[] }) {
                         : `opacity 130ms ${EXIT_EASE}, transform 130ms ${EXIT_EASE}`,
                   }}
                 >
-                {/* The accent column continues down beside the programmes,
+                {/* The media column continues down beside the programmes,
                     so expanding a pathway extends one column rather than
                     starting a full-width panel underneath it.
 
-                    Colour only, no artwork: repeating or stretching the
+                    Ground only, no artwork: repeating or stretching the
                     image down the expanded height would make the picture
                     the loudest thing on an open card, when the point of
                     opening one is to read the programmes.
 
                     border-t sits on the RIGHT half alone. Spanning it the
-                    full width would draw a line straight across the colour
+                    full width would draw a line straight across the column
                     column and cut it in two — which is the seam this whole
                     change exists to remove. */}
                 <div className="flex items-stretch">
                   <div
                     aria-hidden="true"
-                    className={cn(
-                      "shrink-0 border-r border-line",
-                      ACCENT_COL,
-                      !p.accentColor && "bg-gradient-to-br " + NEUTRAL_FALLBACK,
-                    )}
-                    style={p.accentColor ? { backgroundColor: p.accentColor } : undefined}
+                    className={cn("shrink-0 border-r border-line pathway-column", MEDIA_COL)}
                   />
                   <div className="flex-1 min-w-0 px-4 pb-4 pt-3 border-t border-line">
                   {p.programmes.length > 0 ? (

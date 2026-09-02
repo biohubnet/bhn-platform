@@ -22,10 +22,10 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
-  // ── Learning Pathways · the colour column runs the full card
+  // ── Learning Pathways · the media column runs the full card
   {
-    title: "Opening a pathway now extends its colour, instead of stacking a panel underneath",
-    body: "Each learning pathway carries its own colour, shown as a band down the left of the card. Until now that band stopped where the collapsed card stopped \u2014 open the pathway and the programmes appeared in a full-width block below it, so the card visibly broke into two pieces.\n\nThe colour band now runs the whole height of an open card, with the programmes sitting to the right of it. Expanding a pathway extends one shape rather than starting a second one, and it stays clear which pathway you are looking inside of as you scroll down a long list of programmes.\n\nThe artwork itself still only appears at the top. Repeating or stretching it down an open card would have made the picture the loudest thing on screen, exactly when you are trying to read dates and costs.",
+    title: "Opening a pathway now extends the card, instead of stacking a panel underneath",
+    body: "Each learning pathway card shows its cover art in a column down the left. Until now that column stopped where the collapsed card stopped \u2014 open the pathway and the programmes appeared in a full-width block below it, so the card visibly broke into two pieces.\n\nThe column now runs the whole height of an open card, with the programmes sitting to the right of it. Expanding a pathway extends one shape rather than starting a second one, and it stays clear which pathway you are reading inside of as you scroll down a long list of programmes.\n\nBelow the artwork the column is plain, and neutral rather than the pathway's own colour. Carrying the colour all the way down made a tall block of it that outweighed both the picture above and the dates and costs beside it. The pathway's colour still marks it, next to the title, where it identifies the pathway without competing with anything.",
     kind: "improvement",
     visibleTo: ALL,
     daysAgo: 0,

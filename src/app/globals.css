@@ -4433,3 +4433,29 @@ h1, h2, h3 {
      bg-raised made the partition disappear there entirely. */
   background: color-mix(in srgb, var(--fg) 7%, var(--card));
 }
+
+/*
+ * The media column down the left of a Learning Pathway card — the strip
+ * that holds the cover art beside the header and continues, plain, beside
+ * the programmes of an open card.
+ *
+ * Deliberately NOT the pathway's accent colour. Filling this column with
+ * the accent hex worked at collapsed height and failed once the column
+ * ran the full height of an expanded card: a tall slab of saturated
+ * colour outweighed both the artwork above it and the programme detail
+ * beside it. The accent still identifies the pathway in the marker next
+ * to its title, where a small dose reads as identity rather than as
+ * decoration.
+ *
+ * A dark neutral rather than the .detail-panel treatment above, because
+ * this column sits directly beneath a photograph: continuing dark reads
+ * as the same region carrying on past the image, where a light grey
+ * would read as the card running out of content. Anchored to a fixed
+ * charcoal instead of a var(--fg) mix, since fg inverts on the dark
+ * themes and would have turned this into a pale slab on exactly the
+ * themes it should be quietest. The 14% of --card mixed in keeps it from
+ * looking pasted on — Nightfall's column is a shade cooler than Mist's.
+ */
+.pathway-column {
+  background: color-mix(in srgb, var(--card) 14%, #2a2d31);
+}
