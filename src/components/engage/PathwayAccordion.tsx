@@ -94,6 +94,12 @@ const EXIT_EASE = "cubic-bezier(.55, 0, 1, .45)";
 
 const NEUTRAL_FALLBACK = "from-slate-400 to-slate-600";
 
+/** Width of the accent column. Declared once because it is now used twice —
+ *  the artwork segment beside the header, and the plain-colour continuation
+ *  beside the expanded programmes. If those two drift apart the column stops
+ *  reading as one column, which is the whole point of it. */
+const ACCENT_COL = "w-28 sm:w-44";
+
 /** One labelled figure inside the enrolment panel. */
 function Detail({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -233,7 +239,8 @@ export function PathwayAccordion({ pathways }: { pathways: PathwayEntry[] }) {
             <div className="flex items-stretch">
               <div
                 className={cn(
-                  "relative shrink-0 w-28 sm:w-44 overflow-hidden border-r border-line",
+                  "relative shrink-0 overflow-hidden border-r border-line",
+                  ACCENT_COL,
                   !p.accentColor && "bg-gradient-to-br " + NEUTRAL_FALLBACK,
                 )}
                 // Inline because the value is data on the Pathway record, not
@@ -347,7 +354,30 @@ export function PathwayAccordion({ pathways }: { pathways: PathwayEntry[] }) {
                         : `opacity 130ms ${EXIT_EASE}, transform 130ms ${EXIT_EASE}`,
                   }}
                 >
-                <div className="px-4 pb-4 pt-3 border-t border-line">
+                {/* The accent column continues down beside the programmes,
+                    so expanding a pathway extends one column rather than
+                    starting a full-width panel underneath it.
+
+                    Colour only, no artwork: repeating or stretching the
+                    image down the expanded height would make the picture
+                    the loudest thing on an open card, when the point of
+                    opening one is to read the programmes.
+
+                    border-t sits on the RIGHT half alone. Spanning it the
+                    full width would draw a line straight across the colour
+                    column and cut it in two — which is the seam this whole
+                    change exists to remove. */}
+                <div className="flex items-stretch">
+                  <div
+                    aria-hidden="true"
+                    className={cn(
+                      "shrink-0 border-r border-line",
+                      ACCENT_COL,
+                      !p.accentColor && "bg-gradient-to-br " + NEUTRAL_FALLBACK,
+                    )}
+                    style={p.accentColor ? { backgroundColor: p.accentColor } : undefined}
+                  />
+                  <div className="flex-1 min-w-0 px-4 pb-4 pt-3 border-t border-line">
                   {p.programmes.length > 0 ? (
                     <ul className="mt-3.5 space-y-2.5">
                       {p.programmes.map((prog) => (
@@ -359,6 +389,7 @@ export function PathwayAccordion({ pathways }: { pathways: PathwayEntry[] }) {
                       No programmes scheduled for this pathway yet.
                     </p>
                   )}
+                  </div>
                   </div>
                 </div>
               </div>
