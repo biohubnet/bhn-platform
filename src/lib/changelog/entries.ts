@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Learning Pathways · expanded state matches the collapsed one
+  {
+    title: "Expanded pathways no longer look like a different page",
+    body: "Opening a learning pathway revealed programme rows that sat on a different surface from the card holding them \u2014 subtly in most themes, obviously in Mist, where the card is 62% opaque and the rows were 95%. The effect was that expanding a pathway felt like it swapped you into a different part of the platform.\n\nThe rows now sit on the pathway card\u2019s own surface, separated by a hairline rather than by a second panel. The grey enrolment panel on the right is unchanged \u2014 it is meant to read as recessed \u2014 but it now recesses relative to whatever it is sitting on, so it holds up across all seventeen themes instead of only the opaque ones.\n\nAlso fixed: a programme\u2019s Open / Closed status was drawn in fixed green and red text, while the identical status on the pathway header above it used a neutral label with a coloured dot. Same fact, two different treatments, a few pixels apart. Both now use the header\u2019s.",
+    kind: "fix",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Accessibility · contrast, dialog names, tour landmark
   {
     title: "Status colours, dialog names and the tour are readable to more people",
