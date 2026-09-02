@@ -22,10 +22,10 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
-  // ── Learning Pathways · the media column runs the full card
+  // ── Learning Pathways · the colour moves to the card's edge
   {
-    title: "Opening a pathway now extends the card, instead of stacking a panel underneath",
-    body: "Each learning pathway card shows its cover art in a column down the left. Until now that column stopped where the collapsed card stopped \u2014 open the pathway and the programmes appeared in a full-width block below it, so the card visibly broke into two pieces.\n\nThe column now runs the whole height of an open card, with the programmes sitting to the right of it. Expanding a pathway extends one shape rather than starting a second one, and it stays clear which pathway you are reading inside of as you scroll down a long list of programmes.\n\nBelow the artwork the column is plain, and neutral rather than the pathway's own colour. Carrying the colour all the way down made a tall block of it that outweighed both the picture above and the dates and costs beside it. The pathway's colour still marks it, next to the title, where it identifies the pathway without competing with anything.",
+    title: "Learning Pathway cards now carry their colour on the edge",
+    body: "Each learning pathway has its own colour. It used to fill a wide band down the left of the card, which looked right while the card was closed and turned into a large block of flat colour as soon as you opened one \u2014 outweighing both the cover art above it and the dates and costs you had opened the card to read.\n\nThe colour is now the outline of the card itself, along with the small marker beside the title. An edge carries the same colour whether a pathway has two programmes or six, so nothing grows louder as the card grows taller, and the six pathways are still told apart at a glance in the list.\n\nThe card also opens as one shape rather than two. The cover art column used to stop where the closed card stopped, and the programmes appeared in a full-width block below it, so an open card visibly broke in half. The column now runs the whole height, with the programmes beside it.",
     kind: "improvement",
     visibleTo: ALL,
     daysAgo: 0,

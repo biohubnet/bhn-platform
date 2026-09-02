@@ -96,13 +96,15 @@ const EXIT_EASE = "cubic-bezier(.55, 0, 1, .45)";
  *  expanded programmes. If those two drift apart the column stops reading as
  *  one column, which is the whole point of it.
  *
- *  The column is neutral (`.pathway-column`), not the pathway's accent. It
- *  used to be filled with the accent hex, which was tolerable at collapsed
- *  height and much too loud once an open card stretched it down past several
- *  programmes — a ~176px-wide slab of saturated colour became the loudest
- *  thing on screen, competing with the artwork directly above it. The accent
- *  still identifies the pathway, in the small marker beside the title, which
- *  is a dose the colour can carry at any card height. */
+ *  Neither segment is filled with the pathway's colour, and that took two
+ *  passes to settle. The accent hex was tolerable at collapsed height and
+ *  much too loud once an open card stretched it down past several
+ *  programmes: a ~176px-wide slab of saturated colour, the loudest thing on
+ *  screen, competing with the artwork directly above it. A dark neutral
+ *  fixed the loudness and read as a second, emptier column. So the colour
+ *  left the interior entirely — it is the card's outline now, plus the
+ *  marker beside the title. Area was the problem, not hue: an outline and a
+ *  marker carry the same colour at any card height without ever growing. */
 const MEDIA_COL = "w-28 sm:w-44";
 
 /** One labelled figure inside the enrolment panel. */
@@ -230,9 +232,18 @@ export function PathwayAccordion({ pathways }: { pathways: PathwayEntry[] }) {
       {pathways.map((p) => {
         const isOpen = open.has(p.id);
         return (
+          // The pathway's colour lives on the card's own edge now, not in a
+          // filled column. An outline is the one place a hue can be carried
+          // at any card height without gaining area as the card grows — the
+          // failure of every fill we tried: fine collapsed, a slab open.
+          //
+          // Inline because the value is data on the Pathway record rather
+          // than a design token, the same exception the marker beside the
+          // title takes. Falls back to --line when a pathway has no accent.
           <li
             key={p.id}
             className="rounded-lg border border-line bg-card overflow-hidden"
+            style={p.accentColor ? { borderColor: p.accentColor } : undefined}
           >
             {/* Art beside the text rather than above it. As a full-width
                 banner the artwork outweighed the title and description it was
@@ -316,7 +327,7 @@ export function PathwayAccordion({ pathways }: { pathways: PathwayEntry[] }) {
 
             {/* The panel is a full-width SIBLING of the header's flex row,
                 not a child of it. That is what lets the panel's own media
-                column (MEDIA_COL + .pathway-column, below) start at x=0 and
+                column (MEDIA_COL, below) start at x=0 and
                 line up with the artwork above it, so an open card reads as
                 one column running its whole height. Nesting this inside the
                 header's flex-1 body would offset the continuation by the
@@ -375,9 +386,13 @@ export function PathwayAccordion({ pathways }: { pathways: PathwayEntry[] }) {
                     column and cut it in two — which is the seam this whole
                     change exists to remove. */}
                 <div className="flex items-stretch">
+                  {/* Card ground, not a fill of its own: with the colour
+                      moved to the outline the interior is deliberately one
+                      surface throughout, and the hairline on the right is
+                      the only thing marking the column. */}
                   <div
                     aria-hidden="true"
-                    className={cn("shrink-0 border-r border-line pathway-column", MEDIA_COL)}
+                    className={cn("shrink-0 border-r border-line", MEDIA_COL)}
                   />
                   <div className="flex-1 min-w-0 px-4 pb-4 pt-3 border-t border-line">
                   {p.programmes.length > 0 ? (
