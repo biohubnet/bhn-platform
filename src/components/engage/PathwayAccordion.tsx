@@ -314,8 +314,14 @@ export function PathwayAccordion({ pathways }: { pathways: PathwayEntry[] }) {
               </div>
             </div>
 
-            {/* The expanded programme list spans the full card width — the
-                art column belongs to the header row, not to the panel.
+            {/* The panel is a full-width SIBLING of the header's flex row,
+                not a child of it. That is what lets the panel's own media
+                column (MEDIA_COL + .pathway-column, below) start at x=0 and
+                line up with the artwork above it, so an open card reads as
+                one column running its whole height. Nesting this inside the
+                header's flex-1 body would offset the continuation by the
+                column's own width and stagger the two down the card — a
+                break with no error and no obvious cause.
 
                 grid-rows 0fr -> 1fr animates to content height without a
                 hard-coded max-height, and collapses to genuinely zero.
