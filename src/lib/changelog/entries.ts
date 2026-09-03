@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Design system · comparison rail + selected-tab fix
+  {
+    title: "The design controls now show a before-and-after, and a black-box bug is fixed",
+    body: "Change any control and a comparison appears under the tabs: the same sample drawn twice, once as everyone sees it now and once as your edits would leave it. It only shows up once something is dirty, so it costs nothing when you are just looking.\n\nThe selected group tab was rendering as a black box with unreadable text \u2014 a colour that did not exist, so the button painted its text in the same colour as its background. Fixed.\n\nThe Depth control has been removed. It could not work: shadows are fixed when the site is built, so the setting had no effect on anything. It will come back if shadows are made adjustable.\n\nClearing a control back to the theme value now genuinely previews the theme value, rather than falling back to the last saved setting.",
+    kind: "fix",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── Design system · runtime-editable tokens
   {
     title: "The whole design system can now be adjusted without a developer",

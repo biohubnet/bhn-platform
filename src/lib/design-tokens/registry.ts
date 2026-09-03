@@ -19,6 +19,16 @@
  * hardcoded 0.25rem wired to no variable, so the 378 usages sitting on
  * it cannot be tuned from here and need a codemod to join the ladder.
  *
+ * SHADOWS ARE NOT HERE, AND CANNOT BE
+ * A Depth group shipped briefly and did nothing. Tailwind v4 compiles
+ * `shadow-md` to a LITERAL inside --tw-shadow, not to var(--shadow-md) —
+ * verified by compiling this stylesheet and grepping the output, and
+ * still true when the tokens are declared in a plain (non-inline)
+ * @theme block. No runtime custom property can reach a shadow utility,
+ * so a depth dial can only be honest once shadows are re-expressed as a
+ * variable the utilities actually read. Until then it is absent rather
+ * than present-and-inert.
+ *
  * ON COLOUR
  * Colour is the group where an untrained edit quietly drops text below
  * AA. Every ink control declares what it is normally read against, and
@@ -26,7 +36,7 @@
  * guardrail that makes it safe to hand over.
  */
 
-export type ControlGroup = "corners" | "spacing" | "type" | "ink" | "brand" | "depth" | "motion";
+export type ControlGroup = "corners" | "spacing" | "type" | "ink" | "brand" | "motion";
 
 export const GROUPS: readonly { id: ControlGroup; label: string; blurb: string }[] = [
   { id: "corners", label: "Corners",  blurb: "One ladder, smallest to softest. Cards and panels sit on Large; section boxes and dialogs on Extra large." },
@@ -34,7 +44,6 @@ export const GROUPS: readonly { id: ControlGroup; label: string; blurb: string }
   { id: "type",    label: "Type",     blurb: "Text sizes, line height and the weights headings use." },
   { id: "ink",     label: "Ink & surfaces", blurb: "Text and background colours. Contrast against the surface each one is read on is shown live." },
   { id: "brand",   label: "Brand",    blurb: "The brand ramp, light to dark. 600 is the button fill; 700 is the hover and link colour." },
-  { id: "depth",   label: "Depth",    blurb: "How far surfaces lift off the page." },
   { id: "motion",  label: "Motion",   blurb: "Speed and easing for every transition." },
 ] as const;
 
@@ -67,10 +76,7 @@ export interface ColorControl extends Base {
 export interface OptionControl extends Base {
   readonly kind: "option";
   readonly fallback: string;
-  /** One choice may write several properties — a depth preset moves the
-   *  whole shadow ladder together, which is the only way it stays a
-   *  ladder rather than four unrelated dials. */
-  readonly options: readonly { value: string; label: string; writes: Record<string, string> }[];
+  readonly options: readonly { value: string; label: string }[];
 }
 
 export type Control = SizeControl | ColorControl | OptionControl;
@@ -150,32 +156,6 @@ export const CONTROLS: readonly Control[] = [
   brand(800, "#182d35", "Deep accents."),
   brand(900, "#101e24", "The darkest brand step."),
 
-  // ── depth ──────────────────────────────────────────────────────────
-  {
-    kind: "option", name: "preset-depth", label: "Shadow strength", group: "depth",
-    hint: "Moves the whole shadow ladder together. Editing four shadows separately is how a ladder stops being one.",
-    fallback: "standard",
-    options: [
-      { value: "flat", label: "Flat — no shadows", writes: {
-        "shadow-sm": "0 0 #0000", "shadow-md": "0 0 #0000", "shadow-lg": "0 0 #0000", "shadow-xl": "0 0 #0000" } },
-      { value: "subtle", label: "Subtle", writes: {
-        "shadow-sm": "0 1px 2px 0 rgb(0 0 0 / 0.03)",
-        "shadow-md": "0 2px 4px -2px rgb(0 0 0 / 0.05)",
-        "shadow-lg": "0 6px 12px -6px rgb(0 0 0 / 0.07)",
-        "shadow-xl": "0 12px 24px -12px rgb(0 0 0 / 0.09)" } },
-      { value: "standard", label: "Standard", writes: {
-        "shadow-sm": "0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)",
-        "shadow-md": "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)",
-        "shadow-lg": "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)",
-        "shadow-xl": "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)" } },
-      { value: "deep", label: "Deep", writes: {
-        "shadow-sm": "0 2px 5px 0 rgb(0 0 0 / 0.16)",
-        "shadow-md": "0 6px 12px -2px rgb(0 0 0 / 0.18)",
-        "shadow-lg": "0 16px 28px -6px rgb(0 0 0 / 0.22)",
-        "shadow-xl": "0 28px 44px -10px rgb(0 0 0 / 0.26)" } },
-    ],
-  },
-
   // ── motion ─────────────────────────────────────────────────────────
   { kind: "size", name: "default-transition-duration", label: "Transition speed", group: "motion",
     fallback: 150, min: 0, max: 500, step: 10, unit: "ms",
@@ -184,10 +164,10 @@ export const CONTROLS: readonly Control[] = [
     kind: "option", name: "default-transition-timing-function", label: "Easing", group: "motion",
     hint: "The curve those transitions follow.", fallback: "cubic-bezier(0.4, 0, 0.2, 1)",
     options: [
-      { value: "cubic-bezier(0.4, 0, 0.2, 1)",    label: "Standard",  writes: {} },
-      { value: "cubic-bezier(0.22, 1, 0.36, 1)",  label: "Decelerate — soft landing", writes: {} },
-      { value: "cubic-bezier(0.4, 0, 1, 1)",      label: "Accelerate — quick exit",   writes: {} },
-      { value: "linear",                          label: "Linear",    writes: {} },
+      { value: "cubic-bezier(0.4, 0, 0.2, 1)", label: "Standard" },
+      { value: "cubic-bezier(0.22, 1, 0.36, 1)", label: "Decelerate — soft landing" },
+      { value: "cubic-bezier(0.4, 0, 1, 1)", label: "Accelerate — quick exit" },
+      { value: "linear", label: "Linear" },
     ],
   },
 ] as const;
@@ -262,12 +242,8 @@ export function overridesToCss(overrides: TokenOverrides): string {
     } else if (c.kind === "color") {
       decls.push(`--${c.name}:${v}`);
     } else {
-      const chosen = c.options.find((o) => o.value === v);
-      if (!chosen) continue;
-      // A preset writes the properties it owns; a control whose own name
-      // is a real token (easing) also writes itself.
-      for (const [k, val] of Object.entries(chosen.writes)) decls.push(`--${k}:${val}`);
-      if (Object.keys(chosen.writes).length === 0) decls.push(`--${c.name}:${v}`);
+      if (!c.options.some((o) => o.value === v)) continue;
+      decls.push(`--${c.name}:${v}`);
     }
   }
   return decls.length === 0 ? "" : `:root{${decls.join(";")}}`;
@@ -276,3 +252,10 @@ export function overridesToCss(overrides: TokenOverrides): string {
 export function controlsFor(group: ControlGroup): readonly Control[] {
   return CONTROLS.filter((c) => c.group === group);
 }
+
+/**
+ * Every custom property the editor may write, derived from the registry
+ * rather than hand-listed, so a control added later is tracked without a
+ * second edit somewhere else.
+ */
+export const MANAGED: readonly string[] = CONTROLS.map((c) => c.name);

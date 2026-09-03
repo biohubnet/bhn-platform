@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 import {
-  sanitizeOverrides, overridesToCss, CONTROLS, isValidColor,
+  sanitizeOverrides, overridesToCss, CONTROLS, MANAGED, isValidColor,
   type SizeControl,
 } from "../../src/lib/design-tokens/registry";
 import { contrastRatio, parseColor } from "../../src/lib/design-tokens/contrast";
@@ -123,14 +123,16 @@ test("keeps a valid colour and emits it verbatim", () => {
 /* ── option controls ───────────────────────────────────────────────── */
 
 test("rejects an option value the registry does not declare", () => {
-  expect(sanitizeOverrides({ "preset-depth": "enormous" })).toEqual({});
+  expect(sanitizeOverrides({ "default-transition-timing-function": "wobble" })).toEqual({});
 });
 
-test("a depth preset writes the whole shadow ladder, not its own name", () => {
-  const css = overridesToCss(sanitizeOverrides({ "preset-depth": "flat" }));
-  expect(css).toContain("--shadow-sm:");
-  expect(css).toContain("--shadow-xl:");
-  expect(css).not.toContain("--preset-depth");
+test("no control writes a token Tailwind cannot read at runtime", () => {
+  // Tailwind v4 compiles shadow-* to a literal inside --tw-shadow, so a
+  // --shadow-* override reaches nothing. A Depth group shipped once and
+  // was inert; this stops it coming back by the same route.
+  for (const c of CONTROLS) {
+    expect(c.name.startsWith("shadow-"), `${c.name} cannot work at runtime`).toBe(false);
+  }
 });
 
 test("easing writes itself, since its own name is the real token", () => {
@@ -176,4 +178,11 @@ test("every ink control's shipped default passes its own target", () => {
     expect(r, `${c.name} against ${c.against}`).not.toBeNull();
     expect(r!, `${c.name} against ${c.against}`).toBeGreaterThanOrEqual(c.ratio);
   }
+});
+
+
+test("MANAGED covers every control, so nothing is left un-tracked", () => {
+  // The editor strips and restores by this list. A control missing from it
+  // would be written on preview and never cleaned up.
+  expect([...MANAGED].sort()).toEqual(CONTROLS.map((c) => c.name).sort());
 });

@@ -24,7 +24,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { RotateCcw, Check, Loader2, AlertTriangle } from "lucide-react";
 import {
-  CONTROLS, GROUPS, controlsFor, isValidColor,
+  CONTROLS, GROUPS, MANAGED, controlsFor, isValidColor,
   type Control, type ControlGroup, type TokenOverrides,
 } from "@/lib/design-tokens/registry";
 import { contrastRatio } from "@/lib/design-tokens/contrast";
@@ -39,20 +39,68 @@ export function DesignTokenEditor({ initial }: { initial: TokenOverrides }) {
   const [message, setMessage] = useState<string | null>(null);
   const saved = useRef<TokenOverrides>(initial);
 
+  /**
+   * The saved-override stylesheet is switched OFF while this editor is
+   * mounted, and everything is driven from inline properties on <html>
+   * instead.
+   *
+   * Without that, clearing a control did not preview what it claimed to.
+   * removeProperty() drops the inline value, but <style
+   * id="design-token-overrides"> is still in the head, so the token fell
+   * back to the SAVED override rather than to the theme — "Use theme
+   * value" showed you the thing you were trying to get away from.
+   * Disabling the sheet makes the fallback genuinely be the theme.
+   */
+  useEffect(() => {
+    const sheet = document.getElementById("design-token-overrides") as HTMLStyleElement | null;
+    const wasDisabled = sheet?.disabled ?? false;
+    if (sheet) sheet.disabled = true;
+    return () => { if (sheet) sheet.disabled = wasDisabled; };
+  }, []);
+
+  /**
+   * The theme's own value for every managed token, captured once with
+   * nothing of ours applied.
+   *
+   * Needed because "before" has two sources: a token the admin has saved
+   * comes from `saved`, and a token they have not comes from whatever
+   * theme is active — which lives only in CSS, so it has to be read off
+   * a clean root rather than looked up. Captured synchronously in one
+   * strip → read → restore pass: the browser cannot paint mid-task, so
+   * nothing flashes, and it is idempotent under StrictMode's double
+   * invoke because it restores exactly what it removed.
+   */
+  const [baseline, setBaseline] = useState<Record<string, string>>({});
+  useEffect(() => {
+    const root = document.documentElement;
+    const held: [string, string][] = [];
+    for (const name of MANAGED) {
+      const inline = root.style.getPropertyValue(`--${name}`);
+      if (inline !== "") { held.push([name, inline]); root.style.removeProperty(`--${name}`); }
+    }
+    const computed = getComputedStyle(root);
+    const read: Record<string, string> = {};
+    for (const name of MANAGED) read[name] = computed.getPropertyValue(`--${name}`).trim();
+    // Never touch the whole style attribute — ThemeScript and other code
+    // put things on <html> too. Restore only what we removed.
+    for (const [name, v] of held) root.style.setProperty(`--${name}`, v);
+    setBaseline(read);
+    // Re-read if the theme changes underneath us, or every "before" would
+    // keep showing the theme that happened to be active at mount.
+    const mo = new MutationObserver(() => {
+      const c = getComputedStyle(root);
+      const next: Record<string, string> = {};
+      for (const name of MANAGED) next[name] = c.getPropertyValue(`--${name}`).trim();
+      setBaseline(next);
+    });
+    mo.observe(root, { attributes: true, attributeFilter: ["data-theme"] });
+    return () => mo.disconnect();
+  }, []);
+
   const apply = useCallback((next: TokenOverrides) => {
     const root = document.documentElement;
     for (const c of CONTROLS) {
       const v = next[c.name];
-      if (c.kind === "option") {
-        const chosen = c.options.find((o) => o.value === v);
-        for (const o of c.options) for (const k of Object.keys(o.writes)) root.style.removeProperty(`--${k}`);
-        root.style.removeProperty(`--${c.name}`);
-        if (chosen) {
-          for (const [k, val] of Object.entries(chosen.writes)) root.style.setProperty(`--${k}`, val);
-          if (Object.keys(chosen.writes).length === 0) root.style.setProperty(`--${c.name}`, String(v));
-        }
-        continue;
-      }
       if (v === undefined) root.style.removeProperty(`--${c.name}`);
       else root.style.setProperty(`--${c.name}`, c.kind === "size" ? `${v}${c.unit}` : String(v));
     }
@@ -60,14 +108,12 @@ export function DesignTokenEditor({ initial }: { initial: TokenOverrides }) {
 
   useEffect(() => {
     apply(values);
+    // Inline properties are a preview, not state: strip them on unmount so
+    // leaving without saving cannot leave the rest of the admin area
+    // wearing values that were never stored.
     return () => {
       const root = document.documentElement;
-      for (const c of CONTROLS) {
-        root.style.removeProperty(`--${c.name}`);
-        if (c.kind === "option") {
-          for (const o of c.options) for (const k of Object.keys(o.writes)) root.style.removeProperty(`--${k}`);
-        }
-      }
+      for (const name of MANAGED) root.style.removeProperty(`--${name}`);
     };
   }, [values, apply]);
 
@@ -124,14 +170,14 @@ export function DesignTokenEditor({ initial }: { initial: TokenOverrides }) {
               aria-current={g.id === group}
               className={cn(
                 "inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[13px] font-semibold transition-colors",
-                g.id === group ? "bg-fg text-bg" : "text-fg-muted hover:bg-elevated hover:text-fg",
+                g.id === group ? "bg-fg text-background" : "text-muted hover:bg-elevated hover:text-fg",
               )}
             >
               {g.label}
               {n > 0 && (
                 <span className={cn(
                   "rounded-full px-1.5 text-[10px] font-bold tabular-nums",
-                  g.id === group ? "bg-bg/25" : "bg-brand-600 text-white",
+                  g.id === group ? "bg-background/25 text-background" : "bg-brand-600 text-white",
                 )}>{n}</span>
               )}
             </button>
@@ -139,7 +185,9 @@ export function DesignTokenEditor({ initial }: { initial: TokenOverrides }) {
         })}
       </div>
 
-      <p className="mt-2.5 text-[13px] leading-relaxed text-fg-muted">{active.blurb}</p>
+      <p className="mt-2.5 text-[13px] leading-relaxed text-muted">{active.blurb}</p>
+
+      {dirty && <CompareRail baseline={baseline} saved={saved.current} />}
 
       {others.length > 0 && (
         <div className="mt-3 divide-y divide-line rounded-lg border border-line">
@@ -171,7 +219,85 @@ export function DesignTokenEditor({ initial }: { initial: TokenOverrides }) {
         </button>
         {status === "saved" && !dirty && <span className="text-sm font-medium text-emerald-700">Saved. Every page uses these now.</span>}
         {status === "error" && <span className="inline-flex items-center gap-1.5 text-sm font-medium text-rose-700"><AlertTriangle size={14} /> {message}</span>}
-        {dirty && status !== "error" && <span className="text-sm text-fg-muted">Previewing — this page is already using these.</span>}
+        {dirty && status !== "error" && <span className="text-sm text-muted">Previewing — this page is already using these.</span>}
+      </div>
+    </div>
+  );
+}
+
+
+/**
+ * The specimen rail — the same miniatures drawn twice, once as everyone
+ * currently sees them and once as your edits would leave them.
+ *
+ * It exists because the live preview on the rest of the page shows only
+ * the AFTER. That answers "what does this look like" but not "what did I
+ * change", and after four or five adjustments those are different
+ * questions. The rail is the only place the two states sit side by side.
+ *
+ * It appears only when something is dirty. A permanent pane would cost
+ * ~68px on every visit to show two identical copies of the same thing.
+ */
+function beforeVars(baseline: Record<string, string>, saved: TokenOverrides): React.CSSProperties {
+  const out: Record<string, string> = {};
+  for (const name of MANAGED) {
+    const c = CONTROLS.find((x) => x.name === name)!;
+    const s = saved[name];
+    // Every managed token is set explicitly. Leaving one out would let it
+    // inherit the live edit from <html> and the "before" would silently
+    // be part-after.
+    out[`--${name}`] = s === undefined
+      ? (baseline[name] ?? "")
+      : (c.kind === "size" ? `${s}${c.unit}` : String(s));
+  }
+  return out as React.CSSProperties;
+}
+
+/** Miniatures chosen so that between them they consume every group:
+ *  corners and ink (the card), type (the stack), brand and motion (the
+ *  button), and the brand ramp. Spacing shows up in all of them. */
+function Specimens() {
+  return (
+    <div className="flex items-center gap-3">
+      <div className="rounded-lg border border-line bg-card-solid px-2.5 py-2">
+        <div className="text-[11px] font-semibold text-fg">Card</div>
+        <div className="mt-0.5 text-[10px] text-muted">Supporting line</div>
+      </div>
+      <div className="leading-snug">
+        <div className="text-lg font-bold text-fg">Ag</div>
+        <div className="text-xs text-muted">Type</div>
+      </div>
+      <span className="rounded-md bg-brand-600 px-2.5 py-1.5 text-[11px] font-semibold text-white transition-colors">
+        Button
+      </span>
+      <div className="flex overflow-hidden rounded-sm">
+        {["50", "200", "400", "600", "800"].map((k) => (
+          <span key={k} className={`h-5 w-4 bg-brand-${k}`} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function CompareRail({ baseline, saved }: { baseline: Record<string, string>; saved: TokenOverrides }) {
+  return (
+    <div className="mt-3 overflow-hidden rounded-lg border border-line">
+      <div className="grid grid-cols-2 divide-x divide-line">
+        <div className="min-w-0 px-3 py-2">
+          <p className="mb-1.5 text-[10.5px] font-bold uppercase tracking-[0.14em] text-subtle">
+            Now — what everyone sees
+          </p>
+          {/* every managed property pinned, so this pane cannot pick up
+              the live edit from <html> */}
+          <div style={beforeVars(baseline, saved)}><Specimens /></div>
+        </div>
+        <div className="min-w-0 bg-elevated/40 px-3 py-2">
+          <p className="mb-1.5 text-[10.5px] font-bold uppercase tracking-[0.14em] text-subtle">
+            Your edits
+          </p>
+          {/* nothing pinned: inherits the preview already live on <html> */}
+          <div><Specimens /></div>
+        </div>
       </div>
     </div>
   );
@@ -186,7 +312,7 @@ function Row({ c, values, onSet, onClear }: {
     <div className="flex items-center gap-3 px-3 py-1.5">
       <div className="min-w-0 flex-1">
         <span className="text-[13px] font-semibold text-fg">{c.label}</span>
-        <span className="ml-2 hidden truncate text-[12px] text-fg-muted lg:inline">{c.hint}</span>
+        <span className="ml-2 hidden truncate text-[12px] text-muted lg:inline">{c.hint}</span>
       </div>
 
       {c.kind === "size" ? (
@@ -274,7 +400,7 @@ function Swatch({ c, values, onSet, onClear }: {
               }
               className={cn(
                 "shrink-0 rounded px-1.5 text-[10.5px] font-bold tabular-nums",
-                target === undefined ? "bg-elevated text-fg-muted"
+                target === undefined ? "bg-elevated text-muted"
                 : fails ? "bg-rose-100 text-rose-800"
                 : "bg-emerald-100 text-emerald-800",
               )}
@@ -289,7 +415,7 @@ function Swatch({ c, values, onSet, onClear }: {
           aria-label={`${c.label} value`}
           spellCheck={false}
           className={cn(
-            "mt-0.5 w-full bg-transparent font-mono text-[11.5px] text-fg-muted outline-none",
+            "mt-0.5 w-full bg-transparent font-mono text-[11.5px] text-muted outline-none",
             !isValidColor(value) && "text-rose-700",
           )}
         />
@@ -311,7 +437,7 @@ function ResetDot({ onClick, disabled }: { onClick: () => void; disabled: boolea
       aria-label={disabled ? "Using the theme's own value" : "Reset to the theme's value"}
       className={cn(
         "shrink-0 rounded p-1 transition-colors",
-        disabled ? "cursor-default text-transparent" : "text-fg-subtle hover:bg-elevated hover:text-fg",
+        disabled ? "cursor-default text-transparent" : "text-subtle hover:bg-elevated hover:text-fg",
       )}
     >
       <RotateCcw size={13} />
