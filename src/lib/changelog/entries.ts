@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Design system · rail layout + standing mockup
+  {
+    title: "The design controls are one rail now, with a standing mockup beside them",
+    body: "Design system \u2192 Design controls no longer hides five of its six groups behind tabs. Corners, spacing, type, colour, brand and motion are all open at once, in one scrolling list \u2014 each can still be collapsed if you only ever touch one.\n\nA sample now stands beside the controls the whole time: a card, a button, the brand ramp and a line of type, built from the same values every other page uses. Change something and it updates there immediately, so you do not have to scroll away from the slider to see what it did. Change something and a before-and-after comparison also appears above it, for as long as the change is unsaved.\n\nAlso fixed: the brand-colour ramp shown in that sample (and in the comparison strip) was rendering with no colour at all \u2014 a build-time limitation meant the five swatches never picked up their background. They are visible now.",
+    kind: "improvement",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── Design system · comparison rail + selected-tab fix
   {
     title: "The design controls now show a before-and-after, and a black-box bug is fixed",

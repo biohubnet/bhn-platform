@@ -4,6 +4,8 @@ import {
   type SizeControl,
 } from "../../src/lib/design-tokens/registry";
 import { contrastRatio, parseColor } from "../../src/lib/design-tokens/contrast";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 
 const SIZES = CONTROLS.filter((c): c is SizeControl => c.kind === "size");
 
@@ -185,4 +187,26 @@ test("MANAGED covers every control, so nothing is left un-tracked", () => {
   // The editor strips and restores by this list. A control missing from it
   // would be written on preview and never cleaned up.
   expect([...MANAGED].sort()).toEqual(CONTROLS.map((c) => c.name).sort());
+});
+
+
+/* ── the brand-ramp regression ──────────────────────────────────────
+   `` `bg-brand-${step}` `` type-checks and looks correct, but Tailwind
+   v4 extracts classes by scanning the raw TEXT of source files for
+   complete tokens — a template literal never contains "bg-brand-600"
+   as a contiguous substring, so nothing is generated and the ramp
+   renders with no colour at all. Shipped once, caught by compiling the
+   real stylesheet and grepping the output. This guards it from coming
+   back the same way. */
+
+test("the brand ramp uses literal class names, not string interpolation", () => {
+  const src = readFileSync(
+    join(__dirname, "../../src/components/admin/DesignTokenEditor.tsx"),
+    "utf8",
+  );
+  expect(src).not.toMatch(/bg-brand-\$\{/);
+  // and the literal table it should use instead is actually there
+  for (const step of ["50", "100", "200", "600", "700"]) {
+    expect(src, `bg-brand-${step}`).toContain(`bg-brand-${step}`);
+  }
 });
