@@ -14,10 +14,17 @@ import { DesignTokenEditor } from "@/components/admin/DesignTokenEditor";
  * user on their next page load. No rebuild and no deploy, which is the
  * whole point when the codebase is maintained by someone else.
  *
- * Corners and spacing only, deliberately. Colour is the token group
- * where an untrained edit can quietly push text below AA on any of
- * seventeen themes, and it should not land here until the editor can
- * check contrast as you drag.
+ * Seven groups: corners, spacing, type, ink and surfaces, brand, depth
+ * and motion. Colour is included because the editor now shows a live
+ * contrast ratio against whatever each colour is read on — the guardrail
+ * that makes it safe to hand a colour picker to someone who is not
+ * looking for the failure.
+ *
+ * Only tokens something actually reads are exposed. globals.css also
+ * declares --surface-shadow, --heading-weight and four others across
+ * eleven themes that nothing consumes; a dial that changes nothing is
+ * worse than no dial, so they are left out until they are wired up or
+ * deleted.
  */
 export default async function DesignTokensPage() {
   await requireRole("admin");
@@ -32,9 +39,9 @@ export default async function DesignTokensPage() {
         <ArrowLeft size={14} /> Design system
       </Link>
 
-      <h1 className="mt-3 text-2xl font-bold tracking-tight text-fg">Design dials</h1>
-      <p className="mt-2 text-fg-muted leading-relaxed">
-        Adjust how the platform looks without touching code. Changes preview live on this page —
+      <h1 className="mt-3 text-2xl font-bold tracking-tight text-fg">Design controls</h1>
+      <p className="mt-2 leading-relaxed text-fg-muted">
+        Every value the platform&rsquo;s look is built from, in one place. Changes preview live —
         the panels, buttons and navigation around you are already using them — and apply to
         everyone once saved.
       </p>
@@ -43,15 +50,19 @@ export default async function DesignTokensPage() {
         <Info size={16} className="mt-0.5 shrink-0 text-fg-muted" />
         <div className="text-[13px] leading-relaxed text-fg-muted">
           <p>
-            <b className="text-fg">These sit on top of the active theme.</b> A dial you have not
-            touched keeps whatever the current theme sets, so each of the seventeen themes keeps its
-            own character. <b className="text-fg">Use theme value</b> hands a dial back.
+            <b className="text-fg">These sit on top of the active theme.</b> Anything you leave
+            alone keeps whatever the current theme sets, so each of the seventeen themes keeps its
+            own character. The arrow beside a control hands it back.
           </p>
           <p className="mt-2">
-            Corner sizes are a ladder: extra small through 3XL, each one rounder than the last. Most
-            of the platform sits on <b className="text-fg">Large</b> (cards and panels) and{" "}
-            <b className="text-fg">Extra large</b> (section boxes and dialogs), so those two move
-            the most.
+            <b className="text-fg">Colours show their contrast ratio</b> against the surface they
+            are normally read on, and turn red below the level they need. Text needs 4.5:1. The
+            hairlines have no minimum &mdash; they are dividers, not text &mdash; so their number is
+            shown for reference only.
+          </p>
+          <p className="mt-2">
+            Sizes are ladders: each step is larger than the one before. Most of the platform sits on
+            the middle steps, so those move the most.
           </p>
         </div>
       </div>

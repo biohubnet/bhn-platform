@@ -1,7 +1,11 @@
 import { test, expect } from "@playwright/test";
 import {
-  sanitizeOverrides, overridesToCss, ALL_TOKENS,
+  sanitizeOverrides, overridesToCss, CONTROLS, isValidColor,
+  type SizeControl,
 } from "../../src/lib/design-tokens/registry";
+import { contrastRatio, parseColor } from "../../src/lib/design-tokens/contrast";
+
+const SIZES = CONTROLS.filter((c): c is SizeControl => c.kind === "size");
 
 /**
  * sanitizeOverrides is the boundary between an admin form and a <style>
@@ -19,7 +23,7 @@ test("drops token names it does not know", () => {
 });
 
 test("drops values outside the declared range in both directions", () => {
-  const lg = ALL_TOKENS.find((t) => t.name === "radius-lg")!;
+  const lg = SIZES.find((t) => t.name === "radius-lg")!;
   expect(sanitizeOverrides({ "radius-lg": lg.max + 1 })).toEqual({});
   expect(sanitizeOverrides({ "radius-lg": lg.min - 1 })).toEqual({});
 });
@@ -70,8 +74,8 @@ test("emits declarations in ladder order, not insertion order", () => {
   expect(css).toBe(":root{--radius-xs:2px;--radius-lg:14px;--radius-xl:20px}");
 });
 
-test("every token's fallback sits inside its own range", () => {
-  for (const t of ALL_TOKENS) {
+test("every sized token's fallback sits inside its own range", () => {
+  for (const t of SIZES) {
     expect(t.fallback, t.name).toBeGreaterThanOrEqual(t.min);
     expect(t.fallback, t.name).toBeLessThanOrEqual(t.max);
   }
@@ -80,9 +84,96 @@ test("every token's fallback sits inside its own range", () => {
 test("the radius ladder's fallbacks increase step by step", () => {
   // A flat or out-of-order ladder is exactly the bug this work fixed:
   // rounded-md used to render smaller than rounded-sm.
-  const radii = ALL_TOKENS.filter((t) => t.name.startsWith("radius-"));
+  const radii = SIZES.filter((t) => t.name.startsWith("radius-"));
   for (let i = 1; i < radii.length; i++) {
     expect(radii[i].fallback, `${radii[i].name} vs ${radii[i - 1].name}`)
       .toBeGreaterThan(radii[i - 1].fallback);
+  }
+});
+
+
+/* ── colour controls ─────────────────────────────────────────────────
+   A colour lands verbatim in a <style> element, so the grammar it has
+   to match is closed rather than "whatever a browser tolerates". */
+
+test("accepts the colour notations the platform actually uses", () => {
+  for (const ok of ["#fff", "#ffffff", "#1c1c20", "#1c1c2080",
+                    "rgb(28,28,32)", "rgba(28, 28, 32, 0.08)", "rgba(28,28,32,.5)"]) {
+    expect(isValidColor(ok), ok).toBe(true);
+  }
+});
+
+test("rejects colour notations that would let arbitrary CSS through", () => {
+  for (const bad of ["red", "var(--fg)", "url(x)", "#12345", "rgb(28,28,32); }",
+                     "hsl(0 0% 0%)", "#fff}body{display:none", "expression(1)", ""]) {
+    expect(isValidColor(bad), bad).toBe(false);
+  }
+});
+
+test("a colour that fails the grammar never reaches the stylesheet", () => {
+  const attack = { fg: "#fff}body{display:none}.x{a:" };
+  expect(sanitizeOverrides(attack)).toEqual({});
+  expect(overridesToCss(sanitizeOverrides(attack))).toBe("");
+});
+
+test("keeps a valid colour and emits it verbatim", () => {
+  expect(overridesToCss(sanitizeOverrides({ fg: "#123456" }))).toBe(":root{--fg:#123456}");
+});
+
+/* ── option controls ───────────────────────────────────────────────── */
+
+test("rejects an option value the registry does not declare", () => {
+  expect(sanitizeOverrides({ "preset-depth": "enormous" })).toEqual({});
+});
+
+test("a depth preset writes the whole shadow ladder, not its own name", () => {
+  const css = overridesToCss(sanitizeOverrides({ "preset-depth": "flat" }));
+  expect(css).toContain("--shadow-sm:");
+  expect(css).toContain("--shadow-xl:");
+  expect(css).not.toContain("--preset-depth");
+});
+
+test("easing writes itself, since its own name is the real token", () => {
+  const css = overridesToCss(sanitizeOverrides({ "default-transition-timing-function": "linear" }));
+  expect(css).toBe(":root{--default-transition-timing-function:linear}");
+});
+
+/* ── contrast ────────────────────────────────────────────────────────
+   The readout is the guardrail on the colour dials, so it gets tested
+   against known values rather than trusted. */
+
+test("matches known WCAG ratios", () => {
+  expect(contrastRatio("#000000", "#ffffff")!).toBeCloseTo(21, 1);
+  expect(contrastRatio("#ffffff", "#ffffff")!).toBeCloseTo(1, 5);
+  // 4.54:1 — the canonical "just passes AA" grey on white.
+  expect(contrastRatio("#767676", "#ffffff")!).toBeGreaterThan(4.5);
+  expect(contrastRatio("#777777", "#ffffff")!).toBeLessThan(4.6);
+});
+
+test("composites alpha instead of treating it as opaque", () => {
+  // --line is rgba(28,28,32,0.08). Read as opaque it would report ~17:1;
+  // composited onto the card it is barely over 1:1, which is the truth.
+  const asOpaque = contrastRatio("#1c1c20", "#fafaf6")!;
+  const withAlpha = contrastRatio("rgba(28,28,32,0.08)", "#fafaf6")!;
+  expect(asOpaque).toBeGreaterThan(15);
+  expect(withAlpha).toBeLessThan(1.3);
+});
+
+test("returns null rather than a confident wrong number", () => {
+  expect(contrastRatio("nonsense", "#fff")).toBeNull();
+  expect(parseColor("hsl(0 0% 0%)")).toBeNull();
+});
+
+test("every ink control's shipped default passes its own target", () => {
+  // If a fallback in the registry cannot clear the bar the editor draws,
+  // the panel is holding admins to a standard it does not meet itself.
+  const cards = new Map(CONTROLS.map((c) => [c.name, c]));
+  for (const c of CONTROLS) {
+    if (c.kind !== "color" || !c.against || !c.ratio) continue;
+    const againstControl = cards.get(c.against);
+    const bg = againstControl && againstControl.kind === "color" ? againstControl.fallback : c.against;
+    const r = contrastRatio(c.fallback, bg);
+    expect(r, `${c.name} against ${c.against}`).not.toBeNull();
+    expect(r!, `${c.name} against ${c.against}`).toBeGreaterThanOrEqual(c.ratio);
   }
 });

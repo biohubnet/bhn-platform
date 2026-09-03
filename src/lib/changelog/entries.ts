@@ -24,8 +24,8 @@ export interface ChangelogEntry {
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   // ── Design system · runtime-editable tokens
   {
-    title: "Corners and spacing can now be adjusted without a developer",
-    body: "Admins can now set the platform\u2019s corner roundness and spacing from Design system \u2192 Design dials, and the change applies to everyone. It previews live while you drag, so the panels and buttons around the sliders are already showing the result before you save.\n\nEach dial sits on top of whichever theme is active, so anything you leave alone keeps that theme\u2019s own character \u2014 the sharp themes stay sharp and the soft ones stay soft.\n\nAlongside it, the corner sizes themselves have been put in order. Some of them were not responding to the theme at all, and two were out of sequence \u2014 the size named \u201cmedium\u201d was rendering smaller than \u201csmall\u201d. Corners across the platform should now look consistent rather than arbitrary.",
+    title: "The whole design system can now be adjusted without a developer",
+    body: "Design system \u2192 Design controls now covers everything the platform\u2019s look is built from: corners, spacing, text sizes and line heights, text and surface colours, the brand ramp, shadow depth and how fast things animate. Changes preview live while you drag \u2014 the panels and buttons around the controls are already showing the result \u2014 and apply to everyone once saved.\n\nEach control sits on top of whichever theme is active, so anything you leave alone keeps that theme\u2019s own character.\n\nColours show their contrast ratio against the surface they are read on and turn red if they drop below the level they need, so a colour change cannot quietly make text hard to read on a theme you are not looking at.",
     kind: "feature",
     visibleTo: ADMINS,
     daysAgo: 0,
