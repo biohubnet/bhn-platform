@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Navigation · sidebar group corners
+  {
+    title: "Squarer corners on the sidebar sections",
+    body: "The boxes around each sidebar group \u2014 Engage, Experience and the rest \u2014 had corners rounded far enough that they read as pills rather than as panels. They are now about half as round, and the links inside them follow, so a link never looks rounder than the box holding it.\n\nThe change follows each theme\u2019s own corner setting rather than a fixed number, so the themes built around sharp corners stay sharp and the softer ones stay soft.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Learning Pathways · programmes become a readable list
   {
     title: "The courses inside a pathway are easier to read, and tell you when enrolment is closing",
