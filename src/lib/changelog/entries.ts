@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Learning Pathways · programmes become a readable list
+  {
+    title: "The courses inside a pathway are easier to read, and tell you when enrolment is closing",
+    body: "Opening a pathway used to show each course as a split row with a panel of five labelled fields beside it. At that width the labels had to be very small and very pale to fit, which made the details hard to read \u2014 and the courses ran together with nothing between them.\n\nEach course is now a single row with a line between it and the next. The enrolment deadline leads the row, and the title, session dates, provider and cost are set at a size you can actually read. Nothing on the row is faint any more.\n\nWhen a deadline is a week away or less it is called out in red and says how many days are left, so a closing intake is obvious while you are scanning rather than something you work out from the date. The cover artwork is also larger.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Learning Pathways · the colour moves to the card's edge
   {
     title: "Learning Pathway cards now carry their colour on the edge",
