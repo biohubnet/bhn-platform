@@ -823,7 +823,7 @@ function SectionGroup({
       // globals.css.
       data-section-tone={tone}
       className={cn(
-        "relative rounded transition-[padding,border-color,background-color] duration-300 ease-out",
+        "relative rounded-sm transition-[padding,border-color,background-color] duration-300 ease-out",
         // Two-mode layout:
         //   • EXPANDED — full bordered/painted container with the chip
         //     absolutely positioned to overlap the top border on the
@@ -1212,7 +1212,7 @@ function NavLink({ item, pathname, onNavigate, queueCounts }: {
         aria-current={active ? "page" : undefined}
         aria-describedby={hasTooltip ? tooltipId : undefined}
         className={cn(
-          "relative flex items-center gap-3 px-3 py-2 rounded-sm text-sm font-medium transition-colors",
+          "relative flex items-center gap-3 px-3 py-2 rounded text-sm font-medium transition-colors",
           // focus-visible adds an explicit ring for keyboard users; the
           // ring is brand-tinted and offset so it floats just outside
           // the rounded link box, looking deliberate rather than tacked-on.
