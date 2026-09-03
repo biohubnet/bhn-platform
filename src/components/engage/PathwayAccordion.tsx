@@ -159,34 +159,53 @@ function ProgrammeRow({ p }: { p: PathwayProgramme }) {
           "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600",
         )}
       >
-        {/* Start date and deadline. Emphasis is size and weight only — a
-            filled chip here read as an island on the leading edge of every
-            row, and pulled the eye to the furniture rather than the
-            programme. 11rem fits "Enrol by 11 September 2026" without
-            wrapping mid-date. */}
+        {/* The DEADLINE leads the row, not the start date.
+            The mockup led with "Starts 21 Oct", but Course.cohortStartDate
+            is null for every programme in this catalogue — the seed sets
+            sessionDates (free text) and enrollByDate, and nothing writes a
+            cohort start. Leading with it would print "Starts TBC" on every
+            row, which is worse than the panel it replaced. The deadline is
+            populated, it is the date that requires an action, and it is
+            already what the closing-soon state keys off.
+
+            startsLabel is still rendered when it exists, so the row
+            improves on its own if that field is ever backfilled.
+
+            Emphasis is size and weight only. A filled chip here read as an
+            island on the leading edge of every row and pulled the eye to
+            the furniture rather than the programme. */}
         <div className="shrink-0 sm:w-44 font-mono">
-          <span className="text-[12.5px] pathway-secondary">Starts</span>
-          <span className="ml-1.5 text-[19px] font-bold tracking-tight text-fg">
-            {p.startsLabel ?? "TBC"}
-          </span>
           <span
             className={cn(
-              "block mt-1.5 text-[12.5px] leading-snug",
+              "block text-[12.5px] leading-snug",
               closingSoon ? "font-semibold pathway-urgent" : "pathway-secondary",
             )}
           >
-            {p.enrollByLabel ? `Enrol by ${p.enrollByLabel}` : "No enrolment deadline set"}
-            {closingSoon && (
-              // The colour is never the only carrier: this also states the
-              // number, so the urgency survives a monochrome screen and the
-              // roughly one reader in twelve who cannot separate red here.
-              <span className="block mt-0.5">
-                {p.daysToEnrollBy === 0
-                  ? "Closes today"
-                  : `${p.daysToEnrollBy} day${p.daysToEnrollBy === 1 ? "" : "s"} left`}
-              </span>
-            )}
+            {p.enrollByLabel ? "Enrol by" : "Enrolment deadline"}
           </span>
+          <span
+            className={cn(
+              "block text-[17px] font-bold tracking-tight leading-tight",
+              closingSoon ? "pathway-urgent" : "text-fg",
+            )}
+          >
+            {p.enrollByLabel ?? "Not set"}
+          </span>
+          {closingSoon && (
+            // Colour is never the only carrier: this states the number too,
+            // so the urgency survives a monochrome screen and the roughly
+            // one reader in twelve who cannot separate this red.
+            <span className="block mt-1 text-[12.5px] font-semibold leading-snug pathway-urgent">
+              {p.daysToEnrollBy === 0
+                ? "Closes today"
+                : `${p.daysToEnrollBy} day${p.daysToEnrollBy === 1 ? "" : "s"} left`}
+            </span>
+          )}
+          {p.startsLabel && (
+            <span className="block mt-1.5 text-[12.5px] leading-snug pathway-secondary">
+              Starts {p.startsLabel}
+            </span>
+          )}
         </div>
 
         <div className="flex-1 min-w-0">

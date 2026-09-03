@@ -177,7 +177,7 @@ export default async function PathwaysPage() {
   // Formatted server-side so a date cannot render differently after
   // hydration in another timezone.
   const enrollByFmt = new Intl.DateTimeFormat("en-CA", {
-    month: "long", day: "numeric", year: "numeric", timeZone: "America/Toronto",
+    month: "short", day: "numeric", year: "numeric", timeZone: "America/Toronto",
   });
   // The start date leads each programme row, so it is deliberately short —
   // "21 Oct" rather than the full date the deadline uses underneath it.
