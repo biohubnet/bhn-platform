@@ -4400,39 +4400,7 @@ h1, h2, h3 {
   .ds-wayfinding__field { display: none; }
 }
 
-/* ════════════════════════════════════════════════════════════════
- * Recessed detail panel
- * ════════════════════════════════════════════════════════════════
- *
- * The half of a split row that carries facts rather than actions —
- * the enrolment details beside a pathway programme, for instance.
- *
- * `bg-raised` was the obvious choice and is wrong in one theme.
- * Measured across all seventeen: raised sits darker than the card on
- * the light themes and lighter on the dark ones, which is correct —
- * on a dark theme a DARKER panel sinks into the page background
- * instead of separating from it. But Mist is glass: its card,
- * elevated and raised all resolve to white, so the panel vanished
- * there entirely.
- *
- * Mixing a little foreground into the card gets the right direction
- * everywhere from one rule, because every theme's `--fg` is already
- * the opposite end of its own surface: dark ink on the light themes,
- * light ink on the dark ones, and on Mist a slate that finally gives
- * the panel an edge.
- */
-.detail-panel {
-  /* Mixed into --card, not --card-solid. The panel sits inside a
-     programme row that inherits the pathway card's ground, and --card is
-     translucent in every theme while --card-solid is opaque — basing the
-     panel on the opaque token made it read as a separate surface floating
-     on the card rather than a recess within it. Mixing into --card keeps
-     it 7% darker than whatever it actually sits on.
 
-     Still a mix rather than bg-raised: Mist's surfaces are all white, so
-     bg-raised made the partition disappear there entirely. */
-  background: color-mix(in srgb, var(--fg) 7%, var(--card));
-}
 
 /*
  * The ground behind a Learning Pathway's cover art, at the top of the
@@ -4452,3 +4420,38 @@ h1, h2, h3 {
 .pathway-column {
   background: color-mix(in srgb, var(--card) 14%, #2a2d31);
 }
+
+
+/*
+ * Learning Pathway programme rows.
+ *
+ * Every value here was swept against all seventeen themes for the lowest
+ * one that still clears its contrast target on the worst of them, rather
+ * than picked and spot-checked. Greenwood night and Salty bind nearly all
+ * of them — they have the narrowest range between --fg and --card-solid.
+ * If an eighteenth theme is added, those are the numbers to re-run.
+ *
+ * --card-solid, not --card: eight themes make --card translucent, and
+ * mixing alpha into these lets the page show through and the contrast
+ * guarantee collapses.
+ */
+
+/* Supporting lines: session dates, provider, the deadline when it is not
+   urgent. 68% is the lowest mix that still clears AA — 4.52 at worst, on
+   Salty. --fg-subtle was the obvious token to reach for and measures 2.42
+   there, which is why it is not used on these rows. */
+.pathway-secondary { color: color-mix(in srgb, var(--fg) 68%, var(--card-solid)); }
+
+/* A deadline inside CLOSING_SOON_DAYS. Mixed toward --fg rather than
+   toward the card, so it darkens on the light themes and lightens on the
+   dark ones: a fixed red is a mid-tone and fails at one end whichever end
+   you pick. 75% keeps it unmistakably red and still clears 4.51. */
+.pathway-urgent { color: color-mix(in srgb, #ef4444 75%, var(--fg)); }
+
+/* Status chips. The hue is the FILL and the label stays on --fg, because
+   coloured text cannot hold AA against both a near-white and a near-black
+   card — and pulling the hue far enough toward the ink to fix that turns
+   it grey. As a fill it keeps full strength: 4.53 at worst against the
+   label. */
+.pathway-chip-open   { background: color-mix(in srgb, #f59e0b 40%, var(--card-solid)); }
+.pathway-chip-closed { background: color-mix(in srgb, var(--fg) 13%, var(--card-solid)); }

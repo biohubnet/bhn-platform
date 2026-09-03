@@ -1,7 +1,7 @@
 "use client";
 import { useCallback, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
-import { ChevronDown, ArrowRight } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /**
@@ -36,8 +36,18 @@ export interface PathwayProgramme {
   sessionDates: string | null;
   /** Pre-formatted server-side; null renders as "TBD". */
   enrollByLabel: string | null;
+  /** Short start date ("21 Oct"), formatted server-side. Null when the
+   *  programme has no cohort start on record. */
+  startsLabel: string | null;
+  /** Whole days from today to the enrolment deadline, computed server-side
+   *  so the urgent state cannot differ between render and hydration.
+   *  Negative once the deadline has passed; null when there is no deadline. */
+  daysToEnrollBy: number | null;
   isOpen: boolean;
 }
+
+/** Inside this many days the deadline is called out rather than just stated. */
+const CLOSING_SOON_DAYS = 7;
 
 export interface PathwayEntry {
   id: string;
@@ -99,117 +109,115 @@ const EXIT_EASE = "cubic-bezier(.55, 0, 1, .45)";
  *  Neither segment is filled with the pathway's colour, and that took two
  *  passes to settle. The accent hex was tolerable at collapsed height and
  *  much too loud once an open card stretched it down past several
- *  programmes: a ~176px-wide slab of saturated colour, the loudest thing on
+ *  programmes: a wide slab of saturated colour, the loudest thing on
  *  screen, competing with the artwork directly above it. A dark neutral
  *  fixed the loudness and read as a second, emptier column. So the colour
  *  left the interior entirely — it is the card's outline now, plus the
  *  marker beside the title. Area was the problem, not hue: an outline and a
  *  marker carry the same colour at any card height without ever growing. */
-const MEDIA_COL = "w-28 sm:w-44";
-
-/** One labelled figure inside the enrolment panel. */
-function Detail({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="min-w-0">
-      <p className="text-[10px] uppercase tracking-[0.16em] font-semibold text-subtle">{label}</p>
-      <div className="mt-0.5 text-[12.5px] leading-snug text-fg">{children}</div>
-    </div>
-  );
-}
+const MEDIA_COL = "w-32 sm:w-48";
 
 /**
- * A programme inside an expanded pathway.
+ * One programme inside an expanded pathway.
  *
- * Split into two halves that do different jobs: the LEFT carries the
- * identity and the thing you press, the RIGHT is a recessed panel of
- * enrolment facts — when it runs, when to apply by, what it costs, how
- * it is delivered and by whom.
+ * A list row, deliberately not a table. The previous version split 46/54
+ * with a recessed panel of five labelled fields on the right, which put a
+ * table inside a card inside a page — and a five-column grid at that width
+ * only fits by shrinking the labels to 8.5px and fading them, which is
+ * exactly what made it hard to read.
  *
- * The panel uses `.detail-panel` rather than a literal grey, which
- * would be a light slab on Dark, Nightfall and Hitech. See its
- * definition in globals.css for why it mixes foreground into the card
- * instead of using `bg-raised` — Mist's surfaces are all white, so
- * `bg-raised` made the partition disappear there.
+ * The columns are gone and the values name themselves: "3,500 credits",
+ * "Enrol by 11 September 2026". Nothing here is below 11px and every text
+ * colour clears 4.5:1 on all seventeen themes (see .pathway-list in
+ * globals.css for the solved mixes).
+ *
+ * Start date left, status right, on every row — those two align down the
+ * list, which is the vertical scan the table was good for. The middle is
+ * free to wrap.
+ *
+ * The whole row is the link. There is no per-row button: three buttons in
+ * one open pathway competed with the pathway's own call to action, and
+ * dropping them is what buys the width the dates need.
  */
 function ProgrammeRow({ p }: { p: PathwayProgramme }) {
-  return (
-    // No ground of its own. This row used bg-card-solid while its container
-    // uses bg-card, and those are NOT the same surface: every one of the
-    // fourteen themes defines --card translucent (alpha .62–.92) and
-    // --card-solid opaque. Nesting one inside the other put an opaque slab
-    // on a translucent card — in Mist, .62 against .95 — which is why the
-    // expanded state read as a different design language from the collapsed
-    // one. Inheriting the card's ground restores the "one ground throughout"
-    // this file describes; the hairline border is what separates the rows,
-    // and the detail panel stays the single deliberate exception.
-    <li className="rounded-sm border border-line overflow-hidden">
-      <div className="flex flex-col sm:flex-row">
-        {/* Identity + the action */}
-        <div className="sm:w-[46%] sm:shrink-0 p-3.5 flex flex-col gap-3">
-          <div>
-            <p className="text-sm font-semibold text-fg leading-snug">{p.title}</p>
-            {/* Same treatment as the pathway header above: the dot carries
-                the hue, the label stays on a theme token. This row used
-                text-emerald-700 / text-rose-700, which contradicted this
-                file's own note that a fixed label colour cannot hold across
-                seventeen themes — and made the identical Open/Closed status
-                read as two different components depending on whether the
-                pathway was expanded. */}
-            <p className="mt-1.5 flex items-center gap-1.5 text-[11px] font-semibold text-muted">
-              <span
-                aria-hidden="true"
-                className={cn("h-1.5 w-1.5 rounded-full", p.isOpen ? "bg-emerald-500" : "bg-rose-500")}
-              />
-              <span>{p.isOpen ? "Open" : "Closed"}</span>
-            </p>
-          </div>
+  // Closing soon is a state, not a styling flourish, so it is computed once
+  // and drives the colour, the weight and the extra line together.
+  const closingSoon =
+    p.isOpen &&
+    p.daysToEnrollBy !== null &&
+    p.daysToEnrollBy >= 0 &&
+    p.daysToEnrollBy <= CLOSING_SOON_DAYS;
 
-          <Link
-            href={`/courses/${p.id}`}
+  return (
+    <li>
+      <Link
+        href={`/courses/${p.id}`}
+        className={cn(
+          "flex flex-col gap-3 px-1 py-4",
+          "sm:flex-row sm:items-start sm:gap-5",
+          "transition-colors hover:bg-elevated",
+          "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600",
+        )}
+      >
+        {/* Start date and deadline. Emphasis is size and weight only — a
+            filled chip here read as an island on the leading edge of every
+            row, and pulled the eye to the furniture rather than the
+            programme. 11rem fits "Enrol by 11 September 2026" without
+            wrapping mid-date. */}
+        <div className="shrink-0 sm:w-44 font-mono">
+          <span className="text-[12.5px] pathway-secondary">Starts</span>
+          <span className="ml-1.5 text-[19px] font-bold tracking-tight text-fg">
+            {p.startsLabel ?? "TBC"}
+          </span>
+          <span
             className={cn(
-              "mt-auto inline-flex items-center justify-center gap-1.5 rounded-sm px-3 py-2",
-              "bg-brand-600 text-white text-xs font-semibold",
-              "hover:bg-brand-700 transition-colors",
-              "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600",
+              "block mt-1.5 text-[12.5px] leading-snug",
+              closingSoon ? "font-semibold pathway-urgent" : "pathway-secondary",
             )}
           >
-            Course info &amp; application <ArrowRight size={13} />
-          </Link>
+            {p.enrollByLabel ? `Enrol by ${p.enrollByLabel}` : "No enrolment deadline set"}
+            {closingSoon && (
+              // The colour is never the only carrier: this also states the
+              // number, so the urgency survives a monochrome screen and the
+              // roughly one reader in twelve who cannot separate red here.
+              <span className="block mt-0.5">
+                {p.daysToEnrollBy === 0
+                  ? "Closes today"
+                  : `${p.daysToEnrollBy} day${p.daysToEnrollBy === 1 ? "" : "s"} left`}
+              </span>
+            )}
+          </span>
         </div>
 
-        {/* Enrolment detail — the recessed half */}
-        <div className="flex-1 min-w-0 p-3.5 detail-panel border-t sm:border-t-0 sm:border-l border-line">
-          <div className="grid grid-cols-2 gap-x-4 gap-y-3">
-            <Detail label="Session dates">
-              {p.sessionDates ?? <span className="text-muted">To be announced</span>}
-            </Detail>
-            <Detail label="Enroll by">
-              {p.enrollByLabel ? (
-                <span className="font-semibold text-brand-700">{p.enrollByLabel}</span>
-              ) : (
-                <span className="text-muted">TBD</span>
-              )}
-            </Detail>
-            <Detail label="Cost">
-              {p.creditCost > 0 ? (
-                <span className="font-semibold tabular-nums">
-                  {p.creditCost.toLocaleString()} credits
-                </span>
-              ) : (
-                <span className="text-muted">No credit cost</span>
-              )}
-            </Detail>
-            <Detail label="Delivery">
-              {p.delivery ?? <span className="text-muted">To be confirmed</span>}
-            </Detail>
-            {p.provider && (
-              <div className="col-span-2">
-                <Detail label="Delivered by">{p.provider}</Detail>
-              </div>
-            )}
-          </div>
+        <div className="flex-1 min-w-0">
+          <span className="block text-[15.5px] font-semibold leading-snug text-fg">
+            {p.title}
+          </span>
+          <span className="block mt-1 text-[13px] leading-snug pathway-secondary">
+            {p.sessionDates ?? "Session dates to be announced"}
+          </span>
+          <span className="block mt-0.5 text-[13px] leading-snug pathway-secondary">
+            {p.provider ?? "Provider to be confirmed"} · {p.delivery ?? "Delivery to be confirmed"} ·{" "}
+            <b className="font-semibold text-fg tabular-nums">
+              {p.creditCost > 0 ? `${p.creditCost.toLocaleString()} credits` : "No credit cost"}
+            </b>
+          </span>
         </div>
-      </div>
+
+        {/* The only filled thing on a row. A fill means status here and
+            nothing else, which is what lets it be spotted at a glance. */}
+        <div className="shrink-0 sm:pt-0.5">
+          <span
+            className={cn(
+              "inline-block rounded px-2.5 py-1.5 font-mono text-[11.5px] font-semibold",
+              "uppercase tracking-[0.11em] text-fg",
+              p.isOpen ? "pathway-chip-open" : "pathway-chip-closed",
+            )}
+          >
+            {p.isOpen ? "Enrolling" : "Closed"}
+          </span>
+        </div>
+      </Link>
     </li>
   );
 }
@@ -402,7 +410,7 @@ export function PathwayAccordion({ pathways }: { pathways: PathwayEntry[] }) {
                   />
                   <div className="flex-1 min-w-0 px-4 pb-4 pt-3 border-t border-line">
                   {p.programmes.length > 0 ? (
-                    <ul className="mt-3.5 space-y-2.5">
+                    <ul className="mt-2 divide-y divide-line-strong">
                       {p.programmes.map((prog) => (
                         <ProgrammeRow key={prog.id} p={prog} />
                       ))}

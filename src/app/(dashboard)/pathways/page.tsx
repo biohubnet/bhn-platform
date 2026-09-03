@@ -42,6 +42,7 @@ interface PathwayRow {
       creditCost: number;
       sessionDates: string | null;
       enrollByDate: Date | null;
+      cohortStartDate: Date | null;
       status: string;
     };
   }[];
@@ -82,7 +83,7 @@ export default async function PathwaysPage() {
                 select: {
                   id: true, title: true, provider: true, delivery: true,
                   creditCost: true, sessionDates: true, enrollByDate: true,
-                  status: true,
+                  cohortStartDate: true, status: true,
                 },
               },
             },
@@ -178,6 +179,17 @@ export default async function PathwaysPage() {
   const enrollByFmt = new Intl.DateTimeFormat("en-CA", {
     month: "long", day: "numeric", year: "numeric", timeZone: "America/Toronto",
   });
+  // The start date leads each programme row, so it is deliberately short —
+  // "21 Oct" rather than the full date the deadline uses underneath it.
+  const startsFmt = new Intl.DateTimeFormat("en-CA", {
+    month: "short", day: "numeric", timeZone: "America/Toronto",
+  });
+  // Days-to-deadline is computed HERE, not in the component. The row turns
+  // urgent inside a week, and a client-side clock would make that flip
+  // between the server render and hydration for anyone whose machine clock
+  // or timezone puts them on the other side of the boundary.
+  const daysUntil = (d: Date | null): number | null =>
+    d === null ? null : Math.ceil((d.getTime() - nowForWindows.getTime()) / 86_400_000);
 
   const pathwayEntries: PathwayEntry[] = pathways.map((p) => {
     const w = pathwayWindowFrom(p, approvedByPathway.get(p.id) ?? 0, nowForWindows);
@@ -199,6 +211,8 @@ export default async function PathwaysPage() {
         creditCost: course.creditCost,
         sessionDates: course.sessionDates,
         enrollByLabel: course.enrollByDate ? enrollByFmt.format(course.enrollByDate) : null,
+        daysToEnrollBy: daysUntil(course.enrollByDate),
+        startsLabel: course.cohortStartDate ? startsFmt.format(course.cohortStartDate) : null,
         // A programme is archived when its own intake has closed, which is
         // independent of whether its pathway is still accepting people.
         isOpen: course.status === "published",
