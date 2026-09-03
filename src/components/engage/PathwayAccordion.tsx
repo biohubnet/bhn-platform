@@ -351,7 +351,7 @@ export function PathwayAccordion({ pathways }: { pathways: PathwayEntry[] }) {
                 the toggle makes the collapsed list unreadable — six titles
                 and nothing to choose between them. */}
             {p.description && (
-              <p className="px-4 pb-3.5 -mt-0.5 text-[13px] text-fg-muted leading-relaxed">
+              <p className="px-4 pb-3.5 -mt-0.5 text-[13px] text-muted leading-relaxed">
                 {p.description}
               </p>
             )}

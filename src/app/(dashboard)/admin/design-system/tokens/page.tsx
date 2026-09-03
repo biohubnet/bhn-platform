@@ -34,21 +34,21 @@ export default async function DesignTokensPage() {
     <div className="max-w-3xl">
       <Link
         href="/admin/design-system"
-        className="inline-flex items-center gap-1.5 text-sm font-medium text-fg-muted hover:text-fg transition-colors"
+        className="inline-flex items-center gap-1.5 text-sm font-medium text-muted hover:text-fg transition-colors"
       >
         <ArrowLeft size={14} /> Design system
       </Link>
 
       <h1 className="mt-3 text-2xl font-bold tracking-tight text-fg">Design controls</h1>
-      <p className="mt-2 leading-relaxed text-fg-muted">
+      <p className="mt-2 leading-relaxed text-muted">
         Every value the platform&rsquo;s look is built from, in one place. Changes preview live —
         the panels, buttons and navigation around you are already using them — and apply to
         everyone once saved.
       </p>
 
       <div className="mt-5 flex gap-3 rounded-lg border border-line bg-elevated p-3.5">
-        <Info size={16} className="mt-0.5 shrink-0 text-fg-muted" />
-        <div className="text-[13px] leading-relaxed text-fg-muted">
+        <Info size={16} className="mt-0.5 shrink-0 text-muted" />
+        <div className="text-[13px] leading-relaxed text-muted">
           <p>
             <b className="text-fg">These sit on top of the active theme.</b> Anything you leave
             alone keeps whatever the current theme sets, so each of the seventeen themes keeps its
@@ -63,6 +63,10 @@ export default async function DesignTokensPage() {
           <p className="mt-2">
             Sizes are ladders: each step is larger than the one before. Most of the platform sits on
             the middle steps, so those move the most.
+          </p>
+          <p className="mt-2">
+            <b className="text-fg">Change something and a comparison appears</b> under the tabs,
+            showing the same sample as it is now beside how your edits would leave it.
           </p>
         </div>
       </div>
