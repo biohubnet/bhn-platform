@@ -13,6 +13,7 @@
  * map and don't need a wrapper here.
  */
 import { prisma } from "@/lib/prisma";
+import { sanitizeOverrides, type TokenOverrides } from "@/lib/design-tokens/registry";
 import {
   DEFAULT_DESIGN_SYSTEM,
   isValidDesignSystem,
@@ -72,4 +73,46 @@ export async function getTraineeCourseLimit(): Promise<number> {
   const parsed = parseInt(row.value, 10);
   if (Number.isFinite(parsed) && parsed > 0) return parsed;
   return DEFAULT_TRAINEE_COURSE_LIMIT;
+}
+
+
+const DESIGN_TOKENS_KEY = "designTokenOverrides";
+
+/**
+ * Admin-set overrides for the design tokens, edited at
+ * /admin/design-system/tokens.
+ *
+ * Read in the root layout on every request and emitted as a `:root`
+ * block after globals.css, so an override wins on cascade without a
+ * rebuild. Sparse by design: a token that has never been touched is
+ * absent, and the active theme's own value applies.
+ *
+ * Every failure path returns {} rather than throwing. A malformed row
+ * or a DB blip must not take the whole platform down — the worst
+ * outcome should be that the shipped defaults apply.
+ */
+export async function getDesignTokenOverrides(): Promise<TokenOverrides> {
+  const row = await prisma.platformSetting
+    .findUnique({ where: { key: DESIGN_TOKENS_KEY } })
+    .catch(() => null);
+  if (!row) return {};
+  try {
+    return sanitizeOverrides(JSON.parse(row.value));
+  } catch {
+    return {};
+  }
+}
+
+/** Writer for the admin editor. Sanitises before persisting, so the
+ *  stored row can always be trusted by the reader above — and returns
+ *  what was actually kept, which is what the form re-renders from. */
+export async function setDesignTokenOverrides(input: unknown): Promise<TokenOverrides> {
+  const clean = sanitizeOverrides(input);
+  const value = JSON.stringify(clean);
+  await prisma.platformSetting.upsert({
+    where: { key: DESIGN_TOKENS_KEY },
+    create: { key: DESIGN_TOKENS_KEY, value },
+    update: { value },
+  });
+  return clean;
 }

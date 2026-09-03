@@ -5,7 +5,8 @@ import { Providers } from "./providers";
 import { isAuth0Enabled } from "@/lib/auth/auth0-client";
 import { ThemeScript } from "@/components/ui/ThemeProvider";
 import { I18nScript } from "@/lib/i18n/I18nProvider";
-import { getActiveDesignSystem } from "@/lib/settings";
+import { getActiveDesignSystem, getDesignTokenOverrides } from "@/lib/settings";
+import { overridesToCss } from "@/lib/design-tokens/registry";
 
 const geist = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 
@@ -73,7 +74,14 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   //     during server render (no flash)
   //   • The client provider receives the value as a prop, no
   //     localStorage roundtrip or hydration mismatch
-  const activeDesignSystem = await getActiveDesignSystem();
+  const [activeDesignSystem, tokenOverrides] = await Promise.all([
+    getActiveDesignSystem(),
+    getDesignTokenOverrides(),
+  ]);
+  // Admin-tuned tokens, injected AFTER globals.css so they win on
+  // cascade without !important. Empty string when nothing is overridden,
+  // in which case no element is emitted at all.
+  const tokenCss = overridesToCss(tokenOverrides);
 
   return (
     <html
@@ -85,6 +93,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <head>
         <ThemeScript />
         <I18nScript />
+        {tokenCss !== "" && (
+          // Values here are numbers that have cleared sanitizeOverrides
+          // and units come from the token registry, so nothing
+          // user-supplied is interpolated into the stylesheet as text.
+          <style id="design-token-overrides" dangerouslySetInnerHTML={{ __html: tokenCss }} />
+        )}
       </head>
       <body className="min-h-full bg-page text-fg">
         <Providers initialDesignSystem={activeDesignSystem} auth0Enabled={isAuth0Enabled()}>{children}</Providers>

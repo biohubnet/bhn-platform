@@ -221,9 +221,20 @@ export default async function AdminDesignSystemPage() {
 
       {/* ── 5. Radius scale ───────────────────────────────────── */}
       <Section icon={Box} title="Radius scale" eyebrow="05">
-        <p className="text-sm text-muted leading-relaxed mb-4">
+        <p className="text-sm text-muted leading-relaxed mb-3">
           The platform's "voice" varies by theme — each theme picks
           its own radius. Defaults below are the <code className="font-mono text-fg bg-elevated px-1 rounded">light</code> theme; others override.
+        </p>
+        <p className="text-sm leading-relaxed mb-4">
+          <Link
+            href="/admin/design-system/tokens"
+            className="inline-flex items-center gap-1.5 font-semibold text-brand-700 hover:underline"
+          >
+            <Pencil size={13} /> Adjust corners and spacing
+          </Link>{" "}
+          <span className="text-muted">
+            — change these for the whole platform without a developer. Previews live, applies on save.
+          </span>
         </p>
         <div className="flex flex-wrap items-end gap-3">
           {[
