@@ -4,25 +4,43 @@
  * The design-system control panel.
  *
  * LAYOUT
- * Forty-odd controls will not fit as one card each, so nothing is a
- * card. Groups are tabs, and inside a group every control is a single
- * row about 34px tall: name, hint, the control itself, the value, and a
- * reset. Colours go two-up because a swatch needs width, not height.
- * The result is a whole group on one screen without scrolling, which is
- * what makes comparing steps in a ladder possible at all.
+ * Groups used to be tabs — only one visible at a time, so seeing a
+ * change meant switching away from the controls that made it, and
+ * finding out a control even existed meant clicking through six tabs
+ * first. All six now sit open in one rail, always, ordered corners →
+ * spacing → type → ink → brand → motion. A rail this long only stays
+ * usable because each row is one line: name, control, value, reset —
+ * the density that made a whole GROUP fit a screen now makes the whole
+ * PANEL fit a scroll.
+ *
+ * A group can still be collapsed — long-lived familiarity with one
+ * area (an admin who only ever touches Brand) shouldn't force six
+ * groups of scrolling every visit — but open is the default and
+ * nothing is hidden behind a click on first arrival.
  *
  * PREVIEW
  * Edits are applied to document.documentElement immediately, so the
- * admin shell around the panel — its own cards, buttons, nav and this
- * table — re-renders at the new values as you drag. A swatch strip would
- * show you a rounded rectangle; this shows you the platform. Nothing is
- * persisted until Save, and the inline properties are stripped on
- * unmount so leaving without saving cannot leave the rest of the admin
- * area wearing values that were never stored.
+ * admin shell around the panel — its own cards, buttons, nav — re-
+ * renders at the new values as you drag. That answers "what does the
+ * platform look like now", but not "what am I looking at" when the
+ * affected element is scrolled off-screen. <PreviewPanel> answers
+ * that: a standing sample — card, button, chip, type, ink, the brand
+ * ramp — that stays in view beside the rail, built from the same
+ * Tailwind utility classes the real platform uses, so it responds to
+ * every group without a line of bespoke preview logic. Nothing here
+ * is invented UI: every element shown is controlled by a token in this
+ * panel. It does not include the sidebar's section colours (Engage /
+ * Experience / etc.) — those are a separate, fixed palette in
+ * Sidebar.tsx that this panel has no control over, and showing them
+ * here would imply a slider changes something it does not touch.
+ *
+ * Nothing is persisted until Save, and the inline properties are
+ * stripped on unmount so leaving without saving cannot leave the rest
+ * of the admin area wearing values that were never stored.
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { RotateCcw, Check, Loader2, AlertTriangle } from "lucide-react";
+import { RotateCcw, Check, Loader2, AlertTriangle, ChevronDown, Heart } from "lucide-react";
 import {
   CONTROLS, GROUPS, MANAGED, controlsFor, isValidColor,
   type Control, type ControlGroup, type TokenOverrides,
@@ -32,9 +50,20 @@ import { cn } from "@/lib/utils";
 
 type Status = "idle" | "saving" | "saved" | "error";
 
+const RAMP_STEPS = [
+  { step: "50",  cls: "bg-brand-50" },
+  { step: "100", cls: "bg-brand-100" },
+  { step: "200", cls: "bg-brand-200" },
+  { step: "600", cls: "bg-brand-600" },
+  { step: "700", cls: "bg-brand-700" },
+] as const;
+
 export function DesignTokenEditor({ initial }: { initial: TokenOverrides }) {
   const [values, setValues] = useState<TokenOverrides>(initial);
-  const [group, setGroup] = useState<ControlGroup>("corners");
+  // Every group open on arrival — a Set of the CLOSED ones, so the
+  // default (nothing in it) means "show everything" with no per-group
+  // bookkeeping on mount.
+  const [closedGroups, setClosedGroups] = useState<Set<ControlGroup>>(new Set());
   const [status, setStatus] = useState<Status>("idle");
   const [message, setMessage] = useState<string | null>(null);
   const saved = useRef<TokenOverrides>(initial);
@@ -152,91 +181,103 @@ export function DesignTokenEditor({ initial }: { initial: TokenOverrides }) {
     }
   }
 
-  const active = GROUPS.find((g) => g.id === group)!;
-  const rows = controlsFor(group);
-  const colours = rows.filter((c) => c.kind === "color");
-  const others = rows.filter((c) => c.kind !== "color");
   const touched = (g: ControlGroup) => controlsFor(g).filter((c) => values[c.name] !== undefined).length;
+  const toggleGroup = (id: ControlGroup) => setClosedGroups((prev) => {
+    const next = new Set(prev);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    return next;
+  });
 
   return (
-    <div>
-      {/* group tabs — horizontal so no vertical space is spent on navigation */}
-      <div className="flex flex-wrap gap-1 border-b border-line pb-2">
-        {GROUPS.map((g) => {
-          const n = touched(g.id);
-          return (
-            <button
-              key={g.id} type="button" onClick={() => setGroup(g.id)}
-              aria-current={g.id === group}
-              className={cn(
-                "inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[13px] font-semibold transition-colors",
-                g.id === group ? "bg-fg text-background" : "text-muted hover:bg-elevated hover:text-fg",
-              )}
-            >
-              {g.label}
-              {n > 0 && (
-                <span className={cn(
-                  "rounded-full px-1.5 text-[10px] font-bold tabular-nums",
-                  g.id === group ? "bg-background/25 text-background" : "bg-brand-600 text-white",
-                )}>{n}</span>
-              )}
-            </button>
-          );
-        })}
+    <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_336px]">
+      {/* LEFT — every group open, stacked, nothing behind a tab */}
+      <div className="min-w-0">
+        <div className="divide-y divide-line rounded-lg border border-line">
+          {GROUPS.map((g) => {
+            const isOpen = !closedGroups.has(g.id);
+            const rows = controlsFor(g.id);
+            const colours = rows.filter((c) => c.kind === "color");
+            const others = rows.filter((c) => c.kind !== "color");
+            const n = touched(g.id);
+            return (
+              <section key={g.id}>
+                <button
+                  type="button" onClick={() => toggleGroup(g.id)} aria-expanded={isOpen}
+                  aria-controls={`group-${g.id}`} id={`group-${g.id}-h`}
+                  className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left transition-colors hover:bg-elevated"
+                >
+                  <ChevronDown size={14} className={cn("shrink-0 text-subtle transition-transform", !isOpen && "-rotate-90")} />
+                  <span className="text-[13px] font-bold text-fg">{g.label}</span>
+                  {n > 0 && (
+                    <span className="rounded-full bg-brand-600 px-1.5 text-[10px] font-bold tabular-nums text-white">{n}</span>
+                  )}
+                  <span className="ml-auto hidden text-[12px] text-muted sm:inline">{g.blurb}</span>
+                </button>
+                {isOpen && (
+                  <div id={`group-${g.id}`} role="region" aria-labelledby={`group-${g.id}-h`} className="px-3.5 pb-3.5">
+                    {others.length > 0 && (
+                      <div className="divide-y divide-line rounded-md border border-line">
+                        {others.map((c) => <Row key={c.name} c={c} values={values} onSet={set} onClear={clear} />)}
+                      </div>
+                    )}
+                    {colours.length > 0 && (
+                      <div className={cn("grid gap-2 sm:grid-cols-2", others.length > 0 && "mt-2")}>
+                        {colours.map((c) => <Swatch key={c.name} c={c} values={values} onSet={set} onClear={clear} />)}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </section>
+            );
+          })}
+        </div>
+
+        {/* sticky so Save is reachable no matter how far down the rail you are */}
+        <div className="sticky bottom-0 mt-4 flex flex-wrap items-center gap-3 rounded-lg border border-line bg-card/95 px-3.5 py-3 backdrop-blur">
+          <button
+            type="button" onClick={save} disabled={!dirty || status === "saving"}
+            className="inline-flex items-center gap-2 rounded-md bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {status === "saving" ? <Loader2 size={15} className="animate-spin" /> : <Check size={15} />}
+            {status === "saving" ? "Saving…" : "Save for everyone"}
+          </button>
+          <button
+            type="button" onClick={() => { setStatus("idle"); setMessage(null); setValues(saved.current); }}
+            disabled={!dirty}
+            className="inline-flex items-center gap-2 rounded-md border border-line px-3 py-2 text-sm font-medium transition-colors hover:bg-elevated disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <RotateCcw size={14} /> Revert
+          </button>
+          {status === "saved" && !dirty && <span className="text-sm font-medium text-emerald-700">Saved. Every page uses these now.</span>}
+          {status === "error" && <span className="inline-flex items-center gap-1.5 text-sm font-medium text-rose-700"><AlertTriangle size={14} /> {message}</span>}
+          {dirty && status !== "error" && <span className="text-sm text-muted">Previewing — this page is already using these.</span>}
+        </div>
       </div>
 
-      <p className="mt-2.5 text-[13px] leading-relaxed text-muted">{active.blurb}</p>
-
-      {dirty && <CompareRail baseline={baseline} saved={saved.current} />}
-
-      {others.length > 0 && (
-        <div className="mt-3 divide-y divide-line rounded-lg border border-line">
-          {others.map((c) => <Row key={c.name} c={c} values={values} onSet={set} onClear={clear} />)}
-        </div>
-      )}
-
-      {colours.length > 0 && (
-        <div className="mt-3 grid gap-2 sm:grid-cols-2">
-          {colours.map((c) => <Swatch key={c.name} c={c} values={values} onSet={set} onClear={clear} />)}
-        </div>
-      )}
-
-      {/* sticky so Save is reachable from any group without scrolling back */}
-      <div className="sticky bottom-0 mt-4 flex flex-wrap items-center gap-3 border-t border-line bg-card/95 py-3 backdrop-blur">
-        <button
-          type="button" onClick={save} disabled={!dirty || status === "saving"}
-          className="inline-flex items-center gap-2 rounded-md bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {status === "saving" ? <Loader2 size={15} className="animate-spin" /> : <Check size={15} />}
-          {status === "saving" ? "Saving…" : "Save for everyone"}
-        </button>
-        <button
-          type="button" onClick={() => { setStatus("idle"); setMessage(null); setValues(saved.current); }}
-          disabled={!dirty}
-          className="inline-flex items-center gap-2 rounded-md border border-line px-3 py-2 text-sm font-medium transition-colors hover:bg-elevated disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          <RotateCcw size={14} /> Revert
-        </button>
-        {status === "saved" && !dirty && <span className="text-sm font-medium text-emerald-700">Saved. Every page uses these now.</span>}
-        {status === "error" && <span className="inline-flex items-center gap-1.5 text-sm font-medium text-rose-700"><AlertTriangle size={14} /> {message}</span>}
-        {dirty && status !== "error" && <span className="text-sm text-muted">Previewing — this page is already using these.</span>}
-      </div>
+      {/* RIGHT — the mockup: standing, live, every group represented */}
+      <aside className="lg:sticky lg:top-4">
+        {dirty && <CompareRail baseline={baseline} saved={saved.current} />}
+        <PreviewPanel />
+      </aside>
     </div>
   );
 }
 
 
 /**
- * The specimen rail — the same miniatures drawn twice, once as everyone
- * currently sees them and once as your edits would leave them.
+ * The compare rail — the same four miniatures drawn twice, once as
+ * everyone currently sees them and once as your edits would leave them.
  *
- * It exists because the live preview on the rest of the page shows only
- * the AFTER. That answers "what does this look like" but not "what did I
- * change", and after four or five adjustments those are different
- * questions. The rail is the only place the two states sit side by side.
+ * <PreviewPanel> below answers "what does the platform look like now" —
+ * it is always on screen. This answers a different question, "what did
+ * I change", which after four or five adjustments is not the same one:
+ * staring at the live preview alone, a moved slider and an unmoved one
+ * can look identical if the eye does not have both states at once. This
+ * is the only place they sit side by side.
  *
- * It appears only when something is dirty. A permanent pane would cost
- * ~68px on every visit to show two identical copies of the same thing.
+ * It appears only when something is dirty, above the standing preview —
+ * a permanent second pane would cost real height to show two identical
+ * copies of the same four things every visit.
  */
 function beforeVars(baseline: Record<string, string>, saved: TokenOverrides): React.CSSProperties {
   const out: Record<string, string> = {};
@@ -271,9 +312,7 @@ function Specimens() {
         Button
       </span>
       <div className="flex overflow-hidden rounded-sm">
-        {["50", "200", "400", "600", "800"].map((k) => (
-          <span key={k} className={`h-5 w-4 bg-brand-${k}`} />
-        ))}
+        {RAMP_STEPS.map(({ step, cls }) => <span key={step} className={cn("h-5 w-4", cls)} />)}
       </div>
     </div>
   );
@@ -281,7 +320,7 @@ function Specimens() {
 
 function CompareRail({ baseline, saved }: { baseline: Record<string, string>; saved: TokenOverrides }) {
   return (
-    <div className="mt-3 overflow-hidden rounded-lg border border-line">
+    <div className="mb-4 overflow-hidden rounded-lg border border-line">
       <div className="grid grid-cols-2 divide-x divide-line">
         <div className="min-w-0 px-3 py-2">
           <p className="mb-1.5 text-[10.5px] font-bold uppercase tracking-[0.14em] text-subtle">
@@ -298,6 +337,86 @@ function CompareRail({ baseline, saved }: { baseline: Record<string, string>; sa
           {/* nothing pinned: inherits the preview already live on <html> */}
           <div><Specimens /></div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * The standing mockup. Always visible, not gated on dirty — the request
+ * this answers was "I want to see all the elements", not "show me a
+ * diff", and that has to hold true the moment the page loads, before
+ * anyone has touched a slider.
+ *
+ * Every element below is built from ordinary theme-token Tailwind
+ * classes — bg-card, text-fg, bg-brand-600, rounded-lg — the same
+ * classes the real platform uses, so it needs no bespoke preview
+ * mechanism: the inline properties DesignTokenEditor already sets on
+ * <html> reach it for free through the cascade, exactly like every
+ * other card on this page. `transition-colors` on the button and chip
+ * is what makes the Motion group visible here — Tailwind's transition
+ * utilities read var(--default-transition-duration) and
+ * var(--default-transition-timing-function) by default, so changing
+ * those two sliders changes how this button's hover actually feels
+ * without any extra wiring.
+ *
+ * Deliberately excluded: the sidebar's own section colours (Engage /
+ * Experience / Equip / Admin). Those come from a fixed palette in
+ * Sidebar.tsx that no control on this page touches — drawing them here
+ * would claim a slider does something it does not.
+ */
+function PreviewPanel() {
+  return (
+    <div className="rounded-lg border border-line bg-card p-4">
+      <p className="mb-3 text-[10.5px] font-bold uppercase tracking-[0.14em] text-subtle">
+        Live mockup — every group, at once
+      </p>
+
+      {/* corners · spacing · ink · type */}
+      <div className="rounded-lg border border-line bg-card-solid p-3.5">
+        <div className="flex items-start justify-between gap-2">
+          <div>
+            <p className="text-[10.5px] font-bold uppercase tracking-[0.12em] text-subtle">Sample course</p>
+            <p className="mt-1 text-base font-bold leading-snug text-fg">Regulatory Affairs in Canada</p>
+          </div>
+          <Heart size={16} className="mt-0.5 shrink-0 text-subtle" />
+        </div>
+        <p className="mt-1.5 text-sm leading-relaxed text-muted">
+          How professionals interpret regulations, prepare submissions and work with the authority.
+        </p>
+        <div className="mt-3 flex items-center gap-2">
+          <span className="rounded-full bg-brand-50 px-2.5 py-1 text-[11px] font-semibold text-brand-700">
+            Open
+          </span>
+          <span className="rounded-full bg-elevated px-2.5 py-1 text-[11px] font-semibold text-fg">
+            1,500 credits
+          </span>
+        </div>
+      </div>
+
+      {/* brand + motion */}
+      <button
+        type="button"
+        className="mt-3 w-full rounded-md bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-700"
+      >
+        Course info &amp; application
+      </button>
+
+      {/* brand ramp */}
+      <div className="mt-3 flex overflow-hidden rounded-sm">
+        {RAMP_STEPS.map(({ step, cls }) => (
+          <span key={step} className={cn("h-6 flex-1", cls)} title={`brand-${step}`} />
+        ))}
+      </div>
+
+      {/* type scale */}
+      <div className="mt-3.5 space-y-1 border-t border-line pt-3">
+        <p className="text-lg font-bold leading-snug text-fg">Heading</p>
+        <p className="text-sm leading-relaxed text-muted">
+          Body copy at the platform&rsquo;s current size and line height, long enough to show how
+          it wraps.
+        </p>
+        <p className="text-xs text-subtle">Caption text</p>
       </div>
     </div>
   );
