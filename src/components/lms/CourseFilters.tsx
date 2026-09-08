@@ -3,20 +3,26 @@
  * Top-of-page filter panel for the course catalog.
  *
  * Design choices:
- *   • Compact dark control strip — the panel reads as machinery
- *     above the bright course cards, not as a second hero.
- *   • Specials toggle ("Special programs & workshops, instructor-led")
- *     lives in the header row as a featured amber button — that's
- *     the loudest call on the panel and the one most users want.
- *   • All four filter groups visible at once. Chip toggles instead
+ *   • Compact recessed control strip — the panel reads as machinery
+ *     above the bright course cards, not as a second hero. (It was a
+ *     dark slab once; see the inline note on the section element.)
+ *   • All three filter groups visible at once. Chip toggles instead
  *     of stacked checkbox lists — a chip cloud reads the active set
  *     at a glance.
  *   • Active-count + clear-all live in the header, so the body of
  *     the panel is pure chips with no chrome competing for attention.
+ *
+ * The header used to carry a loud amber "Special programs & workshops
+ * (instructor-led)" toggle. It is gone: the page is now framed as the
+ * on-demand catalogue, and a facet that singled out the instructor-led
+ * rows contradicted that framing. `isSpecial` still exists on the model
+ * and is still editable by admins from the card's quick-edit dialog —
+ * only the trainee-facing filter is removed. `?special=1` also still
+ * filters server-side (see the courses page) for any saved link.
  */
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMemo } from "react";
-import { Filter, Sparkles, X } from "lucide-react";
+import { Filter, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export interface CourseFilterOptions {
@@ -45,7 +51,6 @@ export function CourseFilters({
       topic:    (sp.get("topic")    ?? "").split(",").filter(Boolean),
       delivery: (sp.get("delivery") ?? "").split(",").filter(Boolean),
       provider: (sp.get("provider") ?? "").split(",").filter(Boolean),
-      special:  sp.get("special") === "1",
     }),
     [sp]
   );
@@ -64,24 +69,19 @@ export function CourseFilters({
     setParam(key, Array.from(cur));
   }
 
-  function toggleSpecial() {
-    const next = new URLSearchParams(sp.toString());
-    if (selected.special) next.delete("special");
-    else next.set("special", "1");
-    router.push(`/courses?${next.toString()}`);
-  }
-
   function clearAll() {
     const next = new URLSearchParams(sp.toString());
     next.delete("topic");
     next.delete("delivery");
     next.delete("provider");
+    // Cleared too, so a saved `?special=1` link doesn't survive a
+    // "Clear" that has no control able to show it is still on.
     next.delete("special");
     router.push(`/courses?${next.toString()}`);
   }
 
   const totalActive =
-    selected.topic.length + selected.delivery.length + selected.provider.length + (selected.special ? 1 : 0);
+    selected.topic.length + selected.delivery.length + selected.provider.length;
 
   return (
     <section
@@ -98,9 +98,7 @@ export function CourseFilters({
         "bg-elevated text-fg border border-line",
       )}
     >
-      {/* Compact header row: title + featured special toggle + clear-all.
-          The special toggle lives in the header (not below it) so it
-          reads as the loud headline action, not one more chip. */}
+      {/* Compact header row: title, active count, clear-all. */}
       <div className="flex items-center gap-2 sm:gap-3 flex-wrap mb-3">
         <div className="flex items-center gap-2 min-w-0">
           <Filter size={15} className="text-subtle shrink-0" />
@@ -114,44 +112,11 @@ export function CourseFilters({
           )}
         </div>
 
-        {/* Featured: Special programs & workshops — the one loud
-            control on an otherwise quiet panel, because it is the thing
-            people were not finding. Amber against the recessed surface
-            rather than against the old dark slab: soft amber when off,
-            solid fill + glow + scale when on. */}
-        <button
-          type="button"
-          onClick={toggleSpecial}
-          aria-pressed={selected.special}
-          className={cn(
-            "group ml-auto inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full transition-all",
-            "ring-2 ring-inset",
-            selected.special
-              ? "bg-amber-400 text-amber-950 ring-amber-300 shadow-amber-glow-strong scale-[1.02]"
-              : "bg-amber-50 text-amber-800 ring-amber-300 hover:bg-amber-100 hover:ring-amber-400",
-          )}
-        >
-          <Sparkles
-            size={12}
-            className={cn(
-              "transition-transform",
-              selected.special ? "" : "group-hover:rotate-12",
-            )}
-          />
-          <span>Special programs &amp; workshops</span>
-          {/* No opacity-75 here: at 10px this is small text, and the 75%
-              blend against the amber-50 chip measured 4.02:1 — under the
-              4.5:1 floor. Full opacity keeps the same hue and clears it. */}
-          <span className="hidden sm:inline text-[10px] font-medium">
-            (instructor-led)
-          </span>
-        </button>
-
         {totalActive > 0 && (
           <button
             type="button"
             onClick={clearAll}
-            className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-muted hover:text-fg px-2 py-1 rounded-full ring-1 ring-inset ring-line hover:ring-line-strong transition-colors"
+            className="ml-auto inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-muted hover:text-fg px-2 py-1 rounded-full ring-1 ring-inset ring-line hover:ring-line-strong transition-colors"
           >
             <X size={10} /> Clear
           </button>

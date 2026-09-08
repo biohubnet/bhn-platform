@@ -20,7 +20,7 @@ import {
   Users,
   Settings,
   LogOut,
-  ChevronRight, ChevronDown,
+  ChevronDown,
   Coins,
   FileText,
   Megaphone,
@@ -112,9 +112,9 @@ const engageItems: (NavItem & { labelKey: string })[] = [
   { label: "Program Details & FAQ", labelKey: "nav.engageGuide", href: "/engage", icon: HelpCircle,
     featureId: "engage-faq",
     description: "How training, credits and enrolment work: access, on-demand courses, pathways, the credit-expiry policy, applying for more credits, and leaving the programme." },
-  { label: "Course Catalog",     labelKey: "nav.catalog",     href: "/courses", icon: BookOpen,
+  { label: "On-demand courses",  labelKey: "nav.catalog",     href: "/courses", icon: BookOpen,
     featureId: "learn-courses",
-    description: "Every published course. Natural-language search ranks results by what each course actually covers, not just keyword matches." },
+    description: "Every published course, grouped by topic. Natural-language search ranks results by what each course actually covers, not just keyword matches." },
   { label: "Learning Pathways",  labelKey: "nav.pathways",    href: "/pathways", icon: Layers,
     featureId: "learn-pathways",
     description: "Multi-course learning journeys with a single certificate at the end. Some are open; gated ones need admin approval." },
@@ -1266,7 +1266,13 @@ function NavLink({ item, pathname, onNavigate, queueCounts }: {
             </span>
           );
         })()}
-        {active && <ChevronRight size={14} className="text-brand-400 shrink-0" />}
+        {/* No trailing chevron on the active item. It was the fourth
+            signal for "you are here" — after the brand fill, the brand
+            text colour and the brand bar down the left edge — and the
+            only one that cost layout: chevron plus gap took 26px off
+            the label, which is what truncated "On-demand courses" to
+            "On-demand cour…" whenever you were actually on that page.
+            Every label now gets the full width in every state. */}
       </Link>
 
       {/* Hover/focus tooltip. Hidden under md — on mobile the drawer
