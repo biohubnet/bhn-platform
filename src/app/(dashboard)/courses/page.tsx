@@ -144,7 +144,7 @@ export default async function CoursesPage({
     <div>
       <PageHero
         eyebrow={<><BookOpen size={12} /> ENGAGE</>}
-        title="On-demand courses"
+        title="On-Demand Courses"
         description={
           <EditableText
             copyKey="courses.subtitle"

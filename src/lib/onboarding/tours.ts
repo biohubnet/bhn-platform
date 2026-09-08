@@ -36,12 +36,12 @@ export const TOUR_STEPS: TourStep[] = [
   // ─── ENGAGE · Catalogue renamed + grouped by topic — Sep 2026
   {
     id: "engage.on-demand-courses-by-topic",
-    title: "The catalogue is now On-demand courses, grouped by topic",
+    title: "The catalogue is now On-Demand Courses, grouped by topic",
     body: "Course Catalog has a new name in the menu, and the cards underneath it are sorted into topic sections — Sector/Technology Overview, Career Insights, Clinical Trials and the rest — each with a heading and a count, so you can see what the catalogue covers before you filter anything. Prefer one long list? “All courses” at the top right of the grid switches back. The “Special programs & workshops” button has been retired; use the Delivery filter to find the instructor-led series.",
     path: "/courses",
     placement: "center",
     roles: ["trainee", "evaluating", "instructor", "admin", "superadmin"],
-    cta: { label: "Open On-demand courses", href: "/courses" },
+    cta: { label: "Open On-Demand Courses", href: "/courses" },
     since: "2026.09.15a",
   },
   // ─── ENGAGE · My Courses folded into the Progress Tracker — Sep 2026

@@ -103,3 +103,24 @@ test("the catalogue no longer offers a trainee-facing Specials filter", () => {
   expect(src).not.toContain("selected.special");
   expect(src).not.toContain("Special programs &amp;");
 });
+
+test("the nav label is Title Case and matches its dictionary entry", () => {
+  // The label lives twice: as the `label` fallback on the Sidebar nav item
+  // and as `nav.catalog` in the English dictionary, which is what actually
+  // renders through useT(). Editing one and not the other shows the old
+  // name to every user until someone notices.
+  const NAME = "On-Demand Courses";
+  const sidebar = readFileSync(
+    join(__dirname, "../../src/components/lms/Sidebar.tsx"),
+    "utf8",
+  );
+  const dict = readFileSync(
+    join(__dirname, "../../src/lib/i18n/dictionaries.ts"),
+    "utf8",
+  );
+  expect(sidebar).toContain(`{ label: "${NAME}",`);
+  expect(dict).toContain(`"nav.catalog": "${NAME}",`);
+  // Title Case, matching its ENGAGE siblings (Learning Pathways, Progress
+  // Tracker, My Credits). Both halves of the hyphenated compound capitalise.
+  expect(NAME).toBe(NAME.replace(/(^|[\s-])([a-z])/g, (_, p, c) => p + c.toUpperCase()));
+});

@@ -42,16 +42,16 @@ export default function EngageProgramFaqPage() {
         <Accordion>
           <AccordionItem question="1. How can I access training/courses on BioHubNet?" defaultOpen>
             <p>
-              Everything runs through <L href="/courses">On-demand courses</L>, where the
+              Everything runs through <L href="/courses">On-Demand Courses</L>, where the
               catalogue is grouped by topic. Filter by topic, delivery mode or provider, open
               a course and choose Enroll. Structured programmes live under{" "}
               <L href="/pathways">Learning Pathways</L>.
             </p>
           </AccordionItem>
 
-          <AccordionItem question="2. How do I take On-demand Courses?">
+          <AccordionItem question="2. How do I take On-Demand Courses?">
             <p>
-              On-demand courses are asynchronous — start whenever you like and work at your
+              On-Demand Courses are asynchronous — start whenever you like and work at your
               own pace. Enrol from the <L href="/courses">catalogue</L>; the course then
               appears in your <L href="/progress">Progress Tracker</L>, where you can pick
               it back up whenever you like.

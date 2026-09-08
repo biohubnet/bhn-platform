@@ -38,8 +38,8 @@ export const COPY_REGISTRY: CopyEntry[] = [
   // ── /courses ──
   {
     key: "courses.subtitle",
-    scope: "On-demand courses · /courses",
-    label: "On-demand courses subtitle",
+    scope: "On-Demand Courses · /courses",
+    label: "On-Demand Courses subtitle",
     description: "One-line description shown below the page title on /courses. Sets the framing for the whole catalogue.",
     // Kept verbatim in step with the `subtitleDefault` constant in
     // app/(dashboard)/courses/page.tsx — that is the string the page

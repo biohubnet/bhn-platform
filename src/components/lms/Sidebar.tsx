@@ -112,7 +112,7 @@ const engageItems: (NavItem & { labelKey: string })[] = [
   { label: "Program Details & FAQ", labelKey: "nav.engageGuide", href: "/engage", icon: HelpCircle,
     featureId: "engage-faq",
     description: "How training, credits and enrolment work: access, on-demand courses, pathways, the credit-expiry policy, applying for more credits, and leaving the programme." },
-  { label: "On-demand courses",  labelKey: "nav.catalog",     href: "/courses", icon: BookOpen,
+  { label: "On-Demand Courses",  labelKey: "nav.catalog",     href: "/courses", icon: BookOpen,
     featureId: "learn-courses",
     description: "Every published course, grouped by topic. Natural-language search ranks results by what each course actually covers, not just keyword matches." },
   { label: "Learning Pathways",  labelKey: "nav.pathways",    href: "/pathways", icon: Layers,
@@ -1270,8 +1270,8 @@ function NavLink({ item, pathname, onNavigate, queueCounts }: {
             signal for "you are here" — after the brand fill, the brand
             text colour and the brand bar down the left edge — and the
             only one that cost layout: chevron plus gap took 26px off
-            the label, which is what truncated "On-demand courses" to
-            "On-demand cour…" whenever you were actually on that page.
+            the label, which is what truncated "On-Demand Courses" to
+            "On-Demand Cour…" whenever you were actually on that page.
             Every label now gets the full width in every state. */}
       </Link>
 
