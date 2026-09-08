@@ -294,23 +294,34 @@ export function CatalogGrid({
       )}
 
       {showGroups ? (
-        <div className="space-y-9">
+        <div>
           {groups.map((g) => (
-            <section key={g.key} aria-labelledby={`topic-${slugify(g.key)}`}>
-              {/* Heading, count, then a rule running to the right edge.
-                  Full-weight foreground at 17px: this is the label people
-                  navigate the page by, so it is not a quiet eyebrow. */}
-              <div className="mb-3.5 flex items-center gap-3">
+            <section
+              key={g.key}
+              aria-labelledby={`topic-${slugify(g.key)}`}
+              /* Separator BETWEEN topics: a full-width rule on every
+                 section but the first, so the line always reads as
+                 "new topic starts here" rather than as a decoration
+                 under the last row of cards. The old hairline running
+                 to the right of the heading is gone — with a real
+                 divider above it, a second rule beside it was two
+                 marks doing one job. */
+              className="border-t border-line-strong pt-9 mt-12 first:border-t-0 first:pt-0 first:mt-0"
+            >
+              {/* The label people navigate this page by. At 26px it sits
+                  a clear step below the page hero and a clear step above
+                  the 15px card titles, so the three levels read as a
+                  scale instead of as three similar sizes. */}
+              <div className="mb-5 flex flex-wrap items-baseline gap-x-3 gap-y-1">
                 <h3
                   id={`topic-${slugify(g.key)}`}
-                  className="text-[17px] font-bold tracking-tight text-fg"
+                  className="text-[22px] sm:text-[26px] font-bold tracking-tight leading-tight text-fg"
                 >
                   {g.label}
                 </h3>
-                <span className="text-[12px] font-semibold tabular-nums text-muted whitespace-nowrap">
+                <span className="text-[13px] font-semibold tabular-nums text-muted whitespace-nowrap">
                   {g.items.length} {g.items.length === 1 ? "course" : "courses"}
                 </span>
-                <span aria-hidden className="h-px flex-1 bg-line-strong" />
               </div>
               <div className={gridCls}>{g.items.map(renderCard)}</div>
             </section>
