@@ -1,5 +1,6 @@
 /**
- * Credit-utilisation milestones — the ENGAGE "Progress Tracker" rules.
+ * Credit-utilisation milestones — the ENGAGE award rules, rendered on
+ * My Credits (/credits).
  *
  * The current platform (app.biohubnet.ca) shows trainees:
  *   • "As of <date> you have used N out of 5000 Credits"

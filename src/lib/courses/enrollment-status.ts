@@ -76,7 +76,7 @@ export function classifyEnrollment(status: string, progress: number): Enrollment
  *   completed  — re-entry is the product's intent; the tracker labels
  *                the control "Review", and a learner should be able to
  *                re-read a course they hold a certificate for.
- *   failed     — likewise "Retry". The Progress Tracker says so in
+ *   failed     — likewise "Retry". My Courses says so in
  *                copy: "your best attempt is the one that counts".
  *
  * ONE predicate, used by both the UI and the server-side gates, so the

@@ -3,7 +3,8 @@ import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
 /**
- * Credit statement — the headline block of the Progress Tracker.
+ * Credit statement — the headline block of My Credits (/credits).
+ * It led the Progress Tracker until that page was re-scoped to courses.
  *
  * Leads with the BALANCE rather than the amount used. A trainee's actual
  * question is "how much do I have left to spend", and the previous

@@ -1,8 +1,18 @@
 /**
- * /progress — ENGAGE Progress Tracker.
+ * /progress — ENGAGE "My Courses".
  *
- * The single trainee-facing record of where they stand: credit
- * utilisation against the award, and every course they are enrolled in.
+ * The single trainee-facing record of where they stand: every course
+ * they are enrolled in, the pathways they are on, and what they saved
+ * for later.
+ *
+ * The route stays /progress. Renaming the URL would break the links in
+ * published changelog entries, the ENGAGE FAQ and every bookmark; the
+ * label is what people read, and that is what changed.
+ *
+ * Credit utilisation used to lead this page. It moved to /credits
+ * (Sep 2026) — a trainee asking "where am I in my courses" and one
+ * asking "what can I still afford" are two different visits, and the
+ * credit block was answering the second one at the top of the first.
  *
  * This page absorbed /my-courses (Sep 2026). Before that the two split
  * the same job badly — the tracker held the credits and a read-only list
@@ -29,30 +39,16 @@
  */
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { CircleCheck, Clock, Coins, GraduationCap, Hourglass, LogOut, XCircle, PlayCircle } from "lucide-react";
+import { CircleCheck, Clock, GraduationCap, Hourglass, LogOut, XCircle, PlayCircle } from "lucide-react";
 import { getSession, isStaff as checkIsStaff } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PageHero } from "@/components/ui/PageHero";
 import { DSSection } from "@/components/design-system/DSSection";
-import { CREDIT_GRANT_TTL_DAYS } from "@/lib/credits/expiry";
-import {
-  creditUtilization,
-  CREDIT_AWARD_TOTAL,
-  CREDIT_HALFWAY_MILESTONE,
-  EARLY_EXPIRY_ENFORCED,
-} from "@/lib/credits/utilization";
 import { CompletedCoursesExport } from "@/components/engage/CompletedCoursesExport";
-import { CreditStatement } from "@/components/engage/CreditStatement";
 import { EnrollmentRow, type EnrollmentRowData } from "@/components/lms/EnrollmentRow";
 import { classifyEnrollment, type EnrollmentBucket } from "@/lib/courses/enrollment-status";
 
 export const dynamic = "force-dynamic";
-
-function fmt(d: Date | null): string {
-  return d
-    ? d.toLocaleDateString("en-CA", { month: "long", day: "numeric", year: "numeric" })
-    : "—";
-}
 
 export default async function ProgressTrackerPage() {
   const session = await getSession();
@@ -65,8 +61,7 @@ export default async function ProgressTrackerPage() {
   // /my-courses, which was this button's only home.
   const isStaff = checkIsStaff(role);
 
-  const [util, enrollments] = await Promise.all([
-    creditUtilization(userId),
+  const [enrollments] = await Promise.all([
     // ONE unfiltered read. The old page ran two status-filtered queries
     // and silently dropped everything they did not name; bucketing in
     // memory costs nothing at a trainee's enrolment count and cannot
@@ -102,8 +97,8 @@ export default async function ProgressTrackerPage() {
 
   const live = enrollments.length - buckets.withdrawn.length;
   const description = enrollments.length === 0
-    ? "Your training credits, and every course you enrol in. Nothing enrolled yet — the catalogue is the place to start."
-    : `${live} ${live === 1 ? "course" : "courses"} · ${buckets.in_progress.length} in progress · ${buckets.completed.length} completed. Your training credits are below.`;
+    ? "Everything you enrol in lands here. Nothing yet — the catalogue is the place to start."
+    : `${live} ${live === 1 ? "course" : "courses"} · ${buckets.in_progress.length} in progress · ${buckets.completed.length} completed.`;
 
   const section = (
     key: EnrollmentBucket,
@@ -137,73 +132,11 @@ export default async function ProgressTrackerPage() {
     <div>
       <PageHero
         eyebrow={<><GraduationCap size={12} /> ENGAGE</>}
-        title="Progress Tracker"
+        title="My Courses"
         description={description}
       />
 
       <div className="max-w-5xl mx-auto space-y-8">
-        {/* ── Training credits ─────────────────────────────────── */}
-        <DSSection title="Training Credits" eyebrow="Utilisation" icon={<Coins size={15} />}>
-          <CreditStatement
-            used={util.used}
-            total={CREDIT_AWARD_TOTAL}
-            threshold={CREDIT_HALFWAY_MILESTONE}
-            balance={util.balance}
-            asOf={fmt(new Date())}
-            thresholdMet={util.halfwayMet}
-          />
-
-          {/* Milestones */}
-          <div className="mt-5">
-            <p className="text-sm font-semibold text-fg mb-2">Make sure to…</p>
-            <ul className="space-y-1.5 text-sm">
-              <li className="flex items-start gap-2">
-                <CircleCheck
-                  size={15}
-                  className={util.halfwayMet ? "text-emerald-600 mt-0.5 shrink-0" : "text-subtle mt-0.5 shrink-0"}
-                />
-                <span className={util.halfwayMet ? "text-muted line-through" : "text-fg"}>
-                  Use {CREDIT_HALFWAY_MILESTONE.toLocaleString()} credits by{" "}
-                  <strong>{fmt(util.checkpointAt)}</strong> to avoid early expiry
-                </span>
-              </li>
-              <li className="flex items-start gap-2">
-                <CircleCheck
-                  size={15}
-                  className={util.fullMet ? "text-emerald-600 mt-0.5 shrink-0" : "text-subtle mt-0.5 shrink-0"}
-                />
-                <span className={util.fullMet ? "text-muted line-through" : "text-fg"}>
-                  Use {CREDIT_AWARD_TOTAL.toLocaleString()} credits by{" "}
-                  <strong>{fmt(util.fullTermAt)}</strong>
-                </span>
-              </li>
-            </ul>
-            {util.issuedAt === null && (
-              <p className="text-xs text-subtle mt-2">
-                Dates appear once your first credits are granted.
-              </p>
-            )}
-          </div>
-
-          {/* Policy */}
-          <div className="mt-5 rounded-xl border border-line bg-elevated p-4">
-            <p className="text-sm font-semibold text-fg mb-2">Credit policy</p>
-            <p className="text-sm text-muted">
-              If credit utilisation at six months post-issuance is{" "}
-              <strong className="text-rose-700">under {CREDIT_HALFWAY_MILESTONE.toLocaleString()}</strong>,
-              remaining credits expire immediately. At{" "}
-              <strong className="text-emerald-700">{CREDIT_HALFWAY_MILESTONE.toLocaleString()} or more</strong>,
-              they stay valid until one year post-issuance.
-            </p>
-            {!EARLY_EXPIRY_ENFORCED && (
-              <p className="text-xs text-subtle mt-2">
-                Today this build only applies the {CREDIT_GRANT_TTL_DAYS}-day per-grant
-                expiry; the six-month checkpoint is policy, not yet automated.
-              </p>
-            )}
-          </div>
-        </DSSection>
-
         {/* ── Courses ──────────────────────────────────────────── */}
         {enrollments.length === 0 ? (
           <DSSection title="Your courses" eyebrow="0 courses" icon={<PlayCircle size={15} />}>

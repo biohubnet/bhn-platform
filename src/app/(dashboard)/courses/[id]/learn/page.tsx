@@ -73,7 +73,7 @@ export default async function LearnPage({
             href="/progress"
             className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium bg-brand-600 text-white hover:bg-brand-700"
           >
-            Progress Tracker
+            My Courses
           </Link>
         </div>
       </div>

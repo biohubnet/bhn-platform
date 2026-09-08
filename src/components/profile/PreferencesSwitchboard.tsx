@@ -23,11 +23,16 @@ import type { FeaturePrefs } from "@/lib/preferences/active";
 
 interface Props {
   initialPrefs: FeaturePrefs;
+  /** Viewer's role rank (0 trainee … 3 superadmin). Rows the viewer
+   *  cannot reach are not rendered — `requiredRoleRank` existed in the
+   *  registry for this and nothing had ever read it, so a trainee was
+   *  shown toggles for staff-only nav items. */
+  roleRank: number;
 }
 
 const DEBOUNCE_MS = 500;
 
-export function PreferencesSwitchboard({ initialPrefs }: Props) {
+export function PreferencesSwitchboard({ initialPrefs, roleRank }: Props) {
   const [prefs, setPrefs] = useState<FeaturePrefs>(initialPrefs);
   const [saving, setSaving] = useState(false);
   const [savedAt, setSavedAt] = useState<Date | null>(null);
@@ -84,11 +89,11 @@ export function PreferencesSwitchboard({ initialPrefs }: Props) {
   }
 
   function toggleGroup(group: FeatureGroupDef, on: boolean) {
-    const ids = featuresInGroup(group.id).map((f) => f.id);
+    const ids = featuresInGroup(group.id, roleRank).map((f) => f.id);
     setPrefs((p) => {
       const nextHidden = new Set(p.hidden);
       const nextOrder = p.order.slice();
-      for (const f of featuresInGroup(group.id)) {
+      for (const f of featuresInGroup(group.id, roleRank)) {
         if (on) {
           nextHidden.delete(f.id);
           if (!f.defaultEnabled && !nextOrder.includes(f.id)) nextOrder.push(f.id);
@@ -125,7 +130,7 @@ export function PreferencesSwitchboard({ initialPrefs }: Props) {
 
   function reorderInGroup(groupId: FeatureGroupDef["id"], fromId: string, toId: string) {
     if (fromId === toId) return;
-    const ids = featuresInGroup(groupId).map((f) => f.id);
+    const ids = featuresInGroup(groupId, roleRank).map((f) => f.id);
     // Build the current effective order for THIS group:
     //   - User-ordered ids that belong to the group first, in user order
     //   - Then registry-default ids not yet in user order
@@ -171,7 +176,7 @@ export function PreferencesSwitchboard({ initialPrefs }: Props) {
 
       {/* Group cards ------------------------------------------- */}
       {GROUPS.map((group) => {
-        const items = featuresInGroup(group.id);
+        const items = featuresInGroup(group.id, roleRank);
         if (items.length === 0) return null;
         // Apply user order WITHIN the group, then registry-order tail.
         const userOrderInGroup = prefs.order.filter((id) => items.find((i) => i.id === id));

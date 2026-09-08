@@ -1,7 +1,8 @@
 /**
  * /my-courses — legacy redirect.
  *
- * My Courses was folded into the Progress Tracker (Sep 2026). The two
+ * My Courses was folded into /progress (Sep 2026), and /progress was
+ * then renamed back to "My Courses" in the nav. The two
  * pages had been splitting one job: the tracker held credits and a
  * read-only list of course titles, this page held the list you could
  * actually act on. /progress now carries both.

@@ -2,11 +2,26 @@ import { requireSession, isStaff } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Coins, ArrowUpCircle, ArrowDownCircle, FileText, ArrowRight, CheckCircle2, Clock, XCircle } from "lucide-react";
+import { Coins, ArrowUpCircle, ArrowDownCircle, FileText, ArrowRight, CheckCircle2, CircleCheck, Clock, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/Badge";
 import { PageHero } from "@/components/ui/PageHero";
 import { nextExpiringGrant, CREDIT_GRANT_TTL_DAYS } from "@/lib/credits/expiry";
+import {
+  creditUtilization,
+  CREDIT_AWARD_TOTAL,
+  CREDIT_HALFWAY_MILESTONE,
+  EARLY_EXPIRY_ENFORCED,
+} from "@/lib/credits/utilization";
+import { DSSection } from "@/components/design-system/DSSection";
+import { CreditStatement } from "@/components/engage/CreditStatement";
+
+/** Long-form date for the statement and the milestone deadlines. */
+function fmt(d: Date | null): string {
+  return d
+    ? d.toLocaleDateString("en-CA", { month: "long", day: "numeric", year: "numeric" })
+    : "\u2014";
+}
 
 export default async function CreditsPage() {
   const session = await requireSession().catch(() => null);
@@ -16,8 +31,7 @@ export default async function CreditsPage() {
   const role = (session.user as { role?: string }).role ?? "trainee";
   const showApplication = !isStaff(role); // trainees + evaluating only
 
-  const [user, transactions, latestApp, expiring] = await Promise.all([
-    prisma.user.findUnique({ where: { id: userId }, select: { credits: true } }),
+  const [transactions, latestApp, expiring, util] = await Promise.all([
     prisma.creditTransaction.findMany({
       where: { userId },
       orderBy: { createdAt: "desc" },
@@ -30,6 +44,10 @@ export default async function CreditsPage() {
         })
       : Promise.resolve(null),
     nextExpiringGrant(userId),
+    // Utilisation against the 5,000-credit award. Moved here from
+    // /progress (Sep 2026) — it answers "what can I still afford",
+    // which is this page's question, not the courses page's.
+    creditUtilization(userId),
   ]);
 
   const courseTitles: Record<string, string> = {};
@@ -41,8 +59,6 @@ export default async function CreditsPage() {
     });
     for (const c of courses) courseTitles[c.id] = c.title;
   }
-
-  const balance = user?.credits ?? 0;
 
   const reasonLabel: Record<string, string> = {
     enrollment: "Course Enrollment",
@@ -60,31 +76,93 @@ export default async function CreditsPage() {
         title="My BHN Credits"
         description={
           <>
-            Credits are used to enroll in paid courses. Per the BioHubNet ENGAGE program, awarded credits expire <strong className="text-white">{CREDIT_GRANT_TTL_DAYS} days</strong> from their grant date. We&apos;ll email you 90, 30, and 7 days before any expiry so you have time to enroll in courses you want to take.
+            Credits are used to enroll in paid courses. Per the BioHubNet ENGAGE program, awarded credits expire <strong className="text-fg">{CREDIT_GRANT_TTL_DAYS} days</strong> from their grant date. We&apos;ll email you 90, 30, and 7 days before any expiry so you have time to enroll in courses you want to take.
           </>
         }
       />
       <div className="space-y-8 max-w-2xl mx-auto">
 
-      {/* Balance card */}
-      <div className="bg-gradient-to-br from-amber-400 to-amber-500 rounded-2xl p-6 text-white shadow-lg">
-        <div className="flex items-center gap-3 mb-4">
-          <Coins size={28} />
-          <p className="text-amber-100 font-medium">Available Balance</p>
-        </div>
-        <p className="text-5xl font-bold tracking-tight">{balance.toLocaleString()}</p>
-        <p className="text-amber-100 mt-1">BHN Credits</p>
+      {/* ── Utilisation ─────────────────────────────────── */}
+      <DSSection title="Training Credits" eyebrow="Utilisation" icon={<Coins size={15} />}>
+        <CreditStatement
+          used={util.used}
+          total={CREDIT_AWARD_TOTAL}
+          threshold={CREDIT_HALFWAY_MILESTONE}
+          balance={util.balance}
+          asOf={fmt(new Date())}
+          thresholdMet={util.halfwayMet}
+        />
+
+        {/* Nearest expiry — the one thing the old balance card said that
+            the statement does not. It was amber-on-amber inside that
+            card; on a normal surface it needs a tone of its own, and the
+            amber-50 / amber-800 pair is the one this codebase already
+            uses for a soft warning that has to clear 4.5:1 on every
+            theme. */}
         {expiring && (
-          <div className="mt-4 pt-4 border-t border-white/30 flex items-center gap-2 text-sm text-amber-100">
-            <Clock size={14} />
-            <span>
-              <strong className="text-white">{expiring.amount.toLocaleString()}</strong> expire in{" "}
-              <strong className="text-white">{expiring.daysRemaining} day{expiring.daysRemaining === 1 ? "" : "s"}</strong>{" "}
-              ({expiring.expiresAt.toLocaleDateString("en-CA", { month: "long", day: "numeric", year: "numeric" })})
-            </span>
+          <div className="mt-4 flex items-start gap-2 rounded-xl bg-amber-50 px-4 py-3 ring-1 ring-inset ring-amber-200">
+            <Clock size={15} className="mt-0.5 shrink-0 text-amber-800" />
+            <p className="text-sm text-amber-800">
+              <strong className="font-semibold">{expiring.amount.toLocaleString()}</strong>{" "}
+              {expiring.amount === 1 ? "credit expires" : "credits expire"} in{" "}
+              <strong className="font-semibold">
+                {expiring.daysRemaining} day{expiring.daysRemaining === 1 ? "" : "s"}
+              </strong>{" "}
+              &mdash; {fmt(expiring.expiresAt)}. Enrol before then to use them.
+            </p>
           </div>
         )}
-      </div>
+
+        {/* Milestones */}
+        <div className="mt-5">
+          <p className="text-sm font-semibold text-fg mb-2">Make sure to…</p>
+          <ul className="space-y-1.5 text-sm">
+            <li className="flex items-start gap-2">
+              <CircleCheck
+                size={15}
+                className={util.halfwayMet ? "text-emerald-600 mt-0.5 shrink-0" : "text-subtle mt-0.5 shrink-0"}
+              />
+              <span className={util.halfwayMet ? "text-muted line-through" : "text-fg"}>
+                Use {CREDIT_HALFWAY_MILESTONE.toLocaleString()} credits by{" "}
+                <strong>{fmt(util.checkpointAt)}</strong> to avoid early expiry
+              </span>
+            </li>
+            <li className="flex items-start gap-2">
+              <CircleCheck
+                size={15}
+                className={util.fullMet ? "text-emerald-600 mt-0.5 shrink-0" : "text-subtle mt-0.5 shrink-0"}
+              />
+              <span className={util.fullMet ? "text-muted line-through" : "text-fg"}>
+                Use {CREDIT_AWARD_TOTAL.toLocaleString()} credits by{" "}
+                <strong>{fmt(util.fullTermAt)}</strong>
+              </span>
+            </li>
+          </ul>
+          {util.issuedAt === null && (
+            <p className="text-xs text-subtle mt-2">
+              Dates appear once your first credits are granted.
+            </p>
+          )}
+        </div>
+
+        {/* Policy */}
+        <div className="mt-5 rounded-xl border border-line bg-elevated p-4">
+          <p className="text-sm font-semibold text-fg mb-2">Credit policy</p>
+          <p className="text-sm text-muted">
+            If credit utilisation at six months post-issuance is{" "}
+            <strong className="text-rose-700">under {CREDIT_HALFWAY_MILESTONE.toLocaleString()}</strong>,
+            remaining credits expire immediately. At{" "}
+            <strong className="text-emerald-700">{CREDIT_HALFWAY_MILESTONE.toLocaleString()} or more</strong>,
+            they stay valid until one year post-issuance.
+          </p>
+          {!EARLY_EXPIRY_ENFORCED && (
+            <p className="text-xs text-subtle mt-2">
+              Today this build only applies the {CREDIT_GRANT_TTL_DAYS}-day per-grant
+              expiry; the six-month checkpoint is policy, not yet automated.
+            </p>
+          )}
+        </div>
+      </DSSection>
 
       {/* Application status / CTA — trainees only */}
       {showApplication && (

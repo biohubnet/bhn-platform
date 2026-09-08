@@ -451,7 +451,7 @@ export default async function DashboardPage() {
               <div className="space-y-4">
                 <HeroStat label="In progress" value={inProgress.toLocaleString()} />
                 {/* No credits figure in the hero — it lives in the mini
-                    Progress Tracker below, where it sits next to the used
+                    courses panel below, where it sits next to the used
                     /awarded bar that gives it meaning. A bare balance in a
                     stat column was the thing that read as unexplained. */}
                 <HeroStat label="Certificates" value={certsCount.toLocaleString()} />
@@ -548,7 +548,7 @@ export default async function DashboardPage() {
 
       {/* ── WHERE YOU STAND + WHAT'S OPEN ───────────────────────────
             Three things the trainee home was missing: a compact read
-            of the Progress Tracker, the pathways currently accepting
+            of My Courses, the pathways currently accepting
             people, and what's coming up.
 
             Two columns on lg+, events in the right rail as asked.
@@ -557,7 +557,7 @@ export default async function DashboardPage() {
       <div className="max-w-screen-2xl mx-auto px-6 mt-8">
         <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_20rem] gap-6 items-start">
           <div className="space-y-6 min-w-0">
-            {/* ── Mini Progress Tracker ─────────────────────────── */}
+            {/* ── Mini My Courses panel ──────────────────────────── */}
             <section className="rounded-2xl border border-line bg-card p-5">
               <div className="flex items-center justify-between gap-4 mb-4">
                 <p className="text-[12px] uppercase tracking-[0.2em] font-bold text-subtle">
@@ -567,7 +567,7 @@ export default async function DashboardPage() {
                   href="/progress"
                   className="inline-flex items-center gap-1 text-xs font-semibold text-brand-700 hover:underline shrink-0"
                 >
-                  Progress Tracker <ArrowRight size={12} />
+                  My Courses <ArrowRight size={12} />
                 </Link>
               </div>
 
@@ -585,7 +585,7 @@ export default async function DashboardPage() {
                 <MiniStat label="Certificates" value={certsCount} />
               </div>
 
-              {/* Same scaleX bar language as the Progress Tracker, without
+              {/* Same scaleX bar language as the credit statement, without
                   its animation — this is a glance, not the main event. */}
               <div className="mt-4">
                 <div className="h-1.5 w-full rounded-full bg-raised overflow-hidden">
@@ -825,7 +825,7 @@ function pillToneClasses(tone: PillarItem["pillTone"]): string {
 
 // ─── Minimal helpers ─────────────────────────────────────────────
 
-/** One small labelled figure in the mini Progress Tracker. */
+/** One small labelled figure in the mini courses panel. */
 function MiniStat({ label, value }: { label: string; value: number }) {
   return (
     <div>

@@ -44,7 +44,7 @@ export default async function CertificatesPage() {
             href="/progress"
             className="inline-flex items-center gap-1.5 bg-brand-600 text-white text-sm font-bold px-4 py-2 rounded-md hover:bg-brand-700 transition-colors"
           >
-            Open Progress Tracker
+            Open My Courses
           </Link>
         </div>
       ) : (

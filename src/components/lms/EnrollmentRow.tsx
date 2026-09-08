@@ -1,7 +1,7 @@
 /**
- * One enrolled course, as rendered on the Progress Tracker.
+ * One enrolled course, as rendered on My Courses (/progress).
  *
- * Lifted out of the retired /my-courses page so the Progress Tracker
+ * Lifted out of the retired /my-courses route so /progress
  * could absorb it without losing anything. What it carries that the
  * tracker's old inert list did not: a link to the course, the
  * launch / resume control, the progress bar, score, duration and the

@@ -118,9 +118,9 @@ const engageItems: (NavItem & { labelKey: string })[] = [
   { label: "Learning Pathways",  labelKey: "nav.pathways",    href: "/pathways", icon: Layers,
     featureId: "learn-pathways",
     description: "Multi-course learning journeys with a single certificate at the end. Some are open; gated ones need admin approval." },
-  { label: "Progress Tracker",   labelKey: "nav.progressTracker", href: "/progress", icon: Activity,
+  { label: "My Courses",         labelKey: "nav.myCourses",       href: "/progress", icon: Activity,
     featureId: "learn-progress",
-    description: "Every course you're enrolled in — resume where you left off — plus your training-credit utilisation against the 5,000-credit award and the 2,500 / 5,000 milestone dates. Completed courses export as a PDF." },
+    description: "Every course you're enrolled in — resume where you left off — the pathways you're on, what you've completed, and the courses you saved. Completed courses export as a PDF." },
   { label: "Certificates",       labelKey: "nav.certificates",href: "/certificates", icon: Award,
     featureId: "learn-certificates",
     description: "Every credential you've earned. Each has a public verify link to share with employers." },
@@ -215,13 +215,17 @@ const experienceItems: (NavItem & { labelKey: string })[] = [
 // — the place users actually engage with themes — rather than as a
 // sidebar item most trainees would scroll past.
 const miscItems: (NavItem & { labelKey: string })[] = [
+  // Both of these are staff-only in the nav. They are not deleted:
+  // /buddy and /changelog still work, and staff still need the
+  // changelog because they are the ones who write it. A trainee just
+  // does not carry two more items down their sidebar for features
+  // that are not part of their loop.
   { label: "Learning Buddies",   labelKey: "nav.buddy",       href: "/buddy", icon: HeartHandshake,
-    featureId: "experience-buddy",
+    featureId: "experience-buddy", minRole: "instructor",
     description: "Pair up with someone for accountability — share a course or pathway, see each other's progress, leave async notes.",
     badgeKey: "buddy-invites" },
-  // labelKey is overridden per-role at render time ("What's new" for trainees).
   { label: "Changelog",          labelKey: "nav.changelog",   href: "/changelog", icon: Bell,
-    featureId: "engage-changelog",
+    featureId: "engage-changelog", minRole: "instructor",
     description: "What's shipped recently — features, fixes, and improvements." },
   // Roadmap moved to the admin Platform group on user request.
 ];
@@ -1726,9 +1730,11 @@ export function Sidebar({
                 return userRank >= required;
               })
               .map((item) => {
-                // Trainees see the changelog as "What's new"; staff as "Changelog".
-                const key = item.href === "/changelog" && !isStaff ? "nav.changelogTrainee" : item.labelKey;
-                const labeled = { ...item, label: t(key) };
+                // No per-role relabelling here any more: the changelog is
+                // gated at minRole "instructor", which IS the isStaff
+                // threshold, so the old "What's new" trainee label could
+                // never render.
+                const labeled = { ...item, label: t(item.labelKey) };
                 return <NavLink key={item.href} item={labeled} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />;
               })}
           </>

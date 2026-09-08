@@ -136,7 +136,7 @@ export const FEATURES: FeatureDef[] = [
   { id: "mentorship-faq",      label: "1:1 Mentorship · Program details & FAQ", description: "How mentor pairing works and how it differs from an advisor session.",       group: "learn",      defaultEnabled: true },
   { id: "learn-courses",       label: "On-Demand Courses",         description: "Browse and enrol in courses, grouped by topic. Filter by topic, delivery mode or provider.", group: "learn",      defaultEnabled: true },
   { id: "learn-pathways",      label: "Pathways",                  description: "Curated multi-course tracks for specific roles + skill sets.",                            group: "learn",      defaultEnabled: true },
-  { id: "learn-progress",      label: "Progress Tracker",          description: "Every enrolment — resume, review or retry — plus credit utilisation and milestone dates.",   group: "learn",      defaultEnabled: true },
+  { id: "learn-progress",      label: "My Courses",                description: "Every enrolment — resume, review or retry — the pathways you are on, and the courses you saved.",   group: "learn",      defaultEnabled: true },
   { id: "learn-gradebook",     label: "Gradebook",                 description: "Per-course assessment scores + completion status.",                                       group: "learn",      defaultEnabled: false },
   { id: "learn-certificates",  label: "Certificates",              description: "Every credential you've earned; each has a public verify link.",                          group: "learn",      defaultEnabled: true },
   { id: "learn-credits",       label: "My Credits",                description: "Balance + grant/spend log + apply-for-more.",                                              group: "learn",      defaultEnabled: true },
@@ -155,12 +155,12 @@ export const FEATURES: FeatureDef[] = [
   { id: "experience-career-paths", label: "Career paths",            description: "Six tracks mapping Junior → VP journeys with course recommendations + cross-tree branch points.", group: "experience", defaultEnabled: true },
   { id: "experience-facilities",   label: "Facilities map",          description: "Map of Canadian biomanufacturing facilities — every dot is a real plant or institute. Zoom + click for details.", group: "experience", defaultEnabled: true },
   { id: "experience-equip-page",   label: "Equip me",                description: "Personal-development equipment grants.",                                           group: "experience", defaultEnabled: false },
-  { id: "experience-buddy",        label: "Buddy hub",               description: "Find a study/accountability buddy.",                                               group: "experience", defaultEnabled: false },
+  { id: "experience-buddy",        label: "Buddy hub",               description: "Find a study/accountability buddy.",                                               group: "experience", defaultEnabled: false, requiredRoleRank: 1 },
 
   // Engage --------------------------------------------------------
   { id: "engage-events",       label: "Events",                    description: "BHN Annual Symposium + Training Week + workshops.",                                       group: "engage",     defaultEnabled: true },
   { id: "engage-committee",    label: "Committees",                description: "Memberships in the platform's advisory + review committees.",                              group: "engage",     defaultEnabled: false },
-  { id: "engage-changelog",    label: "Changelog",                 description: "What's new on the platform — released features, fixes, improvements.",                    group: "engage",     defaultEnabled: true },
+  { id: "engage-changelog",    label: "Changelog",                 description: "What's new on the platform — released features, fixes, improvements.",                    group: "engage",     defaultEnabled: true, requiredRoleRank: 1 },
   { id: "engage-roadmap",      label: "Roadmap",                   description: "What's coming next + ideas the community has voted on.",                                  group: "engage",     defaultEnabled: false },
   { id: "engage-themes",       label: "Themes",                    description: "Theme proposals + voting.",                                                                group: "engage",     defaultEnabled: false },
 
@@ -231,6 +231,15 @@ export const DEFAULT_PRESET = new Set(
 export const FULL_PRESET = new Set(FEATURES.map((f) => f.id));
 
 /** Helper — list of FeatureDefs in a group, in registry order. */
-export function featuresInGroup(groupId: FeatureGroupId): FeatureDef[] {
-  return FEATURES.filter((f) => f.group === groupId);
+export function featuresInGroup(
+  groupId: FeatureGroupId,
+  /** Viewer's role rank. Features above it are not shown — a toggle for
+   *  a nav item the viewer can never see is a control that does nothing.
+   *  Defaults to superadmin so a caller that does not know the role
+   *  still gets the whole registry rather than silently losing rows. */
+  roleRank = 3,
+): FeatureDef[] {
+  return FEATURES.filter(
+    (f) => f.group === groupId && (f.requiredRoleRank ?? 0) <= roleRank,
+  );
 }

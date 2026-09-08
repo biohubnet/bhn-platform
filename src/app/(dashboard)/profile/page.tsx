@@ -1,4 +1,4 @@
-import { requireSession } from "@/lib/auth";
+import { requireSession, ROLE_RANK } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { SlidersHorizontal } from "lucide-react";
 import { prisma } from "@/lib/prisma";
@@ -13,6 +13,14 @@ export default async function ProfilePage() {
   const session = await requireSession().catch(() => null);
   if (!session) redirect("/login");
   const userId = (session.user as { id?: string }).id!;
+  // Real role, not the impersonated one — acting-as a trainee must not
+  // hide switchboard rows a superadmin needs to reach.
+  const roleRank =
+    ROLE_RANK[
+      (session.user as { realRole?: string }).realRole ??
+        (session.user as { role?: string }).role ??
+        "trainee"
+    ] ?? 0;
 
   const [user, latestRoleRequest, prefsRow] = await Promise.all([
     prisma.user.findUnique({
@@ -64,7 +72,7 @@ export default async function ProfilePage() {
             </p>
           </div>
         </header>
-        <PreferencesSwitchboard initialPrefs={initialPrefs} />
+        <PreferencesSwitchboard initialPrefs={initialPrefs} roleRank={roleRank} />
       </section>
     </div>
   );

@@ -11,7 +11,7 @@
  */
 import { redirect } from "next/navigation";
 import { SlidersHorizontal, ShieldCheck } from "lucide-react";
-import { getSession } from "@/lib/auth";
+import { getSession, ROLE_RANK } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PageHero } from "@/components/ui/PageHero";
 import { parsePrefs, isPlatformStaffRole } from "@/lib/preferences/active";
@@ -41,6 +41,9 @@ export default async function PreferencesPage() {
     (session.user as { role?: string }).role ??
     null;
   const isStaffViewer = isPlatformStaffRole(realRole);
+  // Real role, not the impersonated one: acting-as a trainee should not
+  // hide rows a superadmin needs to reach.
+  const roleRank = ROLE_RANK[realRole ?? "trainee"] ?? 0;
 
   return (
     <div className="space-y-6">
@@ -62,7 +65,7 @@ export default async function PreferencesPage() {
             </div>
           </div>
         )}
-        <PreferencesSwitchboard initialPrefs={initialPrefs} />
+        <PreferencesSwitchboard initialPrefs={initialPrefs} roleRank={roleRank} />
       </div>
     </div>
   );

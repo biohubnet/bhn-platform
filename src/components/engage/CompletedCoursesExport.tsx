@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Download, Loader2 } from "lucide-react";
 
 /**
- * "Download as a PDF" for the Progress Tracker's completed-courses list.
+ * "Download as a PDF" for the My Courses completed-courses list.
  *
  * Parity with the current platform, which offers the same export as a
  * record a trainee can send to a supervisor.

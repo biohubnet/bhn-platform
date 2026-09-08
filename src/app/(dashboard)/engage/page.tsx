@@ -53,7 +53,7 @@ export default function EngageProgramFaqPage() {
             <p>
               On-Demand Courses are asynchronous — start whenever you like and work at your
               own pace. Enrol from the <L href="/courses">catalogue</L>; the course then
-              appears in your <L href="/progress">Progress Tracker</L>, where you can pick
+              appears in <L href="/progress">My Courses</L>, where you can pick
               it back up whenever you like.
             </p>
           </AccordionItem>
@@ -69,7 +69,7 @@ export default function EngageProgramFaqPage() {
 
           <AccordionItem question="4. How can I view what courses I have taken?">
             <p>
-              Your <L href="/progress">Progress Tracker</L> lists everything completed and
+              Your <L href="/progress">My Courses</L> page lists everything completed and
               everything still in flight, and exports the completed list as a PDF. Credentials
               you have earned live under <L href="/certificates">Certificates</L>.
             </p>
@@ -89,7 +89,7 @@ export default function EngageProgramFaqPage() {
                 <> On this build only the {CREDIT_GRANT_TTL_DAYS}-day per-grant expiry is
                 automated — the six-month checkpoint is policy, not yet enforced by a job.</>
               )}{" "}
-              Your standing is on the <L href="/progress">Progress Tracker</L>.
+              Your standing is on <L href="/progress">My Courses</L>.
             </p>
           </AccordionItem>
 
@@ -119,7 +119,7 @@ export default function EngageProgramFaqPage() {
             </p>
           </AccordionItem>
 
-          <AccordionItem question="9. Why are there 2 courses already on my Progress Tracker?">
+          <AccordionItem question="9. Why are there 2 courses already in My Courses?">
             <p>
               New accounts are enrolled automatically in the short orientation courses that
               introduce the platform and the ENGAGE programme. They cost no credits, and they
