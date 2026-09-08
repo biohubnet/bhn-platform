@@ -23,6 +23,12 @@ function fmt(d: Date | null): string {
     : "\u2014";
 }
 
+/** Credit-transaction reasons that mean "the ENGAGE training award has
+ *  been granted". `initial` is not one of them — welcome credits are not
+ *  the award, and treating them as such would retire the application
+ *  pitch for every account on its first day. */
+const AWARD_REASONS = new Set(["training_award", "application_approved", "admin_grant"]);
+
 export default async function CreditsPage() {
   const session = await requireSession().catch(() => null);
   if (!session) redirect("/login");
@@ -60,12 +66,25 @@ export default async function CreditsPage() {
     for (const c of courses) courseTitles[c.id] = c.title;
   }
 
+  // "Have they already received the ENGAGE award?" — a credit row whose
+  // reason is one of the award reasons. Deliberately NOT `issuedAt` from
+  // creditUtilization: that is the first credit row of ANY kind, so a
+  // welcome grant would satisfy it and the application pitch would be
+  // greyed out for someone who has never received the award. `initial`
+  // is excluded for the same reason.
+  const hasTrainingAward = transactions.some(
+    (t) =>
+      t.type === "credit" &&
+      AWARD_REASONS.has(t.reason),
+  );
+
   const reasonLabel: Record<string, string> = {
     enrollment: "Course Enrollment",
     refund: "Refund",
     admin_grant: "Admin Credit Grant",
     initial: "Welcome Credits",
     application_approved: "Application Approved",
+    training_award: "ENGAGE Training Award",
     expiry: "Credits Expired",
   };
 
@@ -166,7 +185,7 @@ export default async function CreditsPage() {
 
       {/* Application status / CTA — trainees only */}
       {showApplication && (
-        <ApplicationStatusCard latestApp={latestApp} />
+        <ApplicationStatusCard latestApp={latestApp} hasTrainingAward={hasTrainingAward} />
       )}
 
       {/* Transaction history */}
@@ -226,20 +245,49 @@ interface AppRow {
   approvedAmount: number | null;
 }
 
-function ApplicationStatusCard({ latestApp }: { latestApp: AppRow | null }) {
+function ApplicationStatusCard({
+  latestApp, hasTrainingAward,
+}: {
+  latestApp: AppRow | null;
+  hasTrainingAward: boolean;
+}) {
   if (!latestApp) {
+    // Someone who already holds the award still gets the eligibility copy
+    // — it is where the expiry rules and the 2,500-in-6-months policy are
+    // written — but it is stood down: no brand fill, no live button, and
+    // a line at the top saying why. Hiding it outright would take the
+    // policy off the page for exactly the people it now governs.
+    const spent = hasTrainingAward;
     return (
-      <div className="bg-gradient-to-br from-brand-50 to-brand-100/40 border-2 border-brand-200 rounded-2xl p-6">
+      <div className={cn(
+        "rounded-2xl p-6",
+        spent
+          ? "border border-line bg-elevated opacity-75"
+          : "bg-gradient-to-br from-brand-50 to-brand-100/40 border-2 border-brand-200",
+      )}>
         <div className="flex items-start gap-4">
-          <div className="w-10 h-10 rounded-xl bg-brand-600 text-white flex items-center justify-center shrink-0">
-            <FileText size={18} />
+          <div className={cn(
+            "w-10 h-10 rounded-xl flex items-center justify-center shrink-0",
+            spent ? "bg-raised text-muted" : "bg-brand-600 text-white",
+          )}>
+            {spent ? <CheckCircle2 size={18} /> : <FileText size={18} />}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="font-semibold text-fg">Apply for ENGAGE training credits</p>
+            {spent && (
+              <p className="text-[11px] uppercase tracking-[0.14em] font-bold text-muted mb-1">
+                Already granted
+              </p>
+            )}
+            <p className={cn("font-semibold", spent ? "text-muted" : "text-fg")}>
+              {spent
+                ? "You have received your ENGAGE training credits"
+                : "Apply for ENGAGE training credits"}
+            </p>
             <p className="text-sm text-muted mt-1 leading-relaxed">
               Eligible Highly Qualified Personnel (HQP) at one of the 14 partner
-              Ontario institutions can receive up to <strong className="text-fg">5,000 training credits</strong>{" "}
-              at no cost.
+              Ontario institutions can receive up to{" "}
+              <strong className={spent ? "text-muted" : "text-fg"}>5,000 training credits</strong>{" "}
+              at no cost.{spent && " Your award is on this page above."}
             </p>
           </div>
         </div>
@@ -273,12 +321,22 @@ function ApplicationStatusCard({ latestApp }: { latestApp: AppRow | null }) {
           </a>.
         </p>
 
-        <Link
-          href="/credits/apply"
-          className="mt-4 w-full inline-flex items-center justify-center gap-2 bg-brand-600 hover:bg-brand-700 text-white font-semibold py-2.5 px-4 rounded-xl shadow-md shadow-brand-600/25 transition-all hover:-translate-y-0.5"
-        >
-          Start application <ArrowRight size={16} />
-        </Link>
+        {spent ? (
+          // Not a disabled <button>: there is no action to re-enable, so a
+          // dead control would just be furniture. A sentence says the same
+          // thing and cannot be clicked at.
+          <p className="mt-4 text-xs text-muted">
+            Nothing to apply for — these credits are already yours. Contact BioHubNet if
+            you think your award is wrong.
+          </p>
+        ) : (
+          <Link
+            href="/credits/apply"
+            className="mt-4 w-full inline-flex items-center justify-center gap-2 bg-brand-600 hover:bg-brand-700 text-white font-semibold py-2.5 px-4 rounded-xl shadow-md shadow-brand-600/25 transition-all hover:-translate-y-0.5"
+          >
+            Start application <ArrowRight size={16} />
+          </Link>
+        )}
       </div>
     );
   }
