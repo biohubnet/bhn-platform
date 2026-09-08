@@ -7,6 +7,8 @@ import {
 } from "lucide-react";
 import { CourseCard } from "./CourseCard";
 import type { CourseFilterOptions } from "./CourseFilters";
+import { groupByTopic } from "@/lib/courses/group";
+import { cn } from "@/lib/utils";
 
 export interface CatalogCourse {
   id: string;
@@ -40,13 +42,28 @@ export interface CatalogCourse {
 }
 
 /**
- * Catalog grid with admin power-ups:
+ * Catalog grid, grouped by topic.
+ *
+ * Sixty-odd cards in one flat grid gave no way to see the shape of the
+ * catalogue without filtering first, so the default view breaks them
+ * into topic sections with a heading and a count each (ordering lives
+ * in lib/courses/group.ts). "All courses" flattens it back for anyone
+ * who would rather scan one list; the toggle only appears when there
+ * is more than one topic on screen, so a filtered-to-one-topic view
+ * does not sprout a control that changes nothing.
+ *
+ * Admin power-ups on top of that:
  *  - per-card selection checkbox + sticky bulk toolbar that PATCHes
  *    /api/admin/courses/batch-filters with one or more facets at once
  *  - per-card pencil opening a quick-edit dialog for the same facets
+ *  - drag-to-reorder. While grouped, a drop is only accepted onto a
+ *    card in the SAME topic: `displayOrder` is one flat sequence, so a
+ *    cross-topic drag would reorder the underlying list and then be
+ *    regrouped straight back to where it started — a control that
+ *    appears to do something and does nothing.
  *
  * Trainees and instructors below admin still see the cards but no
- * checkbox / pencil; the wrapper degrades cleanly.
+ * checkbox / pencil / grip; the wrapper degrades cleanly.
  */
 export function CatalogGrid({
   courses, role, options, isAdmin,
@@ -72,6 +89,16 @@ export function CatalogGrid({
   const [reorderFlash, setReorderFlash] = useState<string | null>(null);
   const [, startTransition] = useTransition();
 
+  // Topic sections. On by default — see the file header.
+  const [grouped, setGrouped] = useState(true);
+  const groups = useMemo(() => groupByTopic(localOrder), [localOrder]);
+  // One group means the headings would just restate the active topic
+  // filter, so both the sections and their toggle stand down.
+  const showGroups = grouped && groups.length > 1;
+
+  const topicOf = (id: string) =>
+    localOrder.find((c) => c.id === id)?.topic?.trim() || null;
+
   function toggle(id: string) {
     setSelected((cur) => {
       const next = new Set(cur);
@@ -95,6 +122,9 @@ export function CatalogGrid({
   }
   function onDragOver(e: React.DragEvent<HTMLElement>, id: string) {
     if (!dragId || dragId === id) return;
+    // No preventDefault ⇒ the browser shows "not allowed" and never
+    // fires drop. Cross-topic moves are a no-op once regrouped.
+    if (showGroups && topicOf(dragId) !== topicOf(id)) return;
     e.preventDefault();
     e.dataTransfer.dropEffect = "move";
     if (overId !== id) setOverId(id);
@@ -105,6 +135,10 @@ export function CatalogGrid({
   async function onDrop(e: React.DragEvent<HTMLElement>, dropOnId: string) {
     e.preventDefault();
     if (!dragId || dragId === dropOnId) {
+      setDragId(null); setOverId(null);
+      return;
+    }
+    if (showGroups && topicOf(dragId) !== topicOf(dropOnId)) {
       setDragId(null); setOverId(null);
       return;
     }
@@ -146,97 +180,145 @@ export function CatalogGrid({
     }
   }
 
+  function renderCard(c: CatalogCourse) {
+    const isDragging = dragId === c.id;
+    const isDropTarget = overId === c.id && dragId !== c.id;
+    return (
+      <div
+        key={c.id}
+        className={`relative group transition-all h-full flex flex-col ${
+          isDragging ? "opacity-40" : ""
+        } ${
+          isDropTarget ? "ring-2 ring-brand-400 ring-offset-2 ring-offset-bg rounded-[var(--radius-lg)]" : ""
+        }`}
+        onDragOver={isAdmin ? (e) => onDragOver(e, c.id) : undefined}
+        onDragLeave={isAdmin ? onDragLeave : undefined}
+        onDrop={isAdmin ? (e) => { void onDrop(e, c.id); } : undefined}
+      >
+        {isAdmin && (
+          <>
+            <div className="absolute top-3 left-3 z-10 flex items-center gap-1.5">
+              <label className="cursor-pointer bg-card-solid border border-line rounded-md p-1 shadow-sm hover:border-brand-300 transition-colors">
+                <input
+                  type="checkbox"
+                  checked={selected.has(c.id)}
+                  onChange={() => toggle(c.id)}
+                  className="block accent-brand-600"
+                  aria-label={`Select ${c.title}`}
+                />
+              </label>
+              <button
+                type="button"
+                onClick={() => setEditing(c)}
+                className="bg-card-solid border border-line text-muted hover:text-brand-700 hover:border-brand-300 rounded-md p-1.5 shadow-sm opacity-0 group-hover:opacity-100 transition-all"
+                title="Quick-edit filters"
+              >
+                <Pencil size={13} />
+              </button>
+            </div>
+            {/* Drag grip — admin only. The handle is the
+                draggable element so the underlying Link inside
+                CourseCard stays clickable for navigation. */}
+            <div
+              draggable
+              onDragStart={(e) => onDragStart(e, c.id)}
+              onDragEnd={() => { setDragId(null); setOverId(null); }}
+              title={showGroups ? "Drag to reorder within this topic" : "Drag to reorder"}
+              className="admin-glow absolute top-3 right-3 z-10 bg-card-solid border border-line text-muted rounded-md p-1.5 shadow-sm opacity-0 group-hover:opacity-100 transition-all cursor-grab active:cursor-grabbing hover:text-brand-700 hover:border-brand-300"
+            >
+              <GripVertical size={13} />
+            </div>
+          </>
+        )}
+        <CourseCard course={c} role={role} />
+        {isAdmin && (c.topic || c.delivery || c.provider || c.isSpecial) && (
+          <div className="mt-1.5 flex flex-wrap gap-1 px-1">
+            {c.topic    && <Tag>{c.topic}</Tag>}
+            {c.delivery && <Tag>{c.delivery}</Tag>}
+            {c.provider && <Tag>{c.provider}</Tag>}
+            {c.isSpecial && <Tag amber>Special</Tag>}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  const gridCls = "grid sm:grid-cols-2 xl:grid-cols-3 gap-5";
+
   return (
     <>
-      {isAdmin && localOrder.length > 0 && (
+      {(groups.length > 1 || (isAdmin && localOrder.length > 0)) && (
         <div className="flex items-center gap-2 mb-3 text-xs flex-wrap">
-          <button
-            type="button"
-            onClick={allSelected ? clearAll : selectAll}
-            className="inline-flex items-center gap-1.5 text-muted hover:text-fg px-2 py-1 rounded transition-colors"
-          >
-            {allSelected ? <CheckSquare size={14} /> : <Square size={14} />}
-            {allSelected ? "Deselect all" : "Select all"}
-          </button>
-          {selected.size > 0 && (
-            <span className="text-subtle">· {selected.size} selected</span>
+          {isAdmin && localOrder.length > 0 && (
+            <>
+              <button
+                type="button"
+                onClick={allSelected ? clearAll : selectAll}
+                className="inline-flex items-center gap-1.5 text-muted hover:text-fg px-2 py-1 rounded transition-colors"
+              >
+                {allSelected ? <CheckSquare size={14} /> : <Square size={14} />}
+                {allSelected ? "Deselect all" : "Select all"}
+              </button>
+              {selected.size > 0 && (
+                <span className="text-subtle">· {selected.size} selected</span>
+              )}
+              <span className="text-subtle inline-flex items-center gap-1">
+                <GripVertical size={11} />
+                {showGroups
+                  ? "Drag the grip on any tile to rearrange it within its topic."
+                  : "Drag the grip on any tile to rearrange."}
+              </span>
+              {reorderFlash && (
+                <span className="inline-flex items-center gap-1 text-emerald-700 font-semibold">
+                  <CheckCircle2 size={11} /> {reorderFlash}
+                </span>
+              )}
+            </>
           )}
-          <span className="ml-auto text-subtle inline-flex items-center gap-1">
-            <GripVertical size={11} />
-            Drag the grip on any tile to rearrange.
-          </span>
-          {reorderFlash && (
-            <span className="inline-flex items-center gap-1 text-emerald-700 font-semibold">
-              <CheckCircle2 size={11} /> {reorderFlash}
-            </span>
+
+          {groups.length > 1 && (
+            <div
+              role="group"
+              aria-label="Course arrangement"
+              className="ml-auto inline-flex items-center gap-0.5 rounded-full border border-line bg-elevated p-0.5"
+            >
+              <ArrangeTab active={grouped} onClick={() => setGrouped(true)}>
+                By topic
+              </ArrangeTab>
+              <ArrangeTab active={!grouped} onClick={() => setGrouped(false)}>
+                All courses
+              </ArrangeTab>
+            </div>
           )}
         </div>
       )}
 
-      <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-5">
-        {localOrder.map((c) => {
-          const isDragging = dragId === c.id;
-          const isDropTarget = overId === c.id && dragId !== c.id;
-          return (
-            <div
-              key={c.id}
-              className={`relative group transition-all h-full flex flex-col ${
-                isDragging ? "opacity-40" : ""
-              } ${
-                isDropTarget ? "ring-2 ring-brand-400 ring-offset-2 ring-offset-bg rounded-[var(--radius-lg)]" : ""
-              }`}
-              onDragOver={isAdmin ? (e) => onDragOver(e, c.id) : undefined}
-              onDragLeave={isAdmin ? onDragLeave : undefined}
-              onDrop={isAdmin ? (e) => { void onDrop(e, c.id); } : undefined}
-            >
-              {isAdmin && (
-                <>
-                  <div className="absolute top-3 left-3 z-10 flex items-center gap-1.5">
-                    <label className="cursor-pointer bg-card-solid border border-line rounded-md p-1 shadow-sm hover:border-brand-300 transition-colors">
-                      <input
-                        type="checkbox"
-                        checked={selected.has(c.id)}
-                        onChange={() => toggle(c.id)}
-                        className="block accent-brand-600"
-                        aria-label={`Select ${c.title}`}
-                      />
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() => setEditing(c)}
-                      className="bg-card-solid border border-line text-muted hover:text-brand-700 hover:border-brand-300 rounded-md p-1.5 shadow-sm opacity-0 group-hover:opacity-100 transition-all"
-                      title="Quick-edit filters"
-                    >
-                      <Pencil size={13} />
-                    </button>
-                  </div>
-                  {/* Drag grip — admin only. The handle is the
-                      draggable element so the underlying Link inside
-                      CourseCard stays clickable for navigation. */}
-                  <div
-                    draggable
-                    onDragStart={(e) => onDragStart(e, c.id)}
-                    onDragEnd={() => { setDragId(null); setOverId(null); }}
-                    title="Drag to reorder"
-                    className="admin-glow absolute top-3 right-3 z-10 bg-card-solid border border-line text-muted rounded-md p-1.5 shadow-sm opacity-0 group-hover:opacity-100 transition-all cursor-grab active:cursor-grabbing hover:text-brand-700 hover:border-brand-300"
-                  >
-                    <GripVertical size={13} />
-                  </div>
-                </>
-              )}
-              <CourseCard course={c} role={role} />
-              {isAdmin && (c.topic || c.delivery || c.provider || c.isSpecial) && (
-                <div className="mt-1.5 flex flex-wrap gap-1 px-1">
-                  {c.topic    && <Tag>{c.topic}</Tag>}
-                  {c.delivery && <Tag>{c.delivery}</Tag>}
-                  {c.provider && <Tag>{c.provider}</Tag>}
-                  {c.isSpecial && <Tag amber>Special</Tag>}
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
+      {showGroups ? (
+        <div className="space-y-9">
+          {groups.map((g) => (
+            <section key={g.key} aria-labelledby={`topic-${slugify(g.key)}`}>
+              {/* Heading, count, then a rule running to the right edge.
+                  Full-weight foreground at 17px: this is the label people
+                  navigate the page by, so it is not a quiet eyebrow. */}
+              <div className="mb-3.5 flex items-center gap-3">
+                <h3
+                  id={`topic-${slugify(g.key)}`}
+                  className="text-[17px] font-bold tracking-tight text-fg"
+                >
+                  {g.label}
+                </h3>
+                <span className="text-[12px] font-semibold tabular-nums text-muted whitespace-nowrap">
+                  {g.items.length} {g.items.length === 1 ? "course" : "courses"}
+                </span>
+                <span aria-hidden className="h-px flex-1 bg-line-strong" />
+              </div>
+              <div className={gridCls}>{g.items.map(renderCard)}</div>
+            </section>
+          ))}
+        </div>
+      ) : (
+        <div className={gridCls}>{localOrder.map(renderCard)}</div>
+      )}
 
       {/* Sticky bulk toolbar — admin only */}
       {isAdmin && selected.size > 0 && (
@@ -275,6 +357,40 @@ export function CatalogGrid({
         />
       )}
     </>
+  );
+}
+
+/** Topic string → a value safe for an `id` / `aria-labelledby` pair.
+ *  Topics carry slashes, parens and spaces ("Quality Control/Assurance",
+ *  "Industry Fundamentals (GxPs)"), none of which belong in an id. */
+function slugify(s: string): string {
+  return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "other";
+}
+
+/** One half of the By topic / All courses switch. Solid brand fill when
+ *  active — not `bg-fg text-bg`, which generates no rule for the text
+ *  colour and silently leaves an unreadable tab. */
+function ArrangeTab({
+  active, onClick, children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={cn(
+        "px-2.5 py-1 rounded-full text-[11px] font-semibold transition-colors",
+        active
+          ? "bg-brand-600 text-white shadow-sm"
+          : "text-muted hover:text-fg hover:bg-raised",
+      )}
+    >
+      {children}
+    </button>
   );
 }
 

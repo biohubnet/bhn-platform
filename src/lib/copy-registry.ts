@@ -38,10 +38,14 @@ export const COPY_REGISTRY: CopyEntry[] = [
   // ── /courses ──
   {
     key: "courses.subtitle",
-    scope: "Catalog · /courses",
-    label: "Catalog page subtitle",
-    description: "One-line description shown below the page title on /courses. Sets the framing for the whole catalog.",
-    defaultText: "Self-paced modules, SCORM-backed simulations, and instructor-led series — all in one library. Filter by topic, delivery, provider, or run a search.",
+    scope: "On-demand courses · /courses",
+    label: "On-demand courses subtitle",
+    description: "One-line description shown below the page title on /courses. Sets the framing for the whole catalogue.",
+    // Kept verbatim in step with the `subtitleDefault` constant in
+    // app/(dashboard)/courses/page.tsx — that is the string the page
+    // actually falls back to, and this row is what an admin is shown
+    // as "the default" before they override it.
+    defaultText: "Self-paced modules, instructor-led series and hands-on simulations, all in one place — grouped by topic. Filter by topic, delivery mode or provider to narrow the list.",
     multiline: true,
   },
 

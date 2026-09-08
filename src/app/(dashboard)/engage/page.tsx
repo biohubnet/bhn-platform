@@ -42,9 +42,10 @@ export default function EngageProgramFaqPage() {
         <Accordion>
           <AccordionItem question="1. How can I access training/courses on BioHubNet?" defaultOpen>
             <p>
-              Everything runs through the <L href="/courses">Course Catalog</L>. Filter by
-              topic, delivery mode or provider, open a course and choose Enroll. Structured
-              programmes live under <L href="/pathways">Learning Pathways</L>.
+              Everything runs through <L href="/courses">On-demand courses</L>, where the
+              catalogue is grouped by topic. Filter by topic, delivery mode or provider, open
+              a course and choose Enroll. Structured programmes live under{" "}
+              <L href="/pathways">Learning Pathways</L>.
             </p>
           </AccordionItem>
 

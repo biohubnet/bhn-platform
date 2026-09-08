@@ -24,6 +24,10 @@ export default async function CoursesPage({
     topic?: string;
     delivery?: string;
     provider?: string;
+    /** `1` to restrict the catalog to instructor-led specials. No
+     *  control produces this any more — the Specials toggle was removed
+     *  from the filter panel — but saved links still work, and admins
+     *  still set `isSpecial` from a card's quick-edit dialog. */
     special?: string;
     /** `1` to restrict the catalog to courses the signed-in user
      *  has hearted (the "Favorites only" filter chip on the page). */
@@ -46,10 +50,11 @@ export default async function CoursesPage({
 
   // Plain description of what is here and how to narrow it. The old
   // copy led with "SCORM-backed", which names an authoring standard
-  // rather than anything a trainee experiences, and it did not mention
-  // that the special programs and workshops live in this list too —
-  // people were not finding them.
-  const subtitleDefault = "Self-paced modules, instructor-led series and hands-on simulations, all in one place. Filter by topic, delivery mode or provider — and the special programs and workshops are in here too.";
+  // rather than anything a trainee experiences. It then spent its last
+  // clause pointing at the Specials filter; that filter is gone and the
+  // list is grouped by topic instead, so the sentence now describes the
+  // shape people actually see.
+  const subtitleDefault = "Self-paced modules, instructor-led series and hands-on simulations, all in one place — grouped by topic. Filter by topic, delivery mode or provider to narrow the list.";
 
   // Signed-in user's favorite course IDs. Every card is tagged with
   // `isFavorite` so the heart renders in the right state.
@@ -139,7 +144,7 @@ export default async function CoursesPage({
     <div>
       <PageHero
         eyebrow={<><BookOpen size={12} /> ENGAGE</>}
-        title="Course Catalog"
+        title="On-demand courses"
         description={
           <EditableText
             copyKey="courses.subtitle"
