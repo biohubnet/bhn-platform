@@ -64,6 +64,12 @@ interface CourseCardProps {
   role: string;
 }
 
+/** Floor for the blurb. The box grows past this to fill the card, but
+ *  never shows less than this many lines — a card whose metadata shelf
+ *  happens to be short should still read as a description, not a
+ *  fragment. Three is what the card showed before it could grow. */
+const MIN_BLURB_LINES = 3;
+
 function fmtShortDate(iso: string | null): string {
   if (!iso) return "";
   return new Date(iso).toLocaleDateString(undefined, {
@@ -93,22 +99,60 @@ export function CourseCard({ course }: CourseCardProps) {
   // calls the API; on error we revert.
   const blurb = displayCourseDescription(course.description);
 
-  // Whether the blurb is actually overflowing its three-line clamp. Read
-  // from layout instead of inferred from length, and re-read on resize
-  // because the card reflows across breakpoints.
+  // The blurb fills whatever vertical space the card has left, rather
+  // than stopping at a fixed three lines.
+  //
+  // Why it is measured instead of a CSS clamp: cards sit in a grid whose
+  // rows stretch, so every card in a row is as tall as the tallest one,
+  // and the metadata shelf on the right is usually taller than the code
+  // + title on the left. That difference was dead space under a
+  // three-line blurb. How many lines actually fit is a function of the
+  // card's rendered height, the breakpoint and the theme's line-height —
+  // none of which a fixed utility class knows.
+  //
+  // So: the box takes the leftover height via flex-1 with a basis of 0,
+  // which means the blurb never makes a card TALLER (that would feed
+  // back into the row height and oscillate); it only fills what is
+  // already there. Then the line count is floor(height / lineHeight), so
+  // the clamp lands on a whole line and never slices one in half.
+  const blurbBoxRef = useRef<HTMLDivElement | null>(null);
   const blurbRef = useRef<HTMLParagraphElement | null>(null);
+  const [maxLines, setMaxLines] = useState(MIN_BLURB_LINES);
   const [isClamped, setIsClamped] = useState(false);
 
   useEffect(() => {
+    const box = blurbBoxRef.current;
     const el = blurbRef.current;
-    if (!el) { setIsClamped(false); return; }
-    const measure = () => setIsClamped(el.scrollHeight - el.clientHeight > 1);
+    if (!box || !el) { setIsClamped(false); return; }
+
+    const measure = () => {
+      const cs = getComputedStyle(el);
+      // `line-height: normal` parses as NaN — fall back to the ratio the
+      // card actually uses (11.5px text, leading-snug) so a browser that
+      // reports it that way still gets a sane count instead of Infinity.
+      const lh = parseFloat(cs.lineHeight) || parseFloat(cs.fontSize) * 1.375;
+      const fits = Math.floor((box.clientHeight + 1) / lh);
+      setMaxLines(Math.max(MIN_BLURB_LINES, fits));
+      setIsClamped(el.scrollHeight - el.clientHeight > 1);
+    };
+
     measure();
     if (typeof ResizeObserver === "undefined") return;
+    // Observe the BOX, not the paragraph: the paragraph's height is an
+    // output of maxLines, so observing it would re-enter this on every
+    // change. The box is sized by the flex row above it and is stable.
     const ro = new ResizeObserver(measure);
-    ro.observe(el);
+    ro.observe(box);
     return () => ro.disconnect();
   }, [blurb]);
+
+  // Re-check the cue after a new clamp has been painted: whether the text
+  // overflows depends on the line count we just set, so the reading taken
+  // in the same pass is one render stale.
+  useEffect(() => {
+    const el = blurbRef.current;
+    if (el) setIsClamped(el.scrollHeight - el.clientHeight > 1);
+  }, [maxLines, blurb]);
 
   const [isFavorite, setIsFavorite] = useState(course.isFavorite);
   const [pending, setPending] = useState(false);
@@ -229,14 +273,18 @@ export function CourseCard({ course }: CourseCardProps) {
               placeholder until the backfill script replaces it with
               a real blurb in the DB. */}
           {blurb && (
-            <div className="mt-1.5 flex-1">
-              {/* The relative box wraps ONLY the paragraph, so its height is
-                  the clamped three lines. Putting `relative` on the flex-1
-                  parent instead anchors the cue to the bottom of whatever
-                  space the card has left, which floats it below the text. */}
-              <div className="relative">
+            /* flex-1 with min-h-0 makes this the element that absorbs the
+               card's leftover height; min-h keeps a floor of three lines so
+               a card with a short metadata shelf does not collapse the blurb
+               to one line. The paragraph is clamped to whatever whole number
+               of lines fits inside it — see the measurement effect above. */
+            <div
+              ref={blurbBoxRef}
+              className="relative mt-1.5 flex-1 min-h-[3.1rem] overflow-hidden"
+            >
               <p
                 ref={blurbRef}
+                style={{ WebkitLineClamp: maxLines }}
                 className="text-[11.5px] leading-snug text-fg-muted line-clamp-3"
               >
                 {blurb}
@@ -258,7 +306,6 @@ export function CourseCard({ course }: CourseCardProps) {
                   […]
                 </span>
               )}
-              </div>
             </div>
           )}
         </div>
