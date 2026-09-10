@@ -6,7 +6,7 @@
  *   • Compact recessed control strip — the panel reads as machinery
  *     above the bright course cards, not as a second hero. (It was a
  *     dark slab once; see the inline note on the section element.)
- *   • All three filter groups visible at once. Chip toggles instead
+ *   • Two filter groups visible at once. Chip toggles instead
  *     of stacked checkbox lists — a chip cloud reads the active set
  *     at a glance.
  *   • Active-count + clear-all live in the header, so the body of
@@ -19,6 +19,11 @@
  * and is still editable by admins from the card's quick-edit dialog —
  * only the trainee-facing filter is removed. `?special=1` also still
  * filters server-side (see the courses page) for any saved link.
+ *
+ * Delivery went the same way. Every card already prints its delivery
+ * mode as a coloured chip, so the facet was a second way to read a
+ * property that was never hidden; `delivery` stays on the model, stays
+ * on the card, and `?delivery=` still filters server-side.
  */
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMemo } from "react";
@@ -123,10 +128,10 @@ export function CourseFilters({
         )}
       </div>
 
-      {/* Three-column chip grid. Mobile stacks; md+ uses unequal widths
-          so Topic (the longest cloud) gets the lion's share. Dividers
-          are a subtle 1px slate line — visible on dark but not loud. */}
-      <div className="md:grid md:grid-cols-[1.8fr_1fr_1.3fr] md:divide-x md:divide-line space-y-3 md:space-y-0">
+      {/* Two-column chip grid. Mobile stacks; md+ gives Topic the larger
+          share, since it is much the longest cloud. Delivery used to be
+          the middle column — see the file header for why it went. */}
+      <div className="md:grid md:grid-cols-[1.8fr_1.3fr] md:divide-x md:divide-line space-y-3 md:space-y-0">
         <div className="md:pr-4">
           <ChipGroup
             label="Topic"
@@ -134,15 +139,6 @@ export function CourseFilters({
             counts={counts?.topic}
             selected={selected.topic}
             onToggle={(v) => toggle("topic", v)}
-          />
-        </div>
-        <div className="md:px-4">
-          <ChipGroup
-            label="Delivery"
-            values={options.delivery}
-            counts={counts?.delivery}
-            selected={selected.delivery}
-            onToggle={(v) => toggle("delivery", v)}
           />
         </div>
         <div className="md:pl-4">

@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Brand + catalogue filter
+  {
+    title: "The BioHubNet logo is on the sidebar, and the Delivery filter is gone",
+    body: "The signed-in sidebar now carries the real BioHubNet lockup instead of a redrawn mark next to typed \u201cBHN Training\u201d text. It sits on a white plate: the lockup\u2019s ink is teal through green, which is hard to read on the darkest themes, and there is no reversed version of the artwork \u2014 so the plate is what keeps it legible without altering the logo.\n\nOn On-Demand Courses, the **Delivery** filter (Asynchronous / Online / In-Person / Blended) has been removed from the filter panel. Every card already shows its delivery mode as a coloured chip, so the filter was a second way to read something that was never hidden. Delivery itself is unchanged \u2014 still on every course, still on every card.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Catalogue · renamed, grouped by topic, Specials filter retired
   {
     title: "The course catalogue is now “On-Demand Courses”, and it is grouped by topic",
