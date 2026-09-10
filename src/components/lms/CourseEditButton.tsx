@@ -133,8 +133,11 @@ export function CourseEditButton({ course }: { course: CourseShape }) {
                   SCORM package, and <strong>every enrolment + certificate</strong>{" "}
                   ever issued for it. Cannot be undone. If you only want to
                   stop new enrolments while preserving records, set status
-                  to <strong>Archived</strong> above instead — archived
-                  courses stay in the catalog with a disabled enroll button.
+                  above instead: <strong>Archived</strong> closes enrolment
+                  and hides it from trainees (staff still see it), while
+                  <strong> Upcoming</strong> keeps it listed for everyone
+                  with the button reading &ldquo;Enrolment opening
+                  soon&rdquo;.
                 </p>
               </div>
             </div>
