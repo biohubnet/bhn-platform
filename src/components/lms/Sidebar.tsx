@@ -1491,14 +1491,16 @@ export function Sidebar({
                 darkest theme ground. There is no reversed/white variant of
                 this asset in the repo, and the brand rule is to use the
                 lockup unaltered rather than invert it, so the plate is
-                what makes it legible across all seventeen themes. */}
+                what makes it legible across all seventeen themes. No ring
+                on the plate — a border turned it into a framed object
+                rather than a logo on its ground. */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/biohubnet-logo.png"
               alt="BioHubNet — Transformative Talent Development"
               width={2357}
               height={619}
-              className="w-full max-w-[168px] h-auto rounded-md bg-white px-2 py-1.5 ring-1 ring-inset ring-line"
+              className="w-full max-w-[168px] h-auto rounded-md bg-white px-2 py-1.5"
             />
             <p className="text-[10px] uppercase tracking-[0.18em] text-subtle">{effectiveRole}</p>
           </Link>
