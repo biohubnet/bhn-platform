@@ -5,6 +5,9 @@ import {
 import { COURSE_TOPICS } from "../../src/lib/courses/filters";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import {
+  courseAvailability, availabilityPresentation, TRAINEE_VISIBLE_STATUSES,
+} from "../../src/lib/courses/availability";
 
 /**
  * groupByTopic decides the reading order of the on-demand catalogue —
@@ -123,4 +126,37 @@ test("the nav label is Title Case and matches its dictionary entry", () => {
   // Title Case, matching its ENGAGE siblings (Learning Pathways, Progress
   // Tracker, My Credits). Both halves of the hyphenated compound capitalise.
   expect(NAME).toBe(NAME.replace(/(^|[\s-])([a-z])/g, (_, p, c) => p + c.toUpperCase()));
+});
+
+test("the enrol CTA has three distinct states with three distinct fills", () => {
+  const open     = availabilityPresentation(courseAvailability("published"), false);
+  const approval = availabilityPresentation(courseAvailability("published"), true);
+  const soon     = availabilityPresentation(courseAvailability("upcoming"), false);
+  const archived = availabilityPresentation(courseAvailability("archived"), false);
+
+  expect(open.label).toBe("Enroll");
+  expect(approval.label).toBe("Request to Enroll");
+  expect(soon.label).toBe("Enrolment opening soon");
+  expect(archived.label).toBe("Archived");
+
+  // Only the open state is a call to action.
+  expect(open.actionable).toBe(true);
+  expect(soon.actionable).toBe(false);
+  expect(archived.actionable).toBe(false);
+
+  // Three visibly different fills — the point of the change.
+  const fills = [open.className, soon.className, archived.className];
+  expect(new Set(fills).size).toBe(3);
+  // Token classes only; a raw hex would break on the seventeen themes.
+  for (const f of fills) expect(f).not.toMatch(/#[0-9a-f]{3,8}/i);
+});
+
+test("an unknown status falls through to enrollable rather than disappearing", () => {
+  // `status` is a free String in the schema. A value nobody planned for
+  // must not silently render a card with no button at all.
+  expect(courseAvailability("something-new")).toBe("open");
+});
+
+test("trainees see published and upcoming, never archived or draft", () => {
+  expect([...TRAINEE_VISIBLE_STATUSES]).toEqual(["published", "upcoming"]);
 });

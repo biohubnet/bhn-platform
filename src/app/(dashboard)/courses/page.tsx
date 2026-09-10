@@ -11,6 +11,7 @@ import { PageHero } from "@/components/ui/PageHero";
 import { EditableText } from "@/components/cms/EditableText";
 import { getCopy } from "@/lib/copy";
 import { parseFilters } from "@/lib/courses/filters";
+import { TRAINEE_VISIBLE_STATUSES } from "@/lib/courses/availability";
 import {
   getCourseFilterCounts,
   ensureCourseFilterOptions, getCourseFilterOptions,
@@ -81,13 +82,18 @@ export default async function CoursesPage({
     getCourseFilterOptions(),
     getCourseFilterCounts(),
     favoriteRowsPromise,
-    // Non-staff see published AND archived courses (archived stay in
-    // the catalog so trainees can read about courses that ran in the
-    // past — the detail page disables the enroll button). Staff see
-    // everything including drafts so they can edit unreleased work.
+    // Non-staff see published AND upcoming courses. Upcoming ones are
+    // listed on purpose — someone planning around a cohort that has not
+    // opened yet needs to know it exists — and their card says so
+    // instead of offering an enrol button.
+    //
+    // Archived is staff-only now. It used to be in this list so trainees
+    // could read about courses that had already run, but a catalogue
+    // that mixes joinable and un-joinable rows makes the reader check
+    // every button to find out which is which.
     prisma.course.findMany({
       where: {
-        ...(isStaff ? {} : { status: { in: ["published", "archived"] } }),
+        ...(isStaff ? {} : { status: { in: [...TRAINEE_VISIBLE_STATUSES] } }),
         ...(filters.topic.length    && { topic:    { in: filters.topic } }),
         ...(filters.delivery.length && { delivery: { in: filters.delivery } }),
         ...(filters.provider.length && { provider: { in: filters.provider } }),

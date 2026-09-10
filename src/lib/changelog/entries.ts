@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Catalogue · three enrolment states
+  {
+    title: "Course cards now say whether you can actually enrol",
+    body: "The button on a course card had one look regardless of whether the course was open. It now has three, each a different colour:\n\n\u2022 **Enroll** (or Request to Enroll) \u2014 brand blue. Enrolment is open.\n\u2022 **Enrolment opening soon** \u2014 amber. The course is listed so you can plan around it, but you cannot join yet.\n\u2022 **Archived** \u2014 grey. It has run and is over.\n\nOnly the first carries the arrow, because only the first goes anywhere.\n\nArchived courses are now staff-only in the catalogue. They used to be listed for everyone so people could read about courses that had already run, but a list that mixes joinable and un-joinable rows makes you check every button to find out which is which.\n\nAdmins set the new **Upcoming** state from the course editor\u2019s Status field.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Brand + catalogue filter
   {
     title: "The BioHubNet logo is on the sidebar, and the Delivery filter is gone",

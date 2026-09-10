@@ -175,8 +175,9 @@ export function CourseEditButton({ course }: { course: CourseShape }) {
             <Field label="Status">
               <Select value={status} onChange={(e) => setStatus(e.target.value)}>
                 <option value="draft">Draft</option>
+                <option value="upcoming">Upcoming — listed, enrolment closed</option>
                 <option value="published">Published</option>
-                <option value="archived">Archived</option>
+                <option value="archived">Archived — staff only</option>
               </Select>
             </Field>
           </div>

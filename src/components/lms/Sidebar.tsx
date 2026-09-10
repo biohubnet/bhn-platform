@@ -1481,7 +1481,7 @@ export function Sidebar({
 
         {/* Logo */}
         <div className="px-4 py-4 border-b border-line flex items-center gap-2">
-          <Link href="/dashboard" className="flex flex-col gap-1.5 flex-1 min-w-0 hover:bg-elevated/50 rounded-lg px-2 py-1.5 transition-colors">
+          <Link href="/dashboard" className="flex flex-1 min-w-0 hover:bg-elevated/50 rounded-lg px-2 py-1.5 transition-colors">
             {/* The official BioHubNet lockup, used as-is. It replaces the
                 hand-reconstructed LogoMark plus a typed "BHN Training"
                 wordmark — neither was the brand asset.
@@ -1504,7 +1504,6 @@ export function Sidebar({
               height={619}
               className="w-full max-w-[168px] h-auto"
             />
-            <p className="text-[10px] uppercase tracking-[0.18em] text-subtle">{effectiveRole}</p>
           </Link>
           <NotificationBell initialUnreadCount={initialUnreadCount} />
         </div>

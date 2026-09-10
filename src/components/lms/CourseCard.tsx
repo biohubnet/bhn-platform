@@ -41,6 +41,7 @@ import { ArrowRight, BookOpen, Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { parseOverlay, overlayStyle } from "@/lib/courses/thumbnail-overlay";
 import { displayCourseDescription } from "@/lib/courses/displayDescription";
+import { courseAvailability, availabilityPresentation } from "@/lib/courses/availability";
 
 interface CourseCardProps {
   course: {
@@ -91,7 +92,9 @@ export function CourseCard({ course }: CourseCardProps) {
   const isArchived = course.status === "archived";
   const isFree = course.creditCost === 0;
   const hasCohort = !!(course.cohortStartDate && course.cohortEndDate);
-  const ctaLabel = course.requiresApproval ? "Request to Enroll" : "Enroll";
+  // Three states, three colours — see lib/courses/availability.ts.
+  const availability = courseAvailability(course.status);
+  const cta = availabilityPresentation(availability, course.requiresApproval);
   const overlay = isArchived ? null : parseOverlay(course.thumbnailOverlay);
 
   // Optimistic favourite state — initialised from the server-passed
@@ -392,11 +395,15 @@ export function CourseCard({ course }: CourseCardProps) {
             "w-full inline-flex items-center justify-center gap-1",
             "text-[10.5px] font-bold uppercase tracking-[0.1em]",
             "px-3 py-1.5 rounded-md transition-colors",
-            "bg-brand-600 text-white group-hover:bg-brand-700",
+            cta.className,
           )}
         >
-          {ctaLabel}
-          <ArrowRight size={10} className="group-hover:translate-x-0.5 transition-transform" />
+          {cta.label}
+          {/* The arrow is a promise that pressing this goes somewhere and
+              does something. Only the open state keeps it. */}
+          {cta.actionable && (
+            <ArrowRight size={10} className="group-hover:translate-x-0.5 transition-transform" />
+          )}
         </span>
       </div>
     </Link>
