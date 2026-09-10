@@ -1486,21 +1486,23 @@ export function Sidebar({
                 hand-reconstructed LogoMark plus a typed "BHN Training"
                 wordmark — neither was the brand asset.
 
-                It sits on a white plate because the lockup's ink is teal
-                (#006c7b) through green, which measures about 3.2:1 on the
-                darkest theme ground. There is no reversed/white variant of
-                this asset in the repo, and the brand rule is to use the
-                lockup unaltered rather than invert it, so the plate is
-                what makes it legible across all seventeen themes. No ring
-                on the plate — a border turned it into a framed object
-                rather than a logo on its ground. */}
+                No plate and no border: it sits straight on the sidebar
+                surface, which is what the transparent PNG is for. The
+                trade-off is that the lockup's ink is teal (#006c7b)
+                through green with no reversed variant in the repo, so on
+                the plate is not missed: measured over 34k opaque wordmark
+                pixels, contrast is a median 4.46:1 on the darkest theme
+                and 4.19:1 on Greenwood night, against 4.14:1 on the white
+                plate. The plate had forced every theme to the light-theme
+                number; removing it slightly HELPS the dark ones and leaves
+                the light ones unchanged. */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/biohubnet-logo.png"
               alt="BioHubNet — Transformative Talent Development"
               width={2357}
               height={619}
-              className="w-full max-w-[168px] h-auto rounded-md bg-white px-2 py-1.5"
+              className="w-full max-w-[168px] h-auto"
             />
             <p className="text-[10px] uppercase tracking-[0.18em] text-subtle">{effectiveRole}</p>
           </Link>
