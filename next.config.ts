@@ -58,6 +58,20 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  // The V3 account-page mockups are a folder of static files whose pages
+  // use relative paths (shared.css, manifest.js, ?state= links). Opened
+  // as the bare folder URL, the browser resolves those one level up and
+  // the hub renders blank, so send the folder to its index.html. The
+  // trailing-slash form is normalised to this one before redirects run.
+  async redirects() {
+    return [
+      {
+        source: "/design-archive/v3-account-pages",
+        destination: "/design-archive/v3-account-pages/index.html",
+        permanent: false,
+      },
+    ];
+  },
   serverExternalPackages: ["unzipper", "archiver", "@prisma/client", "bcryptjs", "unpdf", "mammoth"],
   // /admin/security reads markdown files at runtime from docs/security/.
   // Without an explicit trace include, Vercel's file-tracing layer can

@@ -387,14 +387,14 @@
       else if (name === "password" && val.length < 8) {
         msg = `Please lengthen this text to 8 characters or more (you are currently using ${val.length} character${val.length === 1 ? "" : "s"}).`;
       }
-      if (msg) { S.bubble(el, msg); el.focus(); return false; }
+      if (msg) { S.bubble(el, msg); S.focusField(el); return false; }
     }
     return true;
   }
 
   function focusHeading() {
     const h = root.querySelector(`#reg-sec-${model.step}`);
-    if (h) h.focus();
+    S.focusField(h);
   }
 
   root.addEventListener("click", (e) => {
@@ -426,7 +426,7 @@
     if (n === "institute" || n === "occupation") {
       collect(); render();
       const el = root.querySelector(`[name="${n}"]`);
-      if (el) el.focus();
+      S.focusField(el);
     }
   });
 
@@ -434,7 +434,7 @@
   if (preset.validate) validateStep(model.step);
   if (preset.focus) {
     const el = root.querySelector(`[name="${preset.focus}"]`);
-    if (el) { el.classList.add("is-sim-focus"); el.focus(); el.addEventListener("blur", () => el.classList.remove("is-sim-focus"), { once: true }); }
+    if (el) { el.classList.add("is-sim-focus"); S.focusField(el); el.addEventListener("blur", () => el.classList.remove("is-sim-focus"), { once: true }); }
   }
 
   S.banner({

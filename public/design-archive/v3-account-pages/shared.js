@@ -2,6 +2,7 @@
    a database. Every "submit" is a local setTimeout that swaps markup. */
 (function () {
   const params = new URLSearchParams(location.search);
+  const isEmbed = params.get("embed") === "1";
 
   function stateParam(fallback) {
     return params.get("state") || fallback;
@@ -29,9 +30,12 @@
     /* Inside the gallery's scaled frames the full state nav is noise, but
        the "this is a simulation" label must survive, so embed mode keeps a
        one-line strip rather than removing the banner. */
-    if (params.get("embed") === "1") {
-      const label = (opts.states.find((s) => s.id === opts.current) || {}).label || opts.current;
-      bar.innerHTML = `<strong>Simulation</strong><span>${opts.page} · ${label}</span>`;
+    if (isEmbed) {
+      /* Only a label from the manifest is ever written into the page. The
+         raw ?state= value comes from the URL, so echoing it into innerHTML
+         would let a crafted link inject markup on this origin. */
+      const known = opts.states.find((s) => s.id === opts.current);
+      bar.innerHTML = `<strong>Simulation</strong><span>${opts.page} · ${known ? known.label : "Unknown state"}</span>`;
       document.body.prepend(bar);
       return;
     }
@@ -146,5 +150,19 @@
     return String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   }
 
-  window.BHNSim = { stateParam, keepLastWordsTogether, banner, frame, simulateSubmit, arrow, arrowBack, alertIcon, bubble, clearBubbles, emailMessage, esc };
+  /* The gallery loads every frame at once. A real focus() from a focus or
+     validation state scrolls the parent page down to that frame, so embedded
+     frames keep the drawn focus ring (is-sim-focus) and leave focus alone.
+     They still bring the field into their OWN view the way focus() would
+     (centred, only when off-screen): window.scrollTo inside a frame scrolls
+     that frame only, where scrollIntoView would move the gallery too. */
+  function focusField(el) {
+    if (!el) return;
+    if (!isEmbed) { el.focus(); return; }
+    const r = el.getBoundingClientRect();
+    if (r.top >= 0 && r.bottom <= window.innerHeight) return;
+    window.scrollTo(0, Math.max(0, r.top + window.scrollY - (window.innerHeight - r.height) / 2));
+  }
+
+  window.BHNSim = { stateParam, keepLastWordsTogether, banner, frame, simulateSubmit, arrow, arrowBack, alertIcon, bubble, clearBubbles, emailMessage, esc, focusField };
 })();

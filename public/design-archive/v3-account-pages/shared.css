@@ -64,6 +64,9 @@
 }
 .sim-banner a[aria-current="true"], .sim-banner button[aria-pressed="true"] { background: #1c1400; color: #fde68a; }
 .sim-banner a:focus-visible, .sim-banner button:focus-visible { outline: 2px solid #1c1400; outline-offset: 2px; }
+/* On a phone the full state nav wraps to ~300px. Sticky, it covered the very
+   fields the validation states scroll to, so below 40rem it scrolls away. */
+@media (max-width: 39.99rem) { .sim-banner { position: static; } }
 
 .sim-note {
   display: block; margin: 0 0 1rem;
