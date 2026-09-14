@@ -216,10 +216,12 @@
     dbwrite: "Your account was created but your profile could not be saved. Please contact support.",
   };
 
-  /* ── Synthetic data only ──────────────────────────────────────────── */
-  const A = { firstName: "Priya", lastName: "Sample", email: "priya.sample@example.ca", secondaryEmail: "priya.alt@example.com", password: "Example-pass-42", phone: "416-555-0142", address: "100 Example Street, Toronto, ON M5V 0A1" };
-  const B = { institute: "University of Toronto", occupation: "Graduate Program" };
-  const C = {
+  /* ── No pre-filled entries ─────────────────────────────────────────
+     Every text field starts empty in every review state (design review,
+     2026-09-14) — no sample names, emails, phone numbers or typed answers.
+     The answered states only pre-select choices, so an answered question's
+     layout can still be reviewed. */
+  const ANSWERED_SURVEY = {
     specialization: ["Molecular Biology", "Biotechnology"], lifeSciencesExperience: "No",
     "knowledge-0": "Some understanding", "knowledge-1": "Clueless!",
     "interest-0": "Very interested", "interest-1": "Very interested", "interest-2": "Somewhat interested",
@@ -228,19 +230,19 @@
   };
   const PRESETS = {
     "step1": { step: 0, v: {} },
-    "step1-validation": { step: 0, v: { firstName: "Priya" }, validate: true },
-    "step1-focus": { step: 0, v: { firstName: "Priya", lastName: "Sample" }, focus: "email" },
-    "step2": { step: 1, v: { ...A } },
-    "step2-non-member": { step: 1, v: { ...A, institute: OTHER, instituteOther: "Riverbend Research Institute", occupation: "Research Assistant" }, focus: "instituteOther" },
-    "step2-validation": { step: 1, v: { ...A }, validate: true },
-    "step3": { step: 2, v: { ...A, ...B } },
-    "step3-answered": { step: 2, v: { ...A, ...B, ...C, specialization: ["Molecular Biology", "Biotechnology", OTHER], specializationOther: "Synthetic biology" } },
-    "step3-validation": { step: 2, v: { ...A, ...B, specialization: ["Chemistry"] }, validate: true },
-    "step4": { step: 3, v: { ...A, ...B, ...C } },
-    "step4-answered": { step: 3, v: { ...A, ...B, ...C, genderIdentity: OTHER, genderIdentityOther: "Self-described", identities: ["Newcomer", "Francophone"], comments: "Synthetic comment for design review.", privacyConsent: true } },
-    "step4-validation": { step: 3, v: { ...A, ...B, ...C }, validate: true },
+    "step1-validation": { step: 0, v: {}, validate: true },
+    "step1-focus": { step: 0, v: {}, focus: "firstName" },
+    "step2": { step: 1, v: {} },
+    "step2-non-member": { step: 1, v: { institute: OTHER, occupation: "Research Assistant" }, focus: "instituteOther" },
+    "step2-validation": { step: 1, v: {}, validate: true },
+    "step3": { step: 2, v: {} },
+    "step3-answered": { step: 2, v: { ...ANSWERED_SURVEY } },
+    "step3-validation": { step: 2, v: { specialization: ["Chemistry"] }, validate: true },
+    "step4": { step: 3, v: {} },
+    "step4-answered": { step: 3, v: { genderIdentity: "Prefer not to say", identities: ["Newcomer", "Francophone"], privacyConsent: true } },
+    "step4-validation": { step: 3, v: {}, validate: true },
     "server-error": { step: 0, v: {}, serverError: true },
-    "submitting": { step: 3, v: { ...A, ...B, ...C, genderIdentity: "Prefer not to say", identities: ["Prefer not to say"], privacyConsent: true }, submitting: true },
+    "submitting": { step: 3, v: { genderIdentity: "Prefer not to say", identities: ["Prefer not to say"], privacyConsent: true }, submitting: true },
     "submitted": { submitted: true },
   };
   const preset = PRESETS[state] || PRESETS.step1;
