@@ -76,3 +76,6 @@ prisma/*.db-journal
 
 # Auth0 provisioner output — contains a client secret
 .auth0-provision.local
+
+# Throwaway Tailwind compile probes — scratch, never part of the app
+_tw*.mjs
