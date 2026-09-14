@@ -42,6 +42,7 @@
   .reg-extra .rule { padding-top: 1rem; border-top: 1px solid rgba(255, 255, 255, 0.10); }
 
   .reg-form-inner { display: grid; gap: 1.75rem; min-width: 0; }
+  .bhn-acct .reg-source { margin: 0; }
   .reg-section > h2 { margin: 0; }
   .reg-section h2:focus { outline: none; }
   .reg-fields { margin-top: 1.5rem; }
@@ -51,20 +52,60 @@
   /* Mirrors the live form: Back keeps its slot on step 1 so Next never
      changes width between steps. */
   .reg-back.is-invisible { visibility: hidden; }
-  .reg-date-tag { margin: -0.5rem 0 0; }
 
-  /* PROPOSED: voluntary diversity questions at the end of step 3. */
-  .reg-diversity { display: grid; gap: 1.75rem; margin-top: 1.75rem; padding-top: 1.5rem; border-top: 1px solid rgba(255, 255, 255, 0.10); }
-  .bhn-acct .reg-diversity-tag { margin: 0; }
+  /* Four steps, one per block of the Talent Registration Form. Below 40rem
+     the numeral sits above the name so no step name is cut off. */
+  .reg-form .bhn-acct-steps { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  @media (max-width: 39.99rem) {
+    .reg-form .bhn-acct-steps .meta { flex-direction: column; gap: 0.1rem; }
+  }
+
+  /* ── Questions ───────────────────────────────────────────────────────
+     Each choice question is a native fieldset + legend, so every option
+     is announced with its question. */
+  .reg-stack { display: grid; gap: 2.25rem; }
   .reg-q { min-width: 0; margin: 0; padding: 0; border: 0; }
-  .reg-q > legend { padding: 0; }
-  .bhn-acct .reg-q .bhn-acct-hint { margin: 0 0 1rem; }
-  .reg-choices { display: grid; gap: 0.625rem 1.5rem; }
-  @media (min-width: 40rem) { .reg-choices { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-  .reg-other { grid-column: 1 / -1; display: flex; align-items: center; gap: 0.75rem; min-width: 0; }
+  .reg-q > legend { padding: 0; margin-bottom: 0.875rem; }
+  .reg-pw-rules { margin: 0 0 0.25rem; padding-left: 1.1rem; font-size: 0.8125rem; line-height: 1.4rem; color: var(--ink-300); }
+  .reg-choices { display: grid; gap: 0.625rem; }
+  /* Long option lists read down each column, as on the source form. */
+  .reg-cols { column-gap: 1.5rem; }
+  @media (min-width: 40rem) { .reg-cols { column-count: 2; } }
+  @media (min-width: 64rem) { .reg-cols { column-count: 3; } }
+  .reg-cols > .bhn-acct-choice { break-inside: avoid; margin-bottom: 0.625rem; }
+  .bhn-acct .reg-footnote { margin: 0.25rem 0 0; }
+  .reg-rule { height: 0; margin: 1rem 0; border-top: 1px solid rgba(255, 255, 255, 0.10); }
+  /* An option that carries its own free-text box. */
+  .reg-other { display: flex; align-items: center; gap: 0.75rem; min-width: 0; }
+  .reg-cols + .reg-other { margin-top: 0.125rem; }
   .reg-other .bhn-acct-choice { flex: 0 0 auto; align-items: center; }
   .reg-other .bhn-acct-choice input { margin-top: 0; }
   .reg-other .bhn-acct-field { flex: 1 1 auto; min-width: 0; min-height: 2.25rem; padding-block: 0.35rem; }
+
+  /* Rating grids: a table with one radio per cell. Below 40rem each row
+     becomes its own short list, with the column name beside each radio. */
+  .reg-grid { width: 100%; border-collapse: collapse; font-size: 0.875rem; line-height: 1.35rem; }
+  .reg-grid th, .reg-grid td { padding: 0.7rem 0.5rem; border-bottom: 1px solid rgba(255, 255, 255, 0.10); text-align: center; vertical-align: middle; }
+  .reg-grid thead th { font-size: 0.75rem; line-height: 1.1rem; font-weight: 700; color: var(--ink-300); vertical-align: bottom; }
+  .reg-grid tbody th { width: 40%; padding-left: 0; text-align: left; font-weight: 500; color: var(--ink-200); }
+  .reg-grid .bhn-acct-choice { justify-content: center; }
+  .reg-grid .bhn-acct-choice input { margin: 0; }
+  .reg-grid .cap { display: none; }
+  @media (max-width: 39.99rem) {
+    .reg-grid thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+    .reg-grid, .reg-grid tbody, .reg-grid tr, .reg-grid th, .reg-grid td { display: block; }
+    .reg-grid tr { padding: 0.8rem 0; border-bottom: 1px solid rgba(255, 255, 255, 0.10); }
+    .reg-grid th, .reg-grid td { width: auto; padding: 0; border: 0; text-align: left; }
+    .reg-grid tbody th { margin-bottom: 0.5rem; font-weight: 600; }
+    .reg-grid td + td { margin-top: 0.45rem; }
+    .reg-grid .bhn-acct-choice { justify-content: flex-start; }
+    .reg-grid .cap { display: inline; }
+  }
+
+  .reg-block { display: grid; gap: 0.875rem; padding-top: 1.75rem; border-top: 1px solid rgba(255, 255, 255, 0.10); }
+  .reg-textarea { min-height: 6.5rem; resize: vertical; }
+  .reg-consent .bhn-acct-choice > span { color: var(--ink-300); }
+  .reg-consent .req { color: var(--cyan-200); font-weight: 700; }
 
   /* ── Reproduction of the EXISTING approved pre-login page (PR #76 / #77)
      for the "Application submitted" end of the journey. Values copied
@@ -105,39 +146,47 @@
   const state = S.stateParam("step1");
   const root = document.getElementById("root");
 
-  /* ── Exact requirements from origin/main (681d25a) ──────────────────
-     register-form.tsx, register-steps.ts, app/(auth)/register/page.tsx.
-     Do not edit these to fit the layout. */
+  /* ── Questions: exactly the Talent Registration Form (source PDF supplied
+     in design review, 2026-09-14). Wording, option order, markers and
+     required flags are copied as printed. Do not edit these to fit the
+     layout. PROPOSED — the live V3 form asks different questions. */
   const OTHER = "__other__";
+  const STEP_NAMES = ["About You", "Education", "Survey", "Finish"];
+  const LAST = STEP_NAMES.length - 1;
+  /* Institutions in the form's own order, read down each column. true =
+     carries the "*" eligibility marker, joined to the name with a no-break
+     space so it never wraps onto a line alone. */
   const INSTITUTIONS = [
-    "Baycrest Hospital", "British Columbia Institute of Technology",
-    "Centre hospitalier Universitaire Sainte-Justine", "Children's Hospital of Eastern Ontario",
-    "Concordia University of Edmonton", "Dalhousie University", "École Polytechnique de Montréal",
-    "Hospital for Sick Children", "Institut national de la recherche scientifique", "McGill University",
-    "McMaster University", "Memorial University", "Michael Garron Hospital", "Queen's University",
-    "Seneca Polytechnic", "Simon Fraser University", "Sinai Health", "Sunnybrook Research Institute",
-    "The Ottawa Hospital", "Toronto Metropolitan University", "Unity Health Toronto",
-    "University Health Network", "University of Alberta", "University of British Columbia",
-    "University of Calgary", "University of Guelph", "University of Lethbridge", "University of Manitoba",
-    "University of Ottawa", "University of Regina", "University of Saskatchewan", "University of Toronto",
-    "University of Victoria", "University of Waterloo", "University of Windsor", "Université de Montréal",
-    "Université de Sherbrooke", "Université Laval", "Vaccine and Infectious Disease Organization (VIDO)",
-    "Western University", "York University",
+    ["Baycrest Hospital", true], ["British Columbia Institute of Technology", true],
+    ["Centre hospitalier Universitaire Sainte-Justine", true], ["Children's Hospital of Eastern Ontario", true],
+    ["Concordia University of Edmonton", true], ["Dalhousie University", true],
+    ["École Polytechnique de Montréal", true], ["Hospital for Sick Children", false],
+    ["Institut national de la recherche scientifique", true], ["McGill University", true],
+    ["McMaster University", true], ["Memorial University", true], ["Michael Garron Hospital", true],
+    ["Queen's University", false], ["Seneca Polytechnic", false], ["Simon Fraser University", true],
+    ["Sinai Health", false], ["Sunnybrook Research Institute", false], ["The Ottawa Hospital", true],
+    ["Toronto Metropolitan University", false], ["Unity Health Toronto", false], ["University Health Network", false],
+    ["University of Alberta", true], ["University of British Columbia", true], ["University of Calgary", true],
+    ["University of Guelph", false], ["University of Lethbridge", true], ["University of Manitoba", true],
+    ["University of Ottawa", true], ["University of Regina", true], ["University of Saskatchewan", true],
+    ["University of Toronto", false], ["University of Victoria", true], ["University of Waterloo", true],
+    ["University of Windsor", false], ["Université de Montréal", true], ["Université de Sherbrooke", true],
+    ["Université Laval", true], ["Vaccine and Infectious Disease Organization (VIDO)", true],
+    ["Western University", false], ["York University", false],
   ];
-  /* PROPOSED — not in the live form. Without a max, Chrome's date field
-     lets the year segment take six digits (up to 275760). A max of
-     9999-12-31 caps the year at four digits and adds no business rule;
-     a real range (e.g. no future start dates) would be a separate call. */
-  const DATE_MAX = "9999-12-31";
-  const OCCUPATIONS = ["Graduate Program", "Postdoctoral Fellow", "Research Associate", "Laboratory Technician", "Other"];
-  const LEVELS = ["Diploma", "Bachelors", "Masters", "PhD"];
-  /* PROPOSED — not in the live form. Voluntary grant-reporting questions,
-     copy exactly as supplied in design review (2026-09-14). None of these
-     fields is required or validated. */
+  const POSITIONS = ["Graduate Program", "Postdoctoral Fellow", "Research Associate (equivalent to a PostDoc or higher)", "Research Assistant", "Laboratory Technician", "Other"];
+  const SPECIALIZATIONS = ["Biochemistry", "Chemistry", "Molecular Biology", "Microbiology", "Computational Biology", "Cell Biology", "Immunology", "Health Science", "Biostatistics", "Pharmaceutical Science", "Biotechnology", "Biomedical Engineering", "Chemical Engineering"];
+  const KNOWLEDGE_ROWS = ["Canadian Life Sciences industry", "Roles within industry"];
+  const KNOWLEDGE_COLS = ["Clueless!", "Some understanding", "Good understanding"];
+  const INTEREST_ROWS = ["R&D", "Biomanufacturing", "Quality Control/Quality Assurance", "Regulatory/Medical Affairs", "Clinical", "Commercial"];
+  const INTEREST_COLS = ["Not interested", "Somewhat interested", "Very interested"];
+  const TIMINGS = ["<6 months", "6-12 months", "12-24 months", "No immediate plans, I'm looking to explore if industry is the right fit for me."];
   const GENDER_OPTIONS = ["Female", "Male", "Transgender", "Non-binary", "Two-spirited", "Prefer not to say"];
   const IDENTITY_OPTIONS = ["Newcomer", "Racialized Person", "Veteran", "Francophone", "Person with Disability", "Inuit", "First Nations", "Metis", "Prefer not to say"];
-  const PREFER_NOT = "Prefer not to say";
-  const DIVERSITY_NOTICE = "Your response to this question is entirely voluntary and will not affect your eligibility. This information will be used to provide aggregate reporting to the Government of Canada for a federally funded grant that supports this program.";
+  const VOLUNTARY = "Your response to this question is entirely voluntary and will not affect your eligibility. This information will be used to provide aggregate reporting to the Government of Canada for a federally funded grant that supports this program.";
+  const PRIVACY_BEFORE_EMAIL = "The University of Toronto respects your privacy. Personal information that you provide to the University is collected pursuant to section 2(14) of the University of Toronto Act, 1971. Situated in the University of Toronto, the Biomanufacturing Hub Network (BioHubNet) is a federally funded talent development initiative that provides training programs to facilitate industry-readiness of highly qualified personnel. As part of this program, your name, contact information, academic program and institutional affiliation, academic transcript and employment status will be collected for the purpose of processing course admissions, administering training credits and reporting to the federal government for program evaluation and statistical purposes. BioHubNet may share your information with its administrative staff, affiliates, and training partners from time-to-time who have a need to know it for the purposes of registration and as part of the program's operations. Where possible, data will be released in aggregate form and de-identified. All information which has been collected will be stored securely, encrypted, and retained for as long as it is needed to meet the purposes of the program. At all times your information will be protected in accordance with the Freedom of Information and Protection of Privacy Act (FIPPA). If you have any questions, please contact BioHubNet at ";
+
+  /* Server errors are the live app's six strings, unchanged. */
   const ERRORS = {
     missing: "Please fill in all required fields.",
     exists: "An account with that email already exists. Try signing in instead.",
@@ -146,60 +195,74 @@
     config: "Registration is temporarily unavailable. Please try again later.",
     dbwrite: "Your account was created but your profile could not be saved. Please contact support.",
   };
-  /* Required per step, in the order validateStep walks them. */
-  const REQUIRED = {
-    0: ["firstName", "lastName", "email", "password"],
-    1: ["secondaryEmail", "phone", "address", "institute", "instituteOther"],
-    2: ["occupation"],
-  };
 
   /* ── Synthetic data only ──────────────────────────────────────────── */
-  const A = { firstName: "Priya", lastName: "Sample", email: "priya.sample@example.ca", password: "example-pass-42" };
-  const B = { secondaryEmail: "priya.alt@example.com", phone: "416-555-0142", address: "100 Example Street, Toronto, ON M5V 0A1", institute: "University of Toronto" };
+  const A = { firstName: "Priya", lastName: "Sample", email: "priya.sample@example.ca", secondaryEmail: "priya.alt@example.com", password: "Example-pass-42", phone: "416-555-0142", address: "100 Example Street, Toronto, ON M5V 0A1" };
+  const B = { institute: "University of Toronto", occupation: "Graduate Program" };
+  const C = {
+    specialization: ["Molecular Biology", "Biotechnology"], lifeSciencesExperience: "No",
+    "knowledge-0": "Some understanding", "knowledge-1": "Clueless!",
+    "interest-0": "Very interested", "interest-1": "Very interested", "interest-2": "Somewhat interested",
+    "interest-3": "Not interested", "interest-4": "Somewhat interested", "interest-5": "Not interested",
+    transitionTiming: "6-12 months",
+  };
   const PRESETS = {
     "step1": { step: 0, v: {} },
     "step1-validation": { step: 0, v: { firstName: "Priya" }, validate: true },
     "step1-focus": { step: 0, v: { firstName: "Priya", lastName: "Sample" }, focus: "email" },
     "step2": { step: 1, v: { ...A } },
-    "step2-custom-institution": { step: 1, v: { ...A, ...B, institute: OTHER, instituteOther: "Riverbend Research Institute" }, focus: "instituteOther" },
-    "step2-validation": { step: 1, v: { ...A, secondaryEmail: "priya.sample@" }, validate: true },
+    "step2-non-member": { step: 1, v: { ...A, institute: OTHER, instituteOther: "Riverbend Research Institute", occupation: "Research Assistant" }, focus: "instituteOther" },
+    "step2-validation": { step: 1, v: { ...A }, validate: true },
     "step3": { step: 2, v: { ...A, ...B } },
-    "step3-graduate": { step: 2, v: { ...A, ...B, occupation: "Graduate Program", levelStatus: "Masters", program: "MSc Biomedical Engineering", programStartDate: "2025-09-02" } },
-    "step3-other": { step: 2, v: { ...A, ...B, occupation: "Other", levelStatus: "Bachelors", program: "BSc Life Sciences", employmentStartDate: "2024-05-13" } },
-    "step3-employment": { step: 2, v: { ...A, ...B, occupation: "Postdoctoral Fellow", employmentStartDate: "2025-01-06" } },
-    "step3-diversity": { step: 2, v: { ...A, ...B, occupation: "Laboratory Technician", employmentStartDate: "2023-03-20", genderIdentity: OTHER, genderIdentityOther: "Self-described", identities: ["Newcomer", "Francophone"] }, reveal: true },
-    "step3-validation": { step: 2, v: { ...A, ...B }, validate: true },
+    "step3-answered": { step: 2, v: { ...A, ...B, ...C, specialization: ["Molecular Biology", "Biotechnology", OTHER], specializationOther: "Synthetic biology" } },
+    "step3-validation": { step: 2, v: { ...A, ...B, specialization: ["Chemistry"] }, validate: true },
+    "step4": { step: 3, v: { ...A, ...B, ...C } },
+    "step4-answered": { step: 3, v: { ...A, ...B, ...C, genderIdentity: OTHER, genderIdentityOther: "Self-described", identities: ["Newcomer", "Francophone"], comments: "Synthetic comment for design review.", privacyConsent: true } },
+    "step4-validation": { step: 3, v: { ...A, ...B, ...C }, validate: true },
     "server-error": { step: 0, v: {}, serverError: true },
-    "submitting": { step: 2, v: { ...A, ...B, occupation: "Research Associate", employmentStartDate: "2024-11-04" }, submitting: true },
+    "submitting": { step: 3, v: { ...A, ...B, ...C, genderIdentity: "Prefer not to say", identities: ["Prefer not to say"], privacyConsent: true }, submitting: true },
     "submitted": { submitted: true },
   };
   const preset = PRESETS[state] || PRESETS.step1;
   const code = ERRORS[qs.get("code")] ? qs.get("code") : "exists";
-  const model = { step: preset.step || 0, v: { mailingList: true, ...(preset.v || {}) } };
+  const model = { step: preset.step || 0, v: { mailingList: false, ...(preset.v || {}) } };
 
-  /* ── Field builders ───────────────────────────────────────────────── */
+  /* ── Builders ─────────────────────────────────────────────────────── */
+  const REQ = '<span class="req"> *</span>';
+
   function input(o) {
-    const req = o.required ? '<span class="req"> *</span>' : "";
-    const hint = o.helper ? `<p class="bhn-acct-hint" id="${o.name}-hint">${esc(o.helper)}</p>` : "";
     return `<div class="${o.span2 ? "span-2" : ""}">
-      <label class="bhn-acct-label" for="${o.name}">${esc(o.label)}${req}</label>
-      <input class="bhn-acct-field" id="${o.name}" name="${o.name}"${o.type ? ` type="${o.type}"` : ""}${o.required ? " required" : ""}${o.minlength ? ` minlength="${o.minlength}"` : ""}${o.max ? ` max="${o.max}"` : ""}${o.autocomplete ? ` autocomplete="${o.autocomplete}"` : ""}${o.helper ? ` aria-describedby="${o.name}-hint"` : ""} value="${esc(o.value)}">
-      ${hint}</div>`;
+      <label class="bhn-acct-label" for="${o.name}">${esc(o.label)}${o.required ? REQ : ""}</label>
+      <input class="bhn-acct-field" id="${o.name}" name="${o.name}"${o.type ? ` type="${o.type}"` : ""}${o.required ? " required" : ""}${o.autocomplete ? ` autocomplete="${o.autocomplete}"` : ""} value="${esc(o.value)}">
+    </div>`;
   }
-  function select(o) {
-    const req = o.required ? '<span class="req"> *</span>' : "";
-    const opts = [`<option value=""${o.placeholderDisabled ? " disabled" : ""}${!o.value ? " selected" : ""}>${esc(o.placeholder)}</option>`]
-      .concat(o.options.map((x) => `<option value="${esc(x)}"${o.value === x ? " selected" : ""}>${esc(x)}</option>`))
-      .concat((o.extra || []).map((x) => `<option value="${esc(x.value)}"${o.value === x.value ? " selected" : ""}>${esc(x.label)}</option>`))
-      .join("");
-    return `<div class="${o.span2 ? "span-2" : ""}">
-      <label class="bhn-acct-label" for="${o.name}">${esc(o.label)}${req}</label>
-      <select class="bhn-acct-field" id="${o.name}" name="${o.name}"${o.required ? " required" : ""}>${opts}</select></div>`;
+
+  /* label is trusted markup from the constants above. */
+  function choice(type, name, value, label, checked, extra) {
+    return `<label class="bhn-acct-choice"><input type="${type}" name="${name}" value="${esc(value)}"${checked ? " checked" : ""}${extra || ""}><span>${label}</span></label>`;
+  }
+
+  function otherRow(type, group, checked, label, textName, textLabel, value, multi) {
+    return `<div class="reg-other">
+      ${choice(type, group, OTHER, label, checked, multi ? " data-multi" : "")}
+      <input class="bhn-acct-field" id="${textName}" name="${textName}" aria-label="${textLabel}" value="${esc(value)}">
+    </div>`;
+  }
+
+  function grid(id, label, rows, cols) {
+    const v = model.v;
+    const head = cols.map((c) => `<th scope="col">${esc(c)}</th>`).join("");
+    const body = rows.map((r, i) => `<tr><th scope="row">${esc(r)}</th>${cols.map((c) =>
+      `<td><label class="bhn-acct-choice"><input type="radio" name="${id}-${i}" value="${esc(c)}" aria-label="${esc(r)}: ${esc(c)}"${v[`${id}-${i}`] === c ? " checked" : ""}><span class="cap" aria-hidden="true">${esc(c)}</span></label></td>`
+    ).join("")}</tr>`).join("");
+    return `<fieldset class="reg-q" id="q-${id}">
+      <legend class="bhn-acct-label">${esc(label)}${REQ}</legend>
+      <table class="reg-grid"><thead><tr><td></td>${head}</tr></thead><tbody>${body}</tbody></table>
+    </fieldset>`;
   }
 
   function steps(current) {
-    const names = ["Account", "Contact", "Status"];
-    return `<ol class="bhn-acct-steps" aria-label="Registration progress">${names.map((n, i) => {
+    return `<ol class="bhn-acct-steps" aria-label="Registration progress">${STEP_NAMES.map((n, i) => {
       const cls = i < current ? "is-done" : i === current ? "is-current" : "";
       const cur = i === current ? ' aria-current="step"' : "";
       const done = i < current ? '<span class="sr-only">, completed</span>' : "";
@@ -207,105 +270,123 @@
     }).join("")}</ol>`;
   }
 
+  function sectionOpen(i, title) {
+    return `<section class="reg-section"${model.step !== i ? " hidden" : ""} aria-labelledby="reg-sec-${i}">
+      <h2 id="reg-sec-${i}" class="bhn-acct-h2" tabindex="-1">${title}</h2>`;
+  }
+
+  /* About You */
   function section0() {
     const v = model.v;
-    return `<section class="reg-section"${model.step !== 0 ? " hidden" : ""} aria-labelledby="reg-sec-0">
-      <h2 id="reg-sec-0" class="bhn-acct-h2" tabindex="-1">Account</h2>
+    return `${sectionOpen(0, "About You")}
       <div class="bhn-acct-grid2 reg-fields">
-        ${input({ name: "firstName", label: "First name", required: true, autocomplete: "given-name", value: v.firstName })}
-        ${input({ name: "lastName", label: "Last name", required: true, autocomplete: "family-name", value: v.lastName })}
-        ${input({ name: "email", label: "Email address", type: "email", required: true, autocomplete: "email", helper: "Use your institutional email if applying for Training Credits.", value: v.email, span2: true })}
-        ${input({ name: "password", label: "Password", type: "password", required: true, minlength: 8, autocomplete: "new-password", helper: "At least 8 characters.", value: v.password, span2: true })}
+        ${input({ name: "firstName", label: "First Name", required: true, autocomplete: "given-name", value: v.firstName })}
+        ${input({ name: "lastName", label: "Last Name", required: true, autocomplete: "family-name", value: v.lastName })}
+        ${input({ name: "email", label: "Email address (enter institutional email address if applying for Training Credits)", type: "email", required: true, autocomplete: "email", value: v.email, span2: true })}
+        ${input({ name: "secondaryEmail", label: "Secondary Email Address (to be used for notifications/communications)", type: "email", required: true, value: v.secondaryEmail, span2: true })}
+        <div class="span-2">
+          <label class="bhn-acct-label" for="password">Please create a strong password for your account. The password must be at least 8 characters long and contain at least 3 of the following 4 types of characters:${REQ}</label>
+          <ul class="reg-pw-rules" id="password-rules">
+            <li>Lower case letters (a-z)</li>
+            <li>Upper case letters (A-Z)</li>
+            <li>Numbers (i.e. 0-9)</li>
+            <li>Special characters (e.g. !@#$%^&amp;*)</li>
+          </ul>
+          <input class="bhn-acct-field" id="password" name="password" type="password" required minlength="8" autocomplete="new-password" aria-describedby="password-rules" value="${esc(v.password)}">
+        </div>
+        ${input({ name: "phone", label: "Phone Number", type: "tel", required: true, autocomplete: "tel", value: v.phone, span2: true })}
+        ${input({ name: "address", label: "Full Current Address", required: true, autocomplete: "street-address", value: v.address, span2: true })}
       </div></section>`;
   }
 
+  /* Education */
   function section1() {
     const v = model.v;
-    const other = v.institute === OTHER;
-    if (!other) delete v.instituteOther;            // live form unmounts it, losing the value
-    return `<section class="reg-section"${model.step !== 1 ? " hidden" : ""} aria-labelledby="reg-sec-1">
-      <h2 id="reg-sec-1" class="bhn-acct-h2" tabindex="-1">Contact &amp; institution</h2>
-      <div class="bhn-acct-grid2 reg-fields">
-        ${input({ name: "secondaryEmail", label: "Secondary email", type: "email", required: true, helper: "Used for notifications and communications.", value: v.secondaryEmail })}
-        ${input({ name: "phone", label: "Phone number", type: "tel", required: true, autocomplete: "tel", value: v.phone })}
-        ${input({ name: "address", label: "Full current address", required: true, autocomplete: "street-address", value: v.address, span2: true })}
-        ${select({ name: "institute", label: "Institution", required: true, options: INSTITUTIONS, placeholder: "Select your institution…", placeholderDisabled: true, value: v.institute, extra: [{ value: OTHER, label: "Non-member institution (specify)" }], span2: true })}
-        ${other ? input({ name: "instituteOther", label: "Institution name", required: true, value: v.instituteOther, span2: true }) : ""}
+    const inst = v.institute || "";
+    const occ = v.occupation || "";
+    return `${sectionOpen(1, "Education")}
+      <div class="reg-fields reg-stack">
+        <fieldset class="reg-q" id="q-institute" aria-describedby="institute-note">
+          <legend class="bhn-acct-label">What BioHubNet Member Institution are you currently enrolled in?${REQ}</legend>
+          <div class="reg-cols">${INSTITUTIONS.map(([name, star]) => choice("radio", "institute", name, esc(name) + (star ? "&nbsp;*" : ""), inst === name)).join("")}</div>
+          <p class="bhn-acct-fine reg-footnote" id="institute-note">* Eligible institutions until Jan 2027</p>
+          <div class="reg-rule" aria-hidden="true"></div>
+          ${otherRow("radio", "institute", inst === OTHER, "Non-member institution:", "instituteOther", "Non-member institution", v.instituteOther)}
+        </fieldset>
+        <fieldset class="reg-q" id="q-occupation">
+          <legend class="bhn-acct-label">What best describes your current position/status?${REQ}</legend>
+          <div class="reg-choices">${POSITIONS.map((x) => choice("radio", "occupation", x, esc(x), occ === x)).join("")}</div>
+        </fieldset>
       </div></section>`;
   }
 
+  /* Registration Survey */
   function section2() {
     const v = model.v;
-    const occ = v.occupation || "";
-    const isGrad = occ === "Graduate Program";
-    const isOther = occ === "Other";
-    const showEdu = isGrad || isOther;              // levelStatus + program
-    const showProgStart = isGrad;                   // programStartDate
-    const showEmp = !!occ && !isGrad;               // employmentStartDate
-    if (!showEdu) { delete v.levelStatus; delete v.program; }
-    if (!showProgStart) delete v.programStartDate;
-    if (!showEmp) delete v.employmentStartDate;
-    return `<section class="reg-section"${model.step !== 2 ? " hidden" : ""} aria-labelledby="reg-sec-2">
-      <h2 id="reg-sec-2" class="bhn-acct-h2" tabindex="-1">Status &amp; education</h2>
-      <div class="bhn-acct-grid2 reg-fields">
-        ${select({ name: "occupation", label: "Current status", required: true, options: OCCUPATIONS, placeholder: "Select your current status…", placeholderDisabled: true, value: v.occupation, span2: true })}
-        ${showEdu ? select({ name: "levelStatus", label: "Level of studies", options: LEVELS, placeholder: "Select…", placeholderDisabled: false, value: v.levelStatus }) : ""}
-        ${showEdu ? input({ name: "program", label: "Degree / program name", value: v.program }) : ""}
-        ${showProgStart ? input({ name: "programStartDate", label: "Program start date", type: "date", value: v.programStartDate, max: DATE_MAX }) : ""}
-        ${showEmp ? input({ name: "employmentStartDate", label: "Current position start date", type: "date", value: v.employmentStartDate, max: DATE_MAX }) : ""}
-        ${showProgStart || showEmp ? `<p class="span-2 reg-date-tag"><span class="sim-tag is-proposed">Proposed: 4-digit year on date fields</span></p>` : ""}
-      </div>${diversity()}</section>`;
+    const spec = Array.isArray(v.specialization) ? v.specialization : [];
+    return `${sectionOpen(2, "Registration Survey")}
+      <div class="reg-fields reg-stack">
+        <fieldset class="reg-q" id="q-specialization">
+          <legend class="bhn-acct-label">Area of specialization (select all that apply)${REQ}</legend>
+          <div class="reg-cols">${SPECIALIZATIONS.map((x) => choice("checkbox", "specialization", x, esc(x), spec.includes(x), " data-multi")).join("")}</div>
+          ${otherRow("checkbox", "specialization", spec.includes(OTHER), "Other (please specify):", "specializationOther", "Other (please specify)", v.specializationOther, true)}
+        </fieldset>
+        <fieldset class="reg-q" id="q-lifeSciencesExperience">
+          <legend class="bhn-acct-label">Have you previously worked in the Life Sciences industry?${REQ}</legend>
+          <div class="reg-choices">${["Yes", "No"].map((x) => choice("radio", "lifeSciencesExperience", x, x, v.lifeSciencesExperience === x)).join("")}</div>
+        </fieldset>
+        ${grid("knowledge", "How would you rate your current knowledge of the following:", KNOWLEDGE_ROWS, KNOWLEDGE_COLS)}
+        ${grid("interest", "Which areas in the Biomanufacturing/Life Sciences sector are you interested to learn about?", INTEREST_ROWS, INTEREST_COLS)}
+        <fieldset class="reg-q" id="q-transitionTiming">
+          <legend class="bhn-acct-label">When would you ideally like to transition to an industry role?${REQ}</legend>
+          <div class="reg-choices">${TIMINGS.map((x) => choice("radio", "transitionTiming", x, esc(x), v.transitionTiming === x)).join("")}</div>
+        </fieldset>
+      </div></section>`;
   }
 
-  /* PROPOSED — voluntary diversity questions (not in the live form).
-     Native fieldset + legend, so every option is announced with its
-     question. The notice is tied to each group with aria-describedby
-     rather than placed in the legend, which a screen reader would repeat
-     on every option. */
-  function diversity() {
+  /* Diversity Self-Identification, Comments, Terms and Conditions */
+  function section3() {
     const v = model.v;
     const g = v.genderIdentity || "";
     const ids = Array.isArray(v.identities) ? v.identities : [];
-    const radio = (x) => `<label class="bhn-acct-choice"><input type="radio" name="genderIdentity" value="${esc(x)}"${g === x ? " checked" : ""}><span>${esc(x)}</span></label>`;
-    const check = (x) => `<label class="bhn-acct-choice"><input type="checkbox" name="identities" value="${esc(x)}" data-multi${ids.includes(x) ? " checked" : ""}><span>${esc(x)}</span></label>`;
-    return `<div class="reg-diversity" id="reg-diversity">
-      <p class="reg-diversity-tag"><span class="sim-tag is-proposed">Proposed: voluntary diversity questions</span></p>
-      <fieldset class="reg-q" aria-describedby="genderIdentity-hint">
-        <legend class="bhn-acct-label">Diversity Self-Identification (Only for Administrative Purposes)</legend>
-        <p class="bhn-acct-hint" id="genderIdentity-hint">${esc(DIVERSITY_NOTICE)}</p>
-        <div class="reg-choices">
-          ${GENDER_OPTIONS.map(radio).join("")}
-          <div class="reg-other">
-            <label class="bhn-acct-choice"><input type="radio" name="genderIdentity" value="${OTHER}"${g === OTHER ? " checked" : ""}><span>Other:</span></label>
-            <input class="bhn-acct-field" id="genderIdentityOther" name="genderIdentityOther" aria-label="Other, please specify" value="${esc(v.genderIdentityOther)}">
+    return `${sectionOpen(3, "Diversity Self-Identification (Only for Administrative Purposes)")}
+      <div class="reg-fields reg-stack">
+        <fieldset class="reg-q" id="q-genderIdentity">
+          <legend class="bhn-acct-label">${esc(VOLUNTARY)}${REQ}</legend>
+          <div class="reg-choices">
+            ${GENDER_OPTIONS.map((x) => choice("radio", "genderIdentity", x, esc(x), g === x)).join("")}
+            ${otherRow("radio", "genderIdentity", g === OTHER, "Other:", "genderIdentityOther", "Other", v.genderIdentityOther)}
           </div>
+        </fieldset>
+        <fieldset class="reg-q" id="q-identities">
+          <legend class="bhn-acct-label">Please select all that apply - ${esc(VOLUNTARY)} (You may select more than one option):${REQ}</legend>
+          <div class="reg-choices">${IDENTITY_OPTIONS.map((x) => choice("checkbox", "identities", x, esc(x), ids.includes(x), " data-multi")).join("")}</div>
+        </fieldset>
+        <div class="reg-block">
+          <h3 id="reg-comments" class="bhn-acct-h3">Comments</h3>
+          <textarea class="bhn-acct-field reg-textarea" id="comments" name="comments" rows="4" aria-labelledby="reg-comments" placeholder="Please leave any additional comments or feedback">${esc(v.comments)}</textarea>
         </div>
-      </fieldset>
-      <fieldset class="reg-q" aria-describedby="identities-hint">
-        <legend class="bhn-acct-label">Please select all that apply</legend>
-        <p class="bhn-acct-hint" id="identities-hint">${esc(DIVERSITY_NOTICE)} (You may select more than one option)</p>
-        <div class="reg-choices">${IDENTITY_OPTIONS.map(check).join("")}</div>
-      </fieldset>
-    </div>`;
-  }
-
-  function mailing() {
-    return `<div><label class="bhn-acct-choice">
-      <input type="checkbox" name="mailingList"${model.v.mailingList !== false ? " checked" : ""}>
-      <span>Keep me on the BioHubNet mailing list for programme news and opportunities.</span>
-    </label></div>`;
+        <div class="reg-block">
+          <h3 id="reg-terms" class="bhn-acct-h3">Terms and Conditions</h3>
+          <p class="bhn-acct-body" id="reg-terms-intro">By ticking the checkboxes below, you confirm that you have read, understood and agreed with the statement.</p>
+          <div class="reg-consent">
+            <label class="bhn-acct-choice"><input type="checkbox" name="privacyConsent" required aria-describedby="reg-terms-intro"${v.privacyConsent ? " checked" : ""}><span>${esc(PRIVACY_BEFORE_EMAIL)}<a class="bhn-acct-link" href="#" onclick="return false">info@biohubnet.ca</a>.${REQ}</span></label>
+          </div>
+          ${choice("checkbox", "mailingList", "yes", "Subscribe to Mailing List (Optional)", v.mailingList === true)}
+        </div>
+      </div></section>`;
   }
 
   function actions(o) {
     const st = model.step;
     const back = `<button type="button" class="bhn-acct-back reg-back${st === 0 ? " is-invisible" : ""}" data-act="back"${o.submitting ? " disabled" : ""}${st === 0 ? ' aria-hidden="true" tabindex="-1"' : ""}>${S.arrowBack()}<span>Back</span></button>`;
     let primary;
-    if (st < 2) primary = `<button type="button" class="bhn-acct-cta" data-act="next"><span>Next</span>${S.arrow()}</button>`;
-    else if (o.submitting) primary = `<button type="submit" class="bhn-acct-cta" disabled aria-busy="true"><span>Creating account</span><span class="bhn-acct-spinner" aria-hidden="true"></span></button>`;
-    else primary = `<button type="submit" class="bhn-acct-cta" data-act="submit"><span>Create account</span>${S.arrow()}</button>`;
+    if (st < LAST) primary = `<button type="button" class="bhn-acct-cta" data-act="next"><span>Next</span>${S.arrow()}</button>`;
+    else if (o.submitting) primary = `<button type="submit" class="bhn-acct-cta" disabled aria-busy="true"><span>Submitting</span><span class="bhn-acct-spinner" aria-hidden="true"></span></button>`;
+    else primary = `<button type="submit" class="bhn-acct-cta" data-act="submit"><span>Submit</span>${S.arrow()}</button>`;
     const tag = o.submitting ? ' <span class="sim-tag is-proposed">Proposed pending state</span>' : "";
     return `<div class="reg-foot">
-      <p class="bhn-acct-fine">Step ${st + 1} of 3${tag}</p>
+      <p class="bhn-acct-fine">Step ${st + 1} of ${STEP_NAMES.length}${tag}</p>
       <div class="reg-actions">${back}${primary}</div>
     </div>`;
   }
@@ -314,7 +395,7 @@
     return `<section class="reg-intro" aria-labelledby="reg-title">
       <p class="bhn-acct-eyebrow is-cyan">New to BioHubNet</p>
       <h1 id="reg-title" class="bhn-acct-h1" data-keep-last>Create your account</h1>
-      <p class="bhn-acct-body" data-keep-last>Join the BioHubNet marketplace. It takes about a minute.</p>
+      <p class="bhn-acct-body" data-keep-last>Join the BioHubNet marketplace.</p>
       <p class="bhn-acct-fine reg-signin">Already have an account? <a class="bhn-acct-link" href="#" onclick="return false">Sign in</a></p>
     </section>`;
   }
@@ -344,9 +425,9 @@
     return `<article class="bhn-acct-panel reg-form" aria-labelledby="reg-sec-${model.step}">
       <form id="reg" class="reg-form-inner" action="#" method="post" novalidate data-live-action="/api/register">
         ${alert}
+        <p class="reg-source"><span class="sim-tag is-proposed">Proposed: questions from the Talent Registration Form</span></p>
         ${steps(model.step)}
-        ${section0()}${section1()}${section2()}
-        ${model.step === 2 ? mailing() : ""}
+        ${section0()}${section1()}${section2()}${section3()}
         ${actions(o)}
       </form>
     </article>`;
@@ -421,7 +502,7 @@
   function collect() {
     const f = root.querySelector("#reg");
     if (!f) return;
-    f.querySelectorAll("input, select").forEach((el) => {
+    f.querySelectorAll("input, select, textarea").forEach((el) => {
       if (!el.name) return;
       if (el.type === "radio") {
         // A radio group is one value: the checked option, or nothing.
@@ -438,27 +519,78 @@
     });
   }
 
+  /* Simulated validation, in the order the form asks. Text fields use
+     Chrome's own wording. A choice question has no native bubble of its
+     own, so its simulated bubble sits under the question text and focus
+     moves to its first unanswered option. */
+  const checkedIn = (name) => root.querySelector(`input[name="${name}"]:checked`);
+  const legendOf = (id) => root.querySelector(`#q-${id} > legend`);
+  function fail(anchor, focusEl, msg, group) {
+    S.bubble(anchor, msg, { group });
+    S.focusField(focusEl);
+    return false;
+  }
+  function passwordKinds(p) {
+    return [/[a-z]/, /[A-Z]/, /[0-9]/, /[^A-Za-z0-9]/].filter((r) => r.test(p)).length;
+  }
+  function requireOne(id, name) {
+    if (checkedIn(name)) return true;
+    return fail(legendOf(id), root.querySelector(`input[name="${name}"]`), "Please select one of these options.", true);
+  }
+  function requireOtherText(group, textName) {
+    const other = root.querySelector(`input[name="${group}"][value="${OTHER}"]`);
+    const t = root.querySelector(`[name="${textName}"]`);
+    if (other && other.checked && t && !t.value.trim()) return fail(t, t, "Please fill out this field.");
+    return true;
+  }
   function validateStep(i) {
     S.clearBubbles(root);
-    for (const name of REQUIRED[i]) {
-      const el = root.querySelector(`[name="${name}"]`);
-      if (!el) continue;                            // unmounted conditional fields do not count
-      const val = el.value || "";
-      let msg = null;
-      if (el.tagName === "SELECT" && !val) msg = "Please select an item in the list.";
-      else if (!val.trim()) msg = "Please fill out this field.";
-      else if (el.type === "email") msg = S.emailMessage(val);
-      else if (name === "password" && val.length < 8) {
-        msg = `Please lengthen this text to 8 characters or more (you are currently using ${val.length} character${val.length === 1 ? "" : "s"}).`;
+    if (i === 0) {
+      for (const name of ["firstName", "lastName", "email", "secondaryEmail", "password", "phone", "address"]) {
+        const el = root.querySelector(`[name="${name}"]`);
+        const val = el.value || "";
+        let msg = null;
+        if (!val.trim()) msg = "Please fill out this field.";
+        else if (el.type === "email") msg = S.emailMessage(val);
+        else if (name === "password" && val.length < 8) {
+          msg = `Please lengthen this text to 8 characters or more (you are currently using ${val.length} character${val.length === 1 ? "" : "s"}).`;
+        } else if (name === "password" && passwordKinds(val) < 3) {
+          msg = "Please match the requested format.";
+        }
+        if (msg) return fail(el, el, msg);
       }
-      if (msg) { S.bubble(el, msg); S.focusField(el); return false; }
+      return true;
+    }
+    if (i === 1) {
+      return requireOne("institute", "institute") && requireOtherText("institute", "instituteOther")
+        && requireOne("occupation", "occupation");
+    }
+    if (i === 2) {
+      if (!root.querySelector('input[name="specialization"]:checked')) {
+        return fail(legendOf("specialization"), root.querySelector('input[name="specialization"]'), "Please select at least one of these options.", true);
+      }
+      if (!requireOtherText("specialization", "specializationOther")) return false;
+      if (!requireOne("lifeSciencesExperience", "lifeSciencesExperience")) return false;
+      for (const [id, rows] of [["knowledge", KNOWLEDGE_ROWS], ["interest", INTEREST_ROWS]]) {
+        const miss = rows.findIndex((_, r) => !checkedIn(`${id}-${r}`));
+        if (miss >= 0) return fail(legendOf(id), root.querySelector(`input[name="${id}-${miss}"]`), "Please select one of these options.", true);
+      }
+      return requireOne("transitionTiming", "transitionTiming");
+    }
+    if (i === 3) {
+      if (!requireOne("genderIdentity", "genderIdentity") || !requireOtherText("genderIdentity", "genderIdentityOther")) return false;
+      if (!root.querySelector('input[name="identities"]:checked')) {
+        return fail(legendOf("identities"), root.querySelector('input[name="identities"]'), "Please select at least one of these options.", true);
+      }
+      const consent = root.querySelector('input[name="privacyConsent"]');
+      if (!consent.checked) return fail(root.querySelector("#reg-terms-intro"), consent, "Please check this box if you want to proceed.", true);
+      return true;
     }
     return true;
   }
 
   function focusHeading() {
-    const h = root.querySelector(`#reg-sec-${model.step}`);
-    S.focusField(h);
+    S.focusField(root.querySelector(`#reg-sec-${model.step}`));
   }
 
   root.addEventListener("click", (e) => {
@@ -475,8 +607,8 @@
 
   root.addEventListener("submit", (e) => {
     e.preventDefault(); collect();
-    if (model.step < 2) { if (validateStep(model.step)) { model.step += 1; render(); focusHeading(); } return; }
-    if (!validateStep(2)) return;
+    if (model.step < LAST) { if (validateStep(model.step)) { model.step += 1; render(); focusHeading(); } return; }
+    if (!validateStep(LAST)) return;
     render({ submitting: true });
     setTimeout(() => {
       submitted = true;
@@ -485,30 +617,27 @@
     }, 1300);
   });
 
-  /* Diversity questions. Typing an "Other" answer selects Other; picking
-     another option clears it so a stale answer is never kept. "Prefer not
-     to say" cannot be combined with the other groups. */
+  /* Options that carry their own text box. Typing an answer selects the
+     option; choosing a different radio, or unticking the checkbox, clears
+     the text so a stale answer is never kept. */
+  const OTHER_TEXT = {
+    instituteOther: "institute",
+    specializationOther: "specialization",
+    genderIdentityOther: "genderIdentity",
+  };
   root.addEventListener("input", (e) => {
-    if (e.target.name !== "genderIdentityOther" || !e.target.value) return;
-    const r = root.querySelector(`input[name="genderIdentity"][value="${OTHER}"]`);
-    if (r) r.checked = true;
+    const group = OTHER_TEXT[e.target.name];
+    if (!group || !e.target.value) return;
+    const box = root.querySelector(`input[name="${group}"][value="${OTHER}"]`);
+    if (box) box.checked = true;
   });
-
   root.addEventListener("change", (e) => {
-    const n = e.target.name;
-    if (n === "genderIdentity" && e.target.value !== OTHER) {
-      const t = root.querySelector('[name="genderIdentityOther"]');
-      if (t) t.value = "";
-    }
-    if (n === "identities" && e.target.checked) {
-      root.querySelectorAll('input[name="identities"]').forEach((b) => {
-        if (b !== e.target && (e.target.value === PREFER_NOT || b.value === PREFER_NOT)) b.checked = false;
-      });
-    }
-    if (n === "institute" || n === "occupation") {
-      collect(); render();
-      const el = root.querySelector(`[name="${n}"]`);
-      S.focusField(el);
+    const t = e.target;
+    for (const [textName, group] of Object.entries(OTHER_TEXT)) {
+      if (t.name !== group) continue;
+      const clears = t.type === "radio" ? t.value !== OTHER : (t.value === OTHER && !t.checked);
+      const box = root.querySelector(`[name="${textName}"]`);
+      if (clears && box) box.value = "";
     }
   });
 
@@ -527,19 +656,6 @@
       ? Object.keys(ERRORS).map((k) => ({ href: `?state=server-error&code=${k}`, label: `?error=${k}`, current: k === code }))
       : [],
   });
-
-  /* Review state: open with the diversity block in view. Scroll only when
-     the block starts below the upper part of the screen, so a tall frame
-     that already shows it keeps the Simulation banner on top. window.scrollTo
-     scrolls only this document, so inside the gallery it moves the frame
-     and not the gallery around it. */
-  if (preset.reveal) {
-    const el = root.querySelector("#reg-diversity");
-    const bar = document.querySelector(".sim-banner");
-    const offset = (bar && getComputedStyle(bar).position === "sticky" ? bar.offsetHeight : 0) + 16;
-    const top = el ? el.getBoundingClientRect().top : 0;
-    if (el && top > window.innerHeight * 0.6) window.scrollTo(0, Math.max(0, top + window.scrollY - offset));
-  }
 })();
 </script>
 </body>

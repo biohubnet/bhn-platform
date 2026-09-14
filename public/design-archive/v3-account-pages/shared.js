@@ -115,10 +115,14 @@
 
   /* Simulated native validation. Shows a bubble in the browser's own
      style directly under the field and marks the field invalid, which
-     triggers the PROPOSED rose underline. Both are labelled. */
-  function bubble(field, message) {
+     triggers the PROPOSED rose underline. Both are labelled.
+     opts.group: the anchor is a choice question (its legend or intro) rather
+     than a text field, so there is no underline to turn rose and no
+     aria-invalid on something that is not a control. */
+  function bubble(field, message, opts) {
+    opts = opts || {};
     clearBubbles(document);
-    field.setAttribute("aria-invalid", "true");
+    if (!opts.group) field.setAttribute("aria-invalid", "true");
     const b = document.createElement("div");
     b.className = "sim-bubble";
     b.setAttribute("role", "note");
@@ -129,7 +133,7 @@
     tag.className = "sim-tag-row";
     tag.innerHTML = `<span class="sim-tag is-proposed">Proposed: rose underline on the invalid field</span>`;
     field.insertAdjacentElement("afterend", b);
-    b.insertAdjacentElement("afterend", tag);
+    if (!opts.group) b.insertAdjacentElement("afterend", tag);
   }
   function clearBubbles(root) {
     (root || document).querySelectorAll(".sim-bubble, .sim-tag-row").forEach((n) => n.remove());
