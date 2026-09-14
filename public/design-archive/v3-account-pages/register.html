@@ -42,7 +42,6 @@
   .reg-extra .rule { padding-top: 1rem; border-top: 1px solid rgba(255, 255, 255, 0.10); }
 
   .reg-form-inner { display: grid; gap: 1.75rem; min-width: 0; }
-  .bhn-acct .reg-source { margin: 0; }
   .reg-section > h2 { margin: 0; }
   .reg-section h2:focus { outline: none; }
   .reg-fields { margin-top: 1.5rem; }
@@ -73,6 +72,11 @@
   @media (min-width: 40rem) { .reg-cols { column-count: 2; } }
   @media (min-width: 64rem) { .reg-cols { column-count: 3; } }
   .reg-cols > .bhn-acct-choice { break-inside: avoid; margin-bottom: 0.625rem; }
+  /* Member institutions, one block per province; one radio group across all. */
+  .reg-provinces { display: grid; gap: 1.25rem; }
+  .reg-province { min-width: 0; margin: 0; padding: 0; border: 0; }
+  .reg-province > legend { padding: 0; margin-bottom: 0.625rem; }
+  .bhn-acct .reg-provinces + .reg-footnote { margin: 0.75rem 0 0; }
   .bhn-acct .reg-footnote { margin: 0.25rem 0 0; }
   .reg-rule { height: 0; margin: 1rem 0; border-top: 1px solid rgba(255, 255, 255, 0.10); }
   /* An option that carries its own free-text box. */
@@ -159,30 +163,36 @@
   /* ── Questions: exactly the Talent Registration Form (source PDF supplied
      in design review, 2026-09-14). Wording, option order, markers and
      required flags are copied as printed. Do not edit these to fit the
-     layout. PROPOSED — the live V3 form asks different questions. */
+     layout. Approved in design review (2026-09-14); the live V3 form asks
+     different questions. */
   const OTHER = "__other__";
   const STEP_NAMES = ["About You", "Education", "Survey", "Finish"];
   const LAST = STEP_NAMES.length - 1;
-  /* Institutions in the form's own order, read down each column. true =
-     carries the "*" eligibility marker, joined to the name with a no-break
-     space so it never wraps onto a line alone. */
-  const INSTITUTIONS = [
-    ["Baycrest Hospital", true], ["British Columbia Institute of Technology", true],
-    ["Centre hospitalier Universitaire Sainte-Justine", true], ["Children's Hospital of Eastern Ontario", true],
-    ["Concordia University of Edmonton", true], ["Dalhousie University", true],
-    ["École Polytechnique de Montréal", true], ["Hospital for Sick Children", false],
-    ["Institut national de la recherche scientifique", true], ["McGill University", true],
-    ["McMaster University", true], ["Memorial University", true], ["Michael Garron Hospital", true],
-    ["Queen's University", false], ["Seneca Polytechnic", false], ["Simon Fraser University", true],
-    ["Sinai Health", false], ["Sunnybrook Research Institute", false], ["The Ottawa Hospital", true],
-    ["Toronto Metropolitan University", false], ["Unity Health Toronto", false], ["University Health Network", false],
-    ["University of Alberta", true], ["University of British Columbia", true], ["University of Calgary", true],
-    ["University of Guelph", false], ["University of Lethbridge", true], ["University of Manitoba", true],
-    ["University of Ottawa", true], ["University of Regina", true], ["University of Saskatchewan", true],
-    ["University of Toronto", false], ["University of Victoria", true], ["University of Waterloo", true],
-    ["University of Windsor", false], ["Université de Montréal", true], ["Université de Sherbrooke", true],
-    ["Université Laval", true], ["Vaccine and Infectious Disease Organization (VIDO)", true],
-    ["Western University", false], ["York University", false],
+  /* Member institutions grouped by province (design review, 2026-09-14):
+     provinces alphabetically, institutions in the form's own order within
+     each. true = carries the form's "*" eligibility marker, joined to the
+     name with a no-break space so it never wraps onto a line alone. */
+  const INSTITUTIONS_BY_PROVINCE = [
+    ["Alberta", [["Concordia University of Edmonton", true], ["University of Alberta", true], ["University of Calgary", true], ["University of Lethbridge", true]]],
+    ["British Columbia", [["British Columbia Institute of Technology", true], ["Simon Fraser University", true], ["University of British Columbia", true], ["University of Victoria", true]]],
+    ["Manitoba", [["University of Manitoba", true]]],
+    ["Newfoundland and Labrador", [["Memorial University", true]]],
+    ["Nova Scotia", [["Dalhousie University", true]]],
+    ["Ontario", [
+      ["Baycrest Hospital", true], ["Children's Hospital of Eastern Ontario", true], ["Hospital for Sick Children", false],
+      ["McMaster University", true], ["Michael Garron Hospital", true], ["Queen's University", false],
+      ["Seneca Polytechnic", false], ["Sinai Health", false], ["Sunnybrook Research Institute", false],
+      ["The Ottawa Hospital", true], ["Toronto Metropolitan University", false], ["Unity Health Toronto", false],
+      ["University Health Network", false], ["University of Guelph", false], ["University of Ottawa", true],
+      ["University of Toronto", false], ["University of Waterloo", true], ["University of Windsor", false],
+      ["Western University", false], ["York University", false],
+    ]],
+    ["Quebec", [
+      ["Centre hospitalier Universitaire Sainte-Justine", true], ["École Polytechnique de Montréal", true],
+      ["Institut national de la recherche scientifique", true], ["McGill University", true],
+      ["Université de Montréal", true], ["Université de Sherbrooke", true], ["Université Laval", true],
+    ]],
+    ["Saskatchewan", [["University of Regina", true], ["University of Saskatchewan", true], ["Vaccine and Infectious Disease Organization (VIDO)", true]]],
   ];
   const POSITIONS = ["Graduate Program", "Postdoctoral Fellow", "Research Associate (equivalent to a PostDoc or higher)", "Research Assistant", "Laboratory Technician", "Other"];
   const SPECIALIZATIONS = ["Biochemistry", "Chemistry", "Molecular Biology", "Microbiology", "Computational Biology", "Cell Biology", "Immunology", "Health Science", "Biostatistics", "Pharmaceutical Science", "Biotechnology", "Biomedical Engineering", "Chemical Engineering"];
@@ -235,7 +245,7 @@
   };
   const preset = PRESETS[state] || PRESETS.step1;
   const code = ERRORS[qs.get("code")] ? qs.get("code") : "exists";
-  const model = { step: preset.step || 0, v: { mailingList: false, ...(preset.v || {}) } };
+  const model = { step: preset.step || 0, v: { mailingList: true, ...(preset.v || {}) } };
 
   /* ── Builders ─────────────────────────────────────────────────────── */
   /* The "*" is visual only. Required state is announced by the required
@@ -323,7 +333,12 @@
       <div class="reg-fields reg-stack">
         <fieldset class="reg-q" id="q-institute" aria-describedby="institute-note">
           <legend class="bhn-acct-label">What BioHubNet Member Institution are you currently enrolled in?${REQ_GROUP}</legend>
-          <div class="reg-cols">${INSTITUTIONS.map(([name, star]) => choice("radio", "institute", name, esc(name) + (star ? "&nbsp;*" : ""), inst === name)).join("")}</div>
+          <div class="reg-provinces">${INSTITUTIONS_BY_PROVINCE.map(([province, list]) => `
+            <fieldset class="reg-province">
+              <legend class="bhn-acct-section-label">${province}</legend>
+              <div class="reg-cols">${list.map(([name, star]) => choice("radio", "institute", name, esc(name) + (star ? "&nbsp;*" : ""), inst === name)).join("")}</div>
+            </fieldset>`).join("")}
+          </div>
           <p class="bhn-acct-fine reg-footnote" id="institute-note">* Eligible institutions until Jan 2027</p>
           <div class="reg-rule" aria-hidden="true"></div>
           ${otherRow("radio", "institute", inst === OTHER, "Non-member institution:", "instituteOther", "Non-member institution", v.instituteOther)}
@@ -399,9 +414,8 @@
     if (st < LAST) primary = `<button type="submit" class="bhn-acct-cta" data-act="next"><span>Next</span>${S.arrow()}</button>`;
     else if (o.submitting) primary = `<button type="submit" class="bhn-acct-cta" disabled aria-busy="true"><span>Submitting</span><span class="bhn-acct-spinner" aria-hidden="true"></span></button>`;
     else primary = `<button type="submit" class="bhn-acct-cta" data-act="submit"><span>Submit</span>${S.arrow()}</button>`;
-    const tag = o.submitting ? ' <span class="sim-tag is-proposed">Proposed pending state</span>' : "";
     return `<div class="reg-foot">
-      <p class="bhn-acct-fine">Step ${st + 1} of ${STEP_NAMES.length}${tag}</p>
+      <p class="bhn-acct-fine">Step ${st + 1} of ${STEP_NAMES.length}</p>
       <div class="reg-actions">${back}${primary}</div>
     </div>`;
   }
@@ -418,7 +432,6 @@
   function extra() {
     return `<aside class="reg-extra" aria-labelledby="reg-extra-title">
       <h2 id="reg-extra-title" class="sr-only">ENGAGE and EXPERIENCE programs</h2>
-      <p style="margin:0"><span class="sim-tag is-proposed">Proposed content · approved pre-login copy</span></p>
       <div>
         <p class="bhn-acct-section-label is-cyan">ENGAGE</p>
         <h3 class="bhn-acct-h3">Course marketplace</h3>
@@ -441,7 +454,6 @@
     return `<article class="bhn-acct-panel reg-form" aria-labelledby="reg-sec-${model.step}">
       <form id="reg" class="reg-form-inner" action="#" method="post" novalidate data-live-action="/api/register">
         ${alert}
-        <p class="reg-source"><span class="sim-tag is-proposed">Proposed: questions from the Talent Registration Form</span></p>
         ${steps(model.step)}
         ${section0()}${section1()}${section2()}${section3()}
         ${actions(o)}

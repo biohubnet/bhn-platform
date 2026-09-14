@@ -2,9 +2,7 @@
    page banners all read from here, so a state is added or renamed once.
    Grouped by the three PRs the implementation should split into.
 
-   sim: true      — a simulated interaction or data state.
-   proposed: true — behaviour the live code on origin/main does NOT have
-                    today; shown so it can be approved or rejected. */
+   sim: true — a simulated interaction or data state. */
 window.BHN_MANIFEST = [
   {
     pr: "PR 1",
@@ -25,7 +23,7 @@ window.BHN_MANIFEST = [
       { id: "step4-answered", label: "Step 4 · Answered", sim: true },
       { id: "step4-validation", label: "Step 4 · Validation on Submit", sim: true },
       { id: "server-error", label: "Server error banner", sim: true },
-      { id: "submitting", label: "Submitting", sim: true, proposed: true },
+      { id: "submitting", label: "Submitting", sim: true },
       { id: "submitted", label: "Application submitted (existing page)", sim: true },
     ],
   },
@@ -39,7 +37,7 @@ window.BHN_MANIFEST = [
       { id: "focus", label: "Keyboard focus", sim: true },
       { id: "validation-empty", label: "Validation · empty", sim: true },
       { id: "validation-format", label: "Validation · email format", sim: true },
-      { id: "submitting", label: "Sending", sim: true, proposed: true },
+      { id: "submitting", label: "Sending", sim: true },
     ],
   },
   {
