@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Admin · V3 account-page mockups tab
+  {
+    title: "The V3 account-page mockups have their own sidebar tab",
+    body: "**V3 account pages** now sits in the admin sidebar, next to Design archive. It opens the design-review mockups for the V3 course marketplace’s registration, forgot-password and reset-password confirmation screens without leaving the platform.\n\nEvery state is a simulation with synthetic data — nothing submits, signs anyone up or sends email. **Open full screen** gives the pages a browser tab of their own, and the gallery inside shows desktop and mobile side by side. States tagged Proposed are not in the live V3 code yet and still need team approval.",
+    kind: "feature",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── Catalogue · three enrolment states
   {
     title: "Course cards now say whether you can actually enrol",

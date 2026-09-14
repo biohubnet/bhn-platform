@@ -68,7 +68,7 @@ import {
   Clapperboard,
   BookUser,
   Radar,
-  CalendarClock, MessageSquareText} from "lucide-react";
+  CalendarClock, MessageSquareText, PanelsTopLeft} from "lucide-react";
 import { NotificationBell } from "@/components/ui/NotificationInbox";
 import { AdminGlobalSearch } from "@/components/admin/AdminGlobalSearch";
 
@@ -476,7 +476,9 @@ const adminInsightsItems: NavItem[] = [
     description: "Pick the platform-wide layout vocabulary (Classic / Cinematic / Studio) — admin-only, applies to every user. Plus the live tokens reference: surfaces, type scale, radius scale, motion primitives, component patterns, accessibility checklist. Canonical doc at docs/design-system.md." },
   { label: "Design archive",      href: "/admin/design-archive",      icon: Layers,     minRole: "admin",
     description: "Working sketches and visual-language explorations — admin dashboard mockups (60 visual languages), per-language layout studies (Vintage IBM × 10, Y2K Aero × 50), and any future archives. Each is a static HTML file under public/design-archive/. Reference material when picking a direction for a new surface." },
-  { label: "Login floaters",      href: "/admin/login-floaters",      icon: FlaskConical, minRole: "admin",
+  { label: "V3 account pages",    href: "/admin/v3-account-pages",    icon: PanelsTopLeft, minRole: "admin",
+    description: "Design-review mockups of the V3 course marketplace account pages — three-step registration, forgot password, and the reset-password confirmation — on the approved BioHubNet pre-login design. Every state is simulated with synthetic data; nothing submits or sends email." },
+  { label: "Login floaters",     href: "/admin/login-floaters",      icon: FlaskConical, minRole: "admin",
     description: "Manage the ambient process-glyph animations that sit on the dark periphery of the public /login screen. Adds + fine-tunes are driven from an interactive editorial gallery of the curated library; each card is the real React floater at thumbnail scale, so admins see exactly what will land on /login." },
   { label: "Insights",            href: "/admin/insights",            icon: Lightbulb,  minRole: "admin",
     description: "Per-period 'what users told us' synthesis. Read the signal feeds (theme votes, exit-survey responses, access requests, pending-queue heat), write the synthesis note, publish to /changelog so the loop closes back to users." },
