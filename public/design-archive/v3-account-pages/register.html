@@ -81,10 +81,20 @@
   .reg-other .bhn-acct-choice { flex: 0 0 auto; align-items: center; }
   .reg-other .bhn-acct-choice input { margin-top: 0; }
   .reg-other .bhn-acct-field { flex: 1 1 auto; min-width: 0; min-height: 2.25rem; padding-block: 0.35rem; }
+  /* On a phone the option label leaves too little room, so the box drops
+     under it and takes the full width. */
+  @media (max-width: 39.99rem) {
+    .reg-other { flex-wrap: wrap; row-gap: 0.25rem; }
+    .reg-other .bhn-acct-field { flex-basis: 100%; }
+  }
+  /* A simulated bubble clears the focus ring of the option below it. */
+  .reg-q > .sim-bubble, .reg-other + .sim-bubble { margin-bottom: 0.5rem; }
+  .bhn-acct-choice > span { text-wrap: pretty; }
 
   /* Rating grids: a table with one radio per cell. Below 40rem each row
      becomes its own short list, with the column name beside each radio. */
-  .reg-grid { width: 100%; border-collapse: collapse; font-size: 0.875rem; line-height: 1.35rem; }
+  .reg-grid { width: 100%; table-layout: fixed; border-collapse: collapse; font-size: 0.875rem; line-height: 1.35rem; }
+  .reg-grid thead td { width: 40%; }
   .reg-grid th, .reg-grid td { padding: 0.7rem 0.5rem; border-bottom: 1px solid rgba(255, 255, 255, 0.10); text-align: center; vertical-align: middle; }
   .reg-grid thead th { font-size: 0.75rem; line-height: 1.1rem; font-weight: 700; color: var(--ink-300); vertical-align: bottom; }
   .reg-grid tbody th { width: 40%; padding-left: 0; text-align: left; font-weight: 500; color: var(--ink-200); }
@@ -96,7 +106,7 @@
     .reg-grid, .reg-grid tbody, .reg-grid tr, .reg-grid th, .reg-grid td { display: block; }
     .reg-grid tr { padding: 0.8rem 0; border-bottom: 1px solid rgba(255, 255, 255, 0.10); }
     .reg-grid th, .reg-grid td { width: auto; padding: 0; border: 0; text-align: left; }
-    .reg-grid tbody th { margin-bottom: 0.5rem; font-weight: 600; }
+    .reg-grid tbody th { width: auto; margin-bottom: 0.5rem; font-weight: 600; }
     .reg-grid td + td { margin-top: 0.45rem; }
     .reg-grid .bhn-acct-choice { justify-content: flex-start; }
     .reg-grid .cap { display: inline; }
@@ -228,7 +238,12 @@
   const model = { step: preset.step || 0, v: { mailingList: false, ...(preset.v || {}) } };
 
   /* ── Builders ─────────────────────────────────────────────────────── */
-  const REQ = '<span class="req"> *</span>';
+  /* The "*" is visual only. Required state is announced by the required
+     attribute on text fields and the consent checkbox, and by a visually
+     hidden "(required)" in each required choice question's legend — a
+     checkbox group cannot carry required. */
+  const REQ = '<span class="req" aria-hidden="true"> *</span>';
+  const REQ_GROUP = `${REQ}<span class="sr-only"> (required)</span>`;
 
   function input(o) {
     return `<div class="${o.span2 ? "span-2" : ""}">
@@ -256,7 +271,7 @@
       `<td><label class="bhn-acct-choice"><input type="radio" name="${id}-${i}" value="${esc(c)}" aria-label="${esc(r)}: ${esc(c)}"${v[`${id}-${i}`] === c ? " checked" : ""}><span class="cap" aria-hidden="true">${esc(c)}</span></label></td>`
     ).join("")}</tr>`).join("");
     return `<fieldset class="reg-q" id="q-${id}">
-      <legend class="bhn-acct-label">${esc(label)}${REQ}</legend>
+      <legend class="bhn-acct-label">${esc(label)}${REQ_GROUP}</legend>
       <table class="reg-grid"><thead><tr><td></td>${head}</tr></thead><tbody>${body}</tbody></table>
     </fieldset>`;
   }
@@ -307,14 +322,14 @@
     return `${sectionOpen(1, "Education")}
       <div class="reg-fields reg-stack">
         <fieldset class="reg-q" id="q-institute" aria-describedby="institute-note">
-          <legend class="bhn-acct-label">What BioHubNet Member Institution are you currently enrolled in?${REQ}</legend>
+          <legend class="bhn-acct-label">What BioHubNet Member Institution are you currently enrolled in?${REQ_GROUP}</legend>
           <div class="reg-cols">${INSTITUTIONS.map(([name, star]) => choice("radio", "institute", name, esc(name) + (star ? "&nbsp;*" : ""), inst === name)).join("")}</div>
           <p class="bhn-acct-fine reg-footnote" id="institute-note">* Eligible institutions until Jan 2027</p>
           <div class="reg-rule" aria-hidden="true"></div>
           ${otherRow("radio", "institute", inst === OTHER, "Non-member institution:", "instituteOther", "Non-member institution", v.instituteOther)}
         </fieldset>
         <fieldset class="reg-q" id="q-occupation">
-          <legend class="bhn-acct-label">What best describes your current position/status?${REQ}</legend>
+          <legend class="bhn-acct-label">What best describes your current position/status?${REQ_GROUP}</legend>
           <div class="reg-choices">${POSITIONS.map((x) => choice("radio", "occupation", x, esc(x), occ === x)).join("")}</div>
         </fieldset>
       </div></section>`;
@@ -327,18 +342,18 @@
     return `${sectionOpen(2, "Registration Survey")}
       <div class="reg-fields reg-stack">
         <fieldset class="reg-q" id="q-specialization">
-          <legend class="bhn-acct-label">Area of specialization (select all that apply)${REQ}</legend>
+          <legend class="bhn-acct-label">Area of specialization (select all that apply)${REQ_GROUP}</legend>
           <div class="reg-cols">${SPECIALIZATIONS.map((x) => choice("checkbox", "specialization", x, esc(x), spec.includes(x), " data-multi")).join("")}</div>
           ${otherRow("checkbox", "specialization", spec.includes(OTHER), "Other (please specify):", "specializationOther", "Other (please specify)", v.specializationOther, true)}
         </fieldset>
         <fieldset class="reg-q" id="q-lifeSciencesExperience">
-          <legend class="bhn-acct-label">Have you previously worked in the Life Sciences industry?${REQ}</legend>
+          <legend class="bhn-acct-label">Have you previously worked in the Life Sciences industry?${REQ_GROUP}</legend>
           <div class="reg-choices">${["Yes", "No"].map((x) => choice("radio", "lifeSciencesExperience", x, x, v.lifeSciencesExperience === x)).join("")}</div>
         </fieldset>
         ${grid("knowledge", "How would you rate your current knowledge of the following:", KNOWLEDGE_ROWS, KNOWLEDGE_COLS)}
         ${grid("interest", "Which areas in the Biomanufacturing/Life Sciences sector are you interested to learn about?", INTEREST_ROWS, INTEREST_COLS)}
         <fieldset class="reg-q" id="q-transitionTiming">
-          <legend class="bhn-acct-label">When would you ideally like to transition to an industry role?${REQ}</legend>
+          <legend class="bhn-acct-label">When would you ideally like to transition to an industry role?${REQ_GROUP}</legend>
           <div class="reg-choices">${TIMINGS.map((x) => choice("radio", "transitionTiming", x, esc(x), v.transitionTiming === x)).join("")}</div>
         </fieldset>
       </div></section>`;
@@ -352,14 +367,14 @@
     return `${sectionOpen(3, "Diversity Self-Identification (Only for Administrative Purposes)")}
       <div class="reg-fields reg-stack">
         <fieldset class="reg-q" id="q-genderIdentity">
-          <legend class="bhn-acct-label">${esc(VOLUNTARY)}${REQ}</legend>
+          <legend class="bhn-acct-label">${esc(VOLUNTARY)}${REQ_GROUP}</legend>
           <div class="reg-choices">
             ${GENDER_OPTIONS.map((x) => choice("radio", "genderIdentity", x, esc(x), g === x)).join("")}
-            ${otherRow("radio", "genderIdentity", g === OTHER, "Other:", "genderIdentityOther", "Other", v.genderIdentityOther)}
+            ${otherRow("radio", "genderIdentity", g === OTHER, "Other:", "genderIdentityOther", "Other, please specify", v.genderIdentityOther)}
           </div>
         </fieldset>
         <fieldset class="reg-q" id="q-identities">
-          <legend class="bhn-acct-label">Please select all that apply - ${esc(VOLUNTARY)} (You may select more than one option):${REQ}</legend>
+          <legend class="bhn-acct-label">Please select all that apply - ${esc(VOLUNTARY)} (You may select more than one option):${REQ_GROUP}</legend>
           <div class="reg-choices">${IDENTITY_OPTIONS.map((x) => choice("checkbox", "identities", x, esc(x), ids.includes(x), " data-multi")).join("")}</div>
         </fieldset>
         <div class="reg-block">
@@ -381,7 +396,7 @@
     const st = model.step;
     const back = `<button type="button" class="bhn-acct-back reg-back${st === 0 ? " is-invisible" : ""}" data-act="back"${o.submitting ? " disabled" : ""}${st === 0 ? ' aria-hidden="true" tabindex="-1"' : ""}>${S.arrowBack()}<span>Back</span></button>`;
     let primary;
-    if (st < LAST) primary = `<button type="button" class="bhn-acct-cta" data-act="next"><span>Next</span>${S.arrow()}</button>`;
+    if (st < LAST) primary = `<button type="submit" class="bhn-acct-cta" data-act="next"><span>Next</span>${S.arrow()}</button>`;
     else if (o.submitting) primary = `<button type="submit" class="bhn-acct-cta" disabled aria-busy="true"><span>Submitting</span><span class="bhn-acct-spinner" aria-hidden="true"></span></button>`;
     else primary = `<button type="submit" class="bhn-acct-cta" data-act="submit"><span>Submit</span>${S.arrow()}</button>`;
     const tag = o.submitting ? ' <span class="sim-tag is-proposed">Proposed pending state</span>' : "";
@@ -401,7 +416,8 @@
   }
 
   function extra() {
-    return `<aside class="reg-extra" aria-label="ENGAGE and EXPERIENCE programs">
+    return `<aside class="reg-extra" aria-labelledby="reg-extra-title">
+      <h2 id="reg-extra-title" class="sr-only">ENGAGE and EXPERIENCE programs</h2>
       <p style="margin:0"><span class="sim-tag is-proposed">Proposed content · approved pre-login copy</span></p>
       <div>
         <p class="bhn-acct-section-label is-cyan">ENGAGE</p>
@@ -525,9 +541,16 @@
      moves to its first unanswered option. */
   const checkedIn = (name) => root.querySelector(`input[name="${name}"]:checked`);
   const legendOf = (id) => root.querySelector(`#q-${id} > legend`);
-  function fail(anchor, focusEl, msg, group) {
+  function fail(anchor, focusEl, msg, group, invalidEl) {
     S.bubble(anchor, msg, { group });
+    if (invalidEl) invalidEl.setAttribute("aria-invalid", "true");
     S.focusField(focusEl);
+    // A tall grid can leave its question text, and so the message, above
+    // the screen while the missing row is in view. Bring the message back.
+    const bub = root.querySelector(".sim-bubble");
+    const bar = document.querySelector(".sim-banner");
+    const floor = bar && getComputedStyle(bar).position === "sticky" ? bar.getBoundingClientRect().bottom : 0;
+    if (bub && bub.getBoundingClientRect().top < floor) window.scrollBy(0, bub.getBoundingClientRect().top - floor - 12);
     return false;
   }
   function passwordKinds(p) {
@@ -540,7 +563,11 @@
   function requireOtherText(group, textName) {
     const other = root.querySelector(`input[name="${group}"][value="${OTHER}"]`);
     const t = root.querySelector(`[name="${textName}"]`);
-    if (other && other.checked && t && !t.value.trim()) return fail(t, t, "Please fill out this field.");
+    if (other && other.checked && t && !t.value.trim()) {
+      // Anchored after the whole row: inside the flex row the bubble would
+      // squeeze the text box to nothing on a phone.
+      return fail(t.closest(".reg-other"), t, "Please fill out this field.", true, t);
+    }
     return true;
   }
   function validateStep(i) {
@@ -614,6 +641,8 @@
       submitted = true;
       history.replaceState(null, "", "?state=submitted");
       render(); window.scrollTo(0, 0);
+      document.querySelector(".sim-banner")?.remove();
+      S.banner({ page: "Registration → /login?registered=1 (existing approved page)", states: STATES, current: "submitted" });
     }, 1300);
   });
 
@@ -626,6 +655,7 @@
     genderIdentityOther: "genderIdentity",
   };
   root.addEventListener("input", (e) => {
+    if (root.querySelector(".sim-bubble")) S.clearBubbles(root);
     const group = OTHER_TEXT[e.target.name];
     if (!group || !e.target.value) return;
     const box = root.querySelector(`input[name="${group}"][value="${OTHER}"]`);
@@ -633,6 +663,7 @@
   });
   root.addEventListener("change", (e) => {
     const t = e.target;
+    if (root.querySelector(".sim-bubble")) S.clearBubbles(root);
     for (const [textName, group] of Object.entries(OTHER_TEXT)) {
       if (t.name !== group) continue;
       const clears = t.type === "radio" ? t.value !== OTHER : (t.value === OTHER && !t.checked);
