@@ -53,6 +53,19 @@
   .reg-back.is-invisible { visibility: hidden; }
   .reg-date-tag { margin: -0.5rem 0 0; }
 
+  /* PROPOSED: voluntary diversity questions at the end of step 3. */
+  .reg-diversity { display: grid; gap: 1.75rem; margin-top: 1.75rem; padding-top: 1.5rem; border-top: 1px solid rgba(255, 255, 255, 0.10); }
+  .bhn-acct .reg-diversity-tag { margin: 0; }
+  .reg-q { min-width: 0; margin: 0; padding: 0; border: 0; }
+  .reg-q > legend { padding: 0; }
+  .bhn-acct .reg-q .bhn-acct-hint { margin: 0 0 1rem; }
+  .reg-choices { display: grid; gap: 0.625rem 1.5rem; }
+  @media (min-width: 40rem) { .reg-choices { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .reg-other { grid-column: 1 / -1; display: flex; align-items: center; gap: 0.75rem; min-width: 0; }
+  .reg-other .bhn-acct-choice { flex: 0 0 auto; align-items: center; }
+  .reg-other .bhn-acct-choice input { margin-top: 0; }
+  .reg-other .bhn-acct-field { flex: 1 1 auto; min-width: 0; min-height: 2.25rem; padding-block: 0.35rem; }
+
   /* ── Reproduction of the EXISTING approved pre-login page (PR #76 / #77)
      for the "Application submitted" end of the journey. Values copied
      from pre-login-page.css / .tsx. Not a redesign. */
@@ -118,6 +131,13 @@
   const DATE_MAX = "9999-12-31";
   const OCCUPATIONS = ["Graduate Program", "Postdoctoral Fellow", "Research Associate", "Laboratory Technician", "Other"];
   const LEVELS = ["Diploma", "Bachelors", "Masters", "PhD"];
+  /* PROPOSED — not in the live form. Voluntary grant-reporting questions,
+     copy exactly as supplied in design review (2026-09-14). None of these
+     fields is required or validated. */
+  const GENDER_OPTIONS = ["Female", "Male", "Transgender", "Non-binary", "Two-spirited", "Prefer not to say"];
+  const IDENTITY_OPTIONS = ["Newcomer", "Racialized Person", "Veteran", "Francophone", "Person with Disability", "Inuit", "First Nations", "Metis", "Prefer not to say"];
+  const PREFER_NOT = "Prefer not to say";
+  const DIVERSITY_NOTICE = "Your response to this question is entirely voluntary and will not affect your eligibility. This information will be used to provide aggregate reporting to the Government of Canada for a federally funded grant that supports this program.";
   const ERRORS = {
     missing: "Please fill in all required fields.",
     exists: "An account with that email already exists. Try signing in instead.",
@@ -147,6 +167,7 @@
     "step3-graduate": { step: 2, v: { ...A, ...B, occupation: "Graduate Program", levelStatus: "Masters", program: "MSc Biomedical Engineering", programStartDate: "2025-09-02" } },
     "step3-other": { step: 2, v: { ...A, ...B, occupation: "Other", levelStatus: "Bachelors", program: "BSc Life Sciences", employmentStartDate: "2024-05-13" } },
     "step3-employment": { step: 2, v: { ...A, ...B, occupation: "Postdoctoral Fellow", employmentStartDate: "2025-01-06" } },
+    "step3-diversity": { step: 2, v: { ...A, ...B, occupation: "Laboratory Technician", employmentStartDate: "2023-03-20", genderIdentity: OTHER, genderIdentityOther: "Self-described", identities: ["Newcomer", "Francophone"] }, reveal: true },
     "step3-validation": { step: 2, v: { ...A, ...B }, validate: true },
     "server-error": { step: 0, v: {}, serverError: true },
     "submitting": { step: 2, v: { ...A, ...B, occupation: "Research Associate", employmentStartDate: "2024-11-04" }, submitting: true },
@@ -233,7 +254,39 @@
         ${showProgStart ? input({ name: "programStartDate", label: "Program start date", type: "date", value: v.programStartDate, max: DATE_MAX }) : ""}
         ${showEmp ? input({ name: "employmentStartDate", label: "Current position start date", type: "date", value: v.employmentStartDate, max: DATE_MAX }) : ""}
         ${showProgStart || showEmp ? `<p class="span-2 reg-date-tag"><span class="sim-tag is-proposed">Proposed: 4-digit year on date fields</span></p>` : ""}
-      </div></section>`;
+      </div>${diversity()}</section>`;
+  }
+
+  /* PROPOSED — voluntary diversity questions (not in the live form).
+     Native fieldset + legend, so every option is announced with its
+     question. The notice is tied to each group with aria-describedby
+     rather than placed in the legend, which a screen reader would repeat
+     on every option. */
+  function diversity() {
+    const v = model.v;
+    const g = v.genderIdentity || "";
+    const ids = Array.isArray(v.identities) ? v.identities : [];
+    const radio = (x) => `<label class="bhn-acct-choice"><input type="radio" name="genderIdentity" value="${esc(x)}"${g === x ? " checked" : ""}><span>${esc(x)}</span></label>`;
+    const check = (x) => `<label class="bhn-acct-choice"><input type="checkbox" name="identities" value="${esc(x)}" data-multi${ids.includes(x) ? " checked" : ""}><span>${esc(x)}</span></label>`;
+    return `<div class="reg-diversity" id="reg-diversity">
+      <p class="reg-diversity-tag"><span class="sim-tag is-proposed">Proposed: voluntary diversity questions</span></p>
+      <fieldset class="reg-q" aria-describedby="genderIdentity-hint">
+        <legend class="bhn-acct-label">Diversity Self-Identification (Only for Administrative Purposes)</legend>
+        <p class="bhn-acct-hint" id="genderIdentity-hint">${esc(DIVERSITY_NOTICE)}</p>
+        <div class="reg-choices">
+          ${GENDER_OPTIONS.map(radio).join("")}
+          <div class="reg-other">
+            <label class="bhn-acct-choice"><input type="radio" name="genderIdentity" value="${OTHER}"${g === OTHER ? " checked" : ""}><span>Other:</span></label>
+            <input class="bhn-acct-field" id="genderIdentityOther" name="genderIdentityOther" aria-label="Other, please specify" value="${esc(v.genderIdentityOther)}">
+          </div>
+        </div>
+      </fieldset>
+      <fieldset class="reg-q" aria-describedby="identities-hint">
+        <legend class="bhn-acct-label">Please select all that apply</legend>
+        <p class="bhn-acct-hint" id="identities-hint">${esc(DIVERSITY_NOTICE)} (You may select more than one option)</p>
+        <div class="reg-choices">${IDENTITY_OPTIONS.map(check).join("")}</div>
+      </fieldset>
+    </div>`;
   }
 
   function mailing() {
@@ -370,7 +423,18 @@
     if (!f) return;
     f.querySelectorAll("input, select").forEach((el) => {
       if (!el.name) return;
-      model.v[el.name] = el.type === "checkbox" ? el.checked : el.value;
+      if (el.type === "radio") {
+        // A radio group is one value: the checked option, or nothing.
+        if (el.checked) model.v[el.name] = el.value;
+        else if (model.v[el.name] === el.value) delete model.v[el.name];
+      } else if (el.type === "checkbox" && el.hasAttribute("data-multi")) {
+        // Several boxes share one name and collect into a list.
+        const set = new Set(Array.isArray(model.v[el.name]) ? model.v[el.name] : []);
+        if (el.checked) set.add(el.value); else set.delete(el.value);
+        model.v[el.name] = [...set];
+      } else {
+        model.v[el.name] = el.type === "checkbox" ? el.checked : el.value;
+      }
     });
   }
 
@@ -421,8 +485,26 @@
     }, 1300);
   });
 
+  /* Diversity questions. Typing an "Other" answer selects Other; picking
+     another option clears it so a stale answer is never kept. "Prefer not
+     to say" cannot be combined with the other groups. */
+  root.addEventListener("input", (e) => {
+    if (e.target.name !== "genderIdentityOther" || !e.target.value) return;
+    const r = root.querySelector(`input[name="genderIdentity"][value="${OTHER}"]`);
+    if (r) r.checked = true;
+  });
+
   root.addEventListener("change", (e) => {
     const n = e.target.name;
+    if (n === "genderIdentity" && e.target.value !== OTHER) {
+      const t = root.querySelector('[name="genderIdentityOther"]');
+      if (t) t.value = "";
+    }
+    if (n === "identities" && e.target.checked) {
+      root.querySelectorAll('input[name="identities"]').forEach((b) => {
+        if (b !== e.target && (e.target.value === PREFER_NOT || b.value === PREFER_NOT)) b.checked = false;
+      });
+    }
     if (n === "institute" || n === "occupation") {
       collect(); render();
       const el = root.querySelector(`[name="${n}"]`);
@@ -445,6 +527,16 @@
       ? Object.keys(ERRORS).map((k) => ({ href: `?state=server-error&code=${k}`, label: `?error=${k}`, current: k === code }))
       : [],
   });
+
+  /* Review state: open with the diversity block in view. window.scrollTo
+     scrolls only this document, so inside the gallery it moves the frame
+     and not the gallery around it. */
+  if (preset.reveal) {
+    const el = root.querySelector("#reg-diversity");
+    const bar = document.querySelector(".sim-banner");
+    const offset = (bar && getComputedStyle(bar).position === "sticky" ? bar.offsetHeight : 0) + 16;
+    if (el) window.scrollTo(0, Math.max(0, el.getBoundingClientRect().top + window.scrollY - offset));
+  }
 })();
 </script>
 </body>

@@ -22,6 +22,7 @@ window.BHN_MANIFEST = [
       { id: "step3-graduate", label: "Step 3 · Graduate Program fields", sim: true },
       { id: "step3-other", label: "Step 3 · Other fields", sim: true },
       { id: "step3-employment", label: "Step 3 · Postdoc / RA / technician", sim: true },
+      { id: "step3-diversity", label: "Step 3 · Diversity self-identification", sim: true, proposed: true },
       { id: "step3-validation", label: "Step 3 · Validation on submit", sim: true },
       { id: "server-error", label: "Server error banner", sim: true },
       { id: "submitting", label: "Submitting", sim: true, proposed: true },
