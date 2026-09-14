@@ -118,6 +118,18 @@ const ARCHIVE_ENTRIES: ArchiveEntry[] = [
     countLabel: "buttons",
     tags: ["Delete", "8-bit", "NES", "Pixel", "Motion", "Alarm"],
   },
+  {
+    // A folder rather than one file: the pages share CSS, JS and a logo
+    // asset, so the slug points at the folder's review hub.
+    slug: "v3-account-pages/index",
+    title: "V3 account pages · register, forgot & reset password",
+    description:
+      "Design-review mockups for the V3 course marketplace account pages — three-step registration, forgot password, and the reset-password confirmation — built on the approved BioHubNet pre-login page. Every state carries a simulation banner and synthetic data; nothing submits, signs anyone up, or sends email. Includes a desktop 1440 / mobile 390 gallery. States tagged Proposed are not in the live V3 code and still need team approval.",
+    date: "2026-09-14",
+    count: 22,
+    countLabel: "states",
+    tags: ["V3", "Auth", "Register", "Password reset", "Pre-login", "Proposed"],
+  },
 ];
 
 export default async function AdminDesignArchivePage() {

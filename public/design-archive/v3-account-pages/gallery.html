@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex, nofollow">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>V3 Account Pages — Gallery</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800;900&display=swap">
+<link rel="stylesheet" href="shared.css">
+<style>
+  body { margin: 0; background: #0b0f1d; color: #e2e8f0; font-family: var(--font); }
+  .g-wrap { max-width: 96rem; margin: 0 auto; padding: 1.5rem 1.25rem 4rem; }
+  .g-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.5rem 1.5rem; }
+  .g-head h1 { margin: 0; font-size: 1.5rem; font-weight: 900; letter-spacing: -0.02em; color: #fff; }
+  .g-filter { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-left: auto; }
+  .g-filter button { font: 700 12px/1 var(--font); color: #cbd5e1; background: rgba(255,255,255,0.06); border: 0; padding: 0.5rem 0.75rem; cursor: pointer; }
+  .g-filter button[aria-pressed="true"] { background: #a5f3fc; color: #06121f; }
+  .g-filter button:focus-visible { outline: 2px solid #a5f3fc; outline-offset: 2px; }
+  .g-page { margin-top: 2.5rem; }
+  .g-page > h2 { margin: 0 0 0.25rem; font-size: 1.125rem; font-weight: 900; color: #fff; }
+  .g-page > p { margin: 0 0 1rem; font-size: 0.8125rem; color: #94a3b8; }
+  .g-row { display: grid; gap: 1rem; padding: 1.25rem 0; border-top: 1px solid rgba(255,255,255,0.08); }
+  @media (min-width: 70rem) { .g-row { grid-template-columns: 13rem minmax(0, 1fr) auto; align-items: start; } }
+  .g-cap { font-size: 0.875rem; font-weight: 700; color: #fff; }
+  .g-cap small { display: block; margin-top: 0.35rem; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #fcd34d; }
+  .g-cap a { display: inline-block; margin-top: 0.5rem; font-size: 12px; color: #a5f3fc; }
+  .g-frame { position: relative; overflow: hidden; background: #050614; outline: 1px solid rgba(255,255,255,0.08); }
+  .g-frame iframe { position: absolute; top: 0; left: 0; border: 0; transform-origin: 0 0; background: #050614; }
+  .g-frame .tag { position: absolute; right: 0; bottom: 0; z-index: 2; font: 700 10px/1 var(--font); letter-spacing: .1em; text-transform: uppercase; color: #06121f; background: #a5f3fc; padding: 0.3rem 0.45rem; }
+  /* Desktop frame: 1440×900 at 0.42. Mobile: 390×844 at 0.62. Scales are
+     labelled on the frame, so nobody reads the two widths as equal size. */
+  .g-desk { width: calc(1440px * 0.42); height: calc(900px * 0.42); max-width: 100%; }
+  .g-desk iframe { width: 1440px; height: 900px; transform: scale(0.42); }
+  .g-mob { width: calc(390px * 0.62); height: calc(844px * 0.62); }
+  .g-mob iframe { width: 390px; height: 844px; transform: scale(0.62); }
+</style>
+</head>
+<body>
+<div class="sim-banner" role="note"><strong>Simulation</strong><span>Gallery · every frame uses synthetic data · nothing is sent</span><nav><a href="index.html">All pages</a></nav></div>
+<div class="g-wrap">
+  <div class="g-head">
+    <h1>Desktop 1440 · Mobile 390</h1>
+    <div class="g-filter" role="group" aria-label="Filter by page" id="filter"></div>
+  </div>
+  <div id="pages"></div>
+</div>
+<script src="manifest.js"></script>
+<script>
+  const pagesEl = document.getElementById("pages");
+  const filterEl = document.getElementById("filter");
+  let active = "all";
+
+  function render() {
+    pagesEl.innerHTML = window.BHN_MANIFEST
+      .filter((g) => active === "all" || g.file === active)
+      .map((g) => `
+        <section class="g-page">
+          <h2>${g.pr} · ${g.title}</h2>
+          <p>${g.route}</p>
+          ${g.states.map((s) => {
+            const src = `${g.file}?state=${s.id}&embed=1`;
+            return `
+              <div class="g-row">
+                <div class="g-cap">${s.label}${s.proposed ? '<small style="color:#f0abfc">Proposed behaviour</small>' : s.sim ? "<small>Simulated state</small>" : ""}
+                  <a href="${g.file}?state=${s.id}">Open full size</a></div>
+                <div class="g-frame g-desk"><iframe loading="lazy" title="${g.title} — ${s.label} — desktop" src="${src}"></iframe><span class="tag">1440 · 42%</span></div>
+                <div class="g-frame g-mob"><iframe loading="lazy" title="${g.title} — ${s.label} — mobile" src="${src}"></iframe><span class="tag">390 · 62%</span></div>
+              </div>`;
+          }).join("")}
+        </section>`).join("");
+  }
+
+  const opts = [{ id: "all", label: "All" }].concat(window.BHN_MANIFEST.map((g) => ({ id: g.file, label: g.title })));
+  filterEl.innerHTML = opts.map((o) => `<button type="button" data-id="${o.id}" aria-pressed="${o.id === active}">${o.label}</button>`).join("");
+  filterEl.addEventListener("click", (e) => {
+    const b = e.target.closest("button"); if (!b) return;
+    active = b.dataset.id;
+    filterEl.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x.dataset.id === active)));
+    render();
+  });
+  render();
+</script>
+</body>
+</html>

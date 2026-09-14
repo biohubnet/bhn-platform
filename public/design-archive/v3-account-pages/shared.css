@@ -1,0 +1,426 @@
+/* ─────────────────────────────────────────────────────────────────────
+   BHN V3 account pages — MOCKUP stylesheet (design review only)
+
+   Values marked APPROVED are copied verbatim from the merged pre-login
+   design in the V3 course marketplace (main):
+     src/components/pre-login-page.css   (PR #76)
+     src/components/pre-login-page.tsx   (PR #76)
+     src/components/sign-in-form.tsx     (PR #77)
+   Tailwind utilities used there are resolved to literal values below.
+
+   Values marked NEW are additions these pages need that the pre-login
+   page never had to style (selects, checkboxes, radios, field-level
+   errors, a step indicator). They are built from the approved tokens
+   and are listed in the handoff notes for approval.
+
+   Every class is prefixed .bhn-acct- so nothing here targets a bare
+   element or :root outside the mockup shell.
+   ───────────────────────────────────────────────────────────────────── */
+
+:root {
+  /* APPROVED ground + panel */
+  --ground: #050614;
+  --panel: rgba(17, 31, 53, 0.66);
+  --rule: rgba(255, 255, 255, 0.10);            /* border-white/10 */
+
+  /* APPROVED ink (Tailwind slate/cyan/emerald/amber/rose resolved) */
+  --ink-white: #ffffff;
+  --ink-100: #f1f5f9;                           /* slate-100 page text */
+  --ink-200: #e2e8f0;                           /* slate-200 labels, field text */
+  --ink-300: #cbd5e1;                           /* slate-300 body */
+  --ink-400: #94a3b8;                           /* slate-400 footer, fine print, placeholder */
+  --cyan-100: #cffafe;
+  --cyan-200: #a5f3fc;                          /* focus */
+  --emerald-100: #d1fae5;
+  --emerald-200: #a7f3d0;
+  --amber-100: #fef3c7;
+  --amber-200: #fde68a;
+  --rose-200: #fecdd3;                          /* APPROVED error text (sign-in form) */
+  --rose-300: #fda4af;                          /* NEW field-error underline */
+
+  /* APPROVED field */
+  --field-line: rgba(220, 232, 248, 0.40);
+  --field-line-focus: #a5f3fc;
+
+  /* APPROVED type */
+  --font: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+/* ── Simulation shell (mockup-only chrome, not part of the design) ─── */
+
+.sim-banner {
+  position: sticky; top: 0; z-index: 50;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1rem;
+  padding: 0.55rem 1rem;
+  font: 600 12px/1.4 var(--font);
+  color: #1c1400;
+  background: repeating-linear-gradient(135deg, #fcd34d 0 14px, #fbbf24 14px 28px);
+}
+.sim-banner strong { letter-spacing: 0.08em; text-transform: uppercase; }
+.sim-banner nav { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-left: auto; }
+.sim-banner a, .sim-banner button {
+  font: 600 11px/1 var(--font); color: #1c1400; text-decoration: none;
+  padding: 0.4rem 0.6rem; background: rgba(255,255,255,0.55); border: 0; cursor: pointer;
+}
+.sim-banner a[aria-current="true"], .sim-banner button[aria-pressed="true"] { background: #1c1400; color: #fde68a; }
+.sim-banner a:focus-visible, .sim-banner button:focus-visible { outline: 2px solid #1c1400; outline-offset: 2px; }
+
+.sim-note {
+  display: block; margin: 0 0 1rem;
+  font: 600 10px/1.4 var(--font); letter-spacing: 0.14em; text-transform: uppercase;
+  color: #fcd34d;
+}
+
+/* ── Box model: match production ───────────────────────────────────
+   The live app runs under Tailwind preflight, which sets border-box on
+   everything. This standalone mockup has no preflight, so without this
+   rule `min-height: 2.875rem` sized the field's CONTENT box and padding
+   stacked on top: fields measured 68px here against 46px in production,
+   exaggerating every form. Scoped to the mockup root. */
+.bhn-acct, .bhn-acct *, .bhn-acct *::before, .bhn-acct *::after { box-sizing: border-box; }
+
+/* ── APPROVED page frame ──────────────────────────────────────────── */
+
+.bhn-acct {
+  position: relative; min-height: 100vh; overflow: hidden;
+  /* NEW, and load-bearing. globals.css on main sets
+     `:root { color-scheme: light }` on purpose (BHN check-in 2026-08-24).
+     The pre-login page never needed to undo that because it has no
+     <select>. Registration does: without this, native dropdown menus,
+     autofill backgrounds and scrollbars paint LIGHT on the dark ground.
+     Scoped to the page root, so the app's light default is untouched. */
+  color-scheme: dark;
+  background: var(--ground);
+  padding: 1.75rem 1.25rem;                      /* px-5 py-7 */
+  color: var(--ink-100);
+  font-family: var(--font);
+  -webkit-font-smoothing: antialiased;
+}
+@media (min-width: 40rem) { .bhn-acct { padding: 2.25rem 2rem; } }   /* sm:px-8 sm:py-9 */
+
+.bhn-acct ::selection { background: #a3bdc6; color: #182d35; }
+.bhn-acct :is(a, button, input, select, textarea) { transition-duration: 180ms; transition-timing-function: ease-out; }
+.bhn-acct :is(h1, h2, h3, h4) { text-wrap: balance; }
+.bhn-acct p { text-wrap: pretty; }
+
+.bhn-acct-aurora {
+  pointer-events: none; position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 78% 50% at 50% -8%, rgba(30, 58, 138, 0.88), transparent 68%),
+    radial-gradient(circle 520px at 48% 18%, rgba(56, 189, 248, 0.2), transparent 67%),
+    radial-gradient(circle 460px at 63% 28%, rgba(63, 168, 106, 0.16), transparent 72%),
+    radial-gradient(ellipse 110% 88% at 50% 50%, transparent 48%, rgba(0, 0, 0, 0.48));
+}
+.bhn-acct-grid {
+  pointer-events: none; position: absolute; inset: 0; opacity: 0.17;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+  background-size: 44px 44px;
+  -webkit-mask-image: radial-gradient(circle at 50% 20%, black, transparent 70%);
+          mask-image: radial-gradient(circle at 50% 20%, black, transparent 70%);
+}
+
+.bhn-acct-header, .bhn-acct-main, .bhn-acct-footer {
+  position: relative; z-index: 10; margin-inline: auto; max-width: 72rem;  /* max-w-6xl */
+}
+.bhn-acct-header { display: flex; align-items: center; }
+.bhn-acct-logo { display: block; width: 184px; height: auto; }
+@media (min-width: 40rem) { .bhn-acct-logo { width: 216px; } }
+.bhn-acct-header a:focus-visible { outline: 2px solid rgba(165, 243, 252, 0.7); outline-offset: 4px; }
+
+.bhn-acct-main { padding-top: 2.5rem; padding-bottom: 2.5rem; }
+@media (min-width: 40rem) { .bhn-acct-main { padding-top: 3.5rem; } }
+
+.bhn-acct-footer {
+  display: flex; flex-direction: column; align-items: center; gap: 0.75rem;
+  border-top: 1px solid var(--rule); padding-top: 1.25rem;
+  text-align: center; font-size: 0.75rem; line-height: 1rem; color: var(--ink-400);
+}
+.bhn-acct-footer p { margin: 0; }
+@media (min-width: 40rem) { .bhn-acct-footer { flex-direction: row; justify-content: space-between; text-align: left; } }
+.bhn-acct-footer a {
+  display: inline-flex; min-height: 2.75rem; align-items: center; gap: 0.5rem; padding-inline: 0.5rem;
+  font-weight: 600; color: var(--cyan-100);
+  text-decoration: underline; text-decoration-color: rgba(165, 243, 252, 0.3); text-underline-offset: 4px;
+}
+.bhn-acct-footer a:hover { color: var(--ink-white); }
+/* APPROVED ArrowIcon is h-4 w-4. Unsized, an inline SVG falls back to its
+   300×150 default and squeezes the link text onto two lines. */
+.bhn-acct-footer a svg { width: 1rem; height: 1rem; flex: 0 0 auto; }
+.bhn-acct-footer a:focus-visible { outline: 2px solid var(--cyan-200); outline-offset: 4px; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+
+/* ── APPROVED type roles ──────────────────────────────────────────── */
+
+.bhn-acct-eyebrow {                              /* text-[10px] font-black uppercase tracking-[0.2em] */
+  margin: 0; font-size: 10px; line-height: 1rem; font-weight: 900;
+  text-transform: uppercase; letter-spacing: 0.2em;
+}
+.bhn-acct-eyebrow.is-cyan { color: rgba(207, 250, 254, 0.65); }       /* text-cyan-100/65 */
+.bhn-acct-eyebrow.is-emerald { color: rgba(209, 250, 229, 0.65); }    /* text-emerald-100/65 */
+.bhn-acct-eyebrow.is-amber { color: var(--amber-100); letter-spacing: 0.24em; }
+
+.bhn-acct-h1 {                                   /* text-3xl sm:text-4xl font-black leading-tight tracking-[-0.03em] */
+  margin: 0; font-size: 1.875rem; line-height: 1.25; font-weight: 900; letter-spacing: -0.03em; color: var(--ink-white);
+}
+@media (min-width: 40rem) { .bhn-acct-h1 { font-size: 2.25rem; } }
+
+.bhn-acct-h2 {                                   /* mt-1 text-lg sm:text-2xl font-black tracking-tight */
+  margin: 0.25rem 0 0; font-size: 1.125rem; line-height: 1.75rem; font-weight: 900; letter-spacing: -0.025em; color: var(--ink-white);
+}
+@media (min-width: 40rem) { .bhn-acct-h2 { font-size: 1.5rem; line-height: 2rem; } }
+
+.bhn-acct-h3 {                                   /* text-base font-bold */
+  margin: 0; font-size: 1rem; line-height: 1.5rem; font-weight: 700; color: var(--ink-white);
+}
+.bhn-acct-section-label {                        /* sign-in "Account credentials": text-[10px] font-bold uppercase tracking-[0.2em] */
+  margin: 0; font-size: 10px; line-height: 1rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.2em; color: rgba(209, 250, 229, 0.7);
+}
+.bhn-acct-section-label.is-cyan { color: rgba(207, 250, 254, 0.7); }
+
+.bhn-acct-body {                                 /* text-sm leading-6 text-slate-300 */
+  margin: 0; font-size: 0.875rem; line-height: 1.5rem; color: var(--ink-300);
+}
+.bhn-acct-fine {                                 /* text-xs leading-5 text-slate-400 */
+  margin: 0; font-size: 0.75rem; line-height: 1.25rem; color: var(--ink-400);
+}
+.bhn-acct-gradient-text {
+  color: #a7f3d0;
+  background: linear-gradient(120deg, #7dd3fc 0%, #5eead4 52%, #86efac 100%);
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+}
+.bhn-acct-link {                                 /* text-xs font-semibold text-cyan-100 underline decoration-cyan-200/30 underline-offset-4 */
+  font-size: 0.75rem; line-height: 1rem; font-weight: 600; color: var(--cyan-100);
+  text-decoration: underline; text-decoration-color: rgba(165, 243, 252, 0.3); text-underline-offset: 4px;
+}
+.bhn-acct-link:hover { color: var(--ink-white); }
+.bhn-acct-link:focus-visible { outline: 2px solid var(--cyan-200); outline-offset: 3px; }
+
+/* ── APPROVED panel: flat, square, shaded — no border, no radius ──── */
+
+.bhn-acct-panel {
+  position: relative; overflow: hidden; background: var(--panel);
+  display: grid; min-width: 0; gap: 1.5rem; padding: 1.25rem;
+  /* Pack rows to the top. Without this, a panel stretched to its row's
+     height spreads its rows apart and parks the last one at the bottom.
+     The approved pre-login panel pins its CTA to the bottom on purpose via
+     subgrid; that is opt-in here with .is-cta-bottom, not the default. */
+  align-content: start;
+}
+.bhn-acct-panel.is-cta-bottom { grid-template-rows: auto 1fr auto; align-content: stretch; }
+@media (min-width: 40rem) { .bhn-acct-panel { padding: 2rem; } }
+
+.bhn-acct-title-row { display: flex; align-items: flex-start; gap: 0.75rem; }
+.bhn-acct-icon {
+  display: inline-flex; width: 3rem; height: 3rem; flex: 0 0 auto;
+  align-items: center; justify-content: center; color: var(--cyan-200);
+}
+.bhn-acct-icon.is-emerald { color: var(--emerald-200); }
+.bhn-acct-icon svg { width: 1.5rem; height: 1.5rem; }
+
+/* APPROVED: content aligns with the heading TEXT, not the icon.
+   3rem icon + 0.75rem gap = 3.75rem. */
+.bhn-acct-detail { display: flex; min-width: 0; flex-direction: column; padding-inline-start: 3.75rem; }
+/* Below 40rem the indent costs too much of a 390px screen for a long
+   form, so registration steps release it. NEW — see the handoff notes. */
+@media (max-width: 39.99rem) { .bhn-acct-detail.releases-on-mobile { padding-inline-start: 0; } }
+
+/* ── APPROVED field + NEW states ───────────────────────────────────── */
+
+.bhn-acct-label {                                /* mb-2 block text-sm font-semibold text-slate-200 */
+  display: block; margin: 0 0 0.5rem; font-size: 0.875rem; line-height: 1.25rem; font-weight: 600; color: var(--ink-200);
+}
+.bhn-acct-label .req { color: var(--cyan-200); font-weight: 700; }
+.bhn-acct-label .opt { color: var(--ink-400); font-weight: 500; font-size: 0.75rem; }
+
+.bhn-acct-field {
+  display: block; width: 100%; min-height: 2.875rem;
+  border: 0; border-bottom: 1px solid var(--field-line); border-radius: 0;
+  background: transparent; padding: 0.65rem 0;
+  font: inherit; font-size: 0.875rem; line-height: 1.5; color: var(--ink-200);
+  -webkit-appearance: none; appearance: none;
+}
+.bhn-acct-field:focus-visible { border-bottom-color: var(--field-line-focus); outline: none; box-shadow: 0 1px var(--field-line-focus); }
+.bhn-acct-field::placeholder { color: var(--ink-400); opacity: 1; }
+.bhn-acct-field:disabled { opacity: 1; cursor: not-allowed; color: var(--ink-400); border-bottom-style: dashed; }  /* dashed = NEW */
+
+/* NEW: select keeps the underline and gains a flat chevron. */
+select.bhn-acct-field {
+  padding-right: 1.75rem; cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none'%3E%3Cpath d='m6 8 4 4 4-4' stroke='%23a5f3fc' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 0.1rem center; background-size: 1.1rem;
+}
+select.bhn-acct-field option { background: #0b1426; color: var(--ink-200); }
+select.bhn-acct-field:invalid { color: var(--ink-400); }
+
+/* NEW: field-level error. Underline turns rose and the message sits
+   directly under the field, tied by aria-describedby. */
+.bhn-acct-field[aria-invalid="true"] { border-bottom-color: var(--rose-300); box-shadow: 0 1px var(--rose-300); }
+.bhn-acct-field-error {
+  display: flex; gap: 0.4rem; align-items: flex-start;
+  margin: 0.45rem 0 0; font-size: 0.75rem; line-height: 1.25rem; color: var(--rose-200);
+}
+.bhn-acct-field-error svg { width: 0.9rem; height: 0.9rem; flex: 0 0 auto; margin-top: 0.15rem; }
+.bhn-acct-hint { margin: 0.45rem 0 0; font-size: 0.75rem; line-height: 1.25rem; color: var(--ink-400); }
+
+/* APPROVED: form-level alert (sign-in form's role="alert" line) */
+.bhn-acct-alert { margin: 0; font-size: 0.75rem; line-height: 1.25rem; color: var(--rose-200); }
+/* NEW: a form-level error shown as a flat rose-edged strip, the same
+   border-l-2 treatment the approved "Application submitted" notice uses. */
+.bhn-acct-alert-strip {
+  border-left: 2px solid rgba(253, 164, 175, 0.55); background: rgba(253, 164, 175, 0.06);
+  padding: 0.9rem 1rem; font-size: 0.8125rem; line-height: 1.35rem; color: var(--rose-200);
+}
+.bhn-acct-alert-strip strong { display: block; color: #ffe4e6; }
+
+/* APPROVED: success notice (pre-login justRegistered block) */
+.bhn-acct-success {
+  border-left: 2px solid rgba(167, 243, 208, 0.5); background: rgba(167, 243, 208, 0.05);
+  padding: 1.25rem; font-size: 0.875rem; line-height: 1.5rem; color: var(--emerald-100);
+}
+.bhn-acct-success p { margin: 0; }
+.bhn-acct-success p + p { margin-top: 0.25rem; }
+
+/* NEW: check / radio, square, on the underline language */
+.bhn-acct-choice { display: flex; gap: 0.75rem; align-items: flex-start; cursor: pointer; }
+.bhn-acct-choice input {
+  -webkit-appearance: none; appearance: none; flex: 0 0 auto;
+  width: 1.125rem; height: 1.125rem; margin: 0.15rem 0 0;
+  border: 1px solid var(--field-line); border-radius: 0; background: transparent; cursor: pointer;
+  display: grid; place-content: center;
+}
+.bhn-acct-choice input[type="radio"] { border-radius: 50%; }
+.bhn-acct-choice input::before { content: ""; width: 0.6rem; height: 0.6rem; transform: scale(0); background: var(--cyan-200); }
+.bhn-acct-choice input[type="radio"]::before { border-radius: 50%; }
+.bhn-acct-choice input:checked { border-color: var(--cyan-200); }
+.bhn-acct-choice input:checked::before { transform: scale(1); }
+.bhn-acct-choice input:focus-visible { outline: 2px solid var(--cyan-200); outline-offset: 3px; }
+.bhn-acct-choice span { font-size: 0.875rem; line-height: 1.5rem; color: var(--ink-200); }
+.bhn-acct-choice small { display: block; font-size: 0.75rem; line-height: 1.25rem; color: var(--ink-400); }
+
+/* ── APPROVED primary action + NEW secondary ───────────────────────── */
+
+.bhn-acct-cta {
+  position: relative; display: inline-flex; width: 100%; min-height: 3.25rem;
+  align-items: center; justify-content: center; gap: 0.75rem; overflow: hidden;
+  padding: 0.8rem 1.2rem; border: 0; border-radius: 0; cursor: pointer;
+  font: inherit; font-size: 0.9375rem; font-weight: 800; color: white; text-decoration: none;
+  background-image: linear-gradient(120deg, #173f72 0%, #1f6f86 50%, #2f7e50 100%);
+  box-shadow: 0 10px 28px -8px rgba(56, 189, 248, 0.4), inset 0 1px rgba(255, 255, 255, 0.22);
+  transition: transform 180ms ease-out, filter 180ms ease-out;
+}
+.bhn-acct-cta:hover { transform: translateY(-1px); filter: brightness(1.1); }
+.bhn-acct-cta:focus-visible { outline: 2px solid rgba(255, 255, 255, 0.85); outline-offset: 3px; }
+.bhn-acct-cta svg { width: 1rem; height: 1rem; transition: transform 180ms ease-out; }
+.bhn-acct-cta:hover svg { transform: translateX(0.2rem); }
+.bhn-acct-cta.is-returning {
+  background-image: linear-gradient(120deg, #165a52 0%, #24734f 58%, #77722a 100%);
+  box-shadow: 0 10px 28px -8px rgba(52, 211, 153, 0.32), inset 0 1px rgba(255, 255, 255, 0.22);
+}
+/* APPROVED: sign-in form's pending state is disabled:cursor-wait disabled:opacity-80 */
+.bhn-acct-cta:disabled { cursor: wait; opacity: 0.8; transform: none; filter: none; }
+.bhn-acct-cta:disabled svg { transform: none; }
+
+/* NEW: Back — same footprint, no fill, so it never competes with Next. */
+.bhn-acct-back {
+  display: inline-flex; min-height: 3.25rem; align-items: center; justify-content: center; gap: 0.6rem;
+  padding: 0.8rem 1.2rem; border: 0; border-radius: 0; cursor: pointer;
+  font: inherit; font-size: 0.9375rem; font-weight: 700; color: var(--ink-200);
+  background: rgba(255, 255, 255, 0.05);
+}
+.bhn-acct-back:hover { background: rgba(255, 255, 255, 0.09); color: var(--ink-white); }
+.bhn-acct-back:focus-visible { outline: 2px solid var(--cyan-200); outline-offset: 3px; }
+.bhn-acct-back svg { width: 1rem; height: 1rem; }
+.bhn-acct-back:disabled { cursor: not-allowed; opacity: 0.5; }
+
+.bhn-acct-spinner {
+  width: 1rem; height: 1rem; border: 2px solid rgba(255,255,255,0.35); border-top-color: #fff; border-radius: 50%;
+  animation: bhn-acct-spin 800ms linear infinite;
+}
+@keyframes bhn-acct-spin { to { transform: rotate(360deg); } }
+
+/* ── NEW: step indicator — flat segments, square ───────────────────── */
+
+.bhn-acct-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.375rem; margin: 0; padding: 0; list-style: none; }
+.bhn-acct-steps li { min-width: 0; }
+.bhn-acct-steps .bar { display: block; height: 3px; background: rgba(255, 255, 255, 0.12); }
+.bhn-acct-steps .is-done .bar { background: rgba(167, 243, 208, 0.65); }
+.bhn-acct-steps .is-current .bar { background: linear-gradient(90deg, #7dd3fc, #5eead4); }
+.bhn-acct-steps .meta { display: flex; gap: 0.4rem; align-items: baseline; margin-top: 0.55rem; }
+/* Numerals take far less tracking than the 0.2em eyebrow letters: at
+   0.2em "01" reads as two separate glyphs. */
+.bhn-acct-steps .num { font-size: 10px; font-weight: 900; letter-spacing: 0.06em; color: var(--ink-400); font-variant-numeric: tabular-nums; }
+.bhn-acct-steps .name { font-size: 0.75rem; font-weight: 700; color: var(--ink-400); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bhn-acct-steps .is-current .num, .bhn-acct-steps .is-current .name { color: var(--ink-white); }
+.bhn-acct-steps .is-done .num, .bhn-acct-steps .is-done .name { color: var(--emerald-100); }
+
+/* ── Layout helpers ────────────────────────────────────────────────── */
+
+.bhn-acct-stack > * + * { margin-top: var(--stack, 1.25rem); }
+.bhn-acct-grid2 { display: grid; gap: 1.25rem 1.5rem; }
+@media (min-width: 40rem) { .bhn-acct-grid2 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.bhn-acct-grid2 > .span-2 { grid-column: 1 / -1; }
+.bhn-acct-actions { display: grid; gap: 0.75rem; }
+@media (min-width: 40rem) {
+  .bhn-acct-actions { grid-template-columns: minmax(0, 11rem) minmax(0, 1fr); }
+  .bhn-acct-actions.single { grid-template-columns: minmax(0, 1fr); }
+}
+.bhn-acct-divider { height: 1px; background: var(--rule); border: 0; margin: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  .bhn-acct, .bhn-acct *, .bhn-acct *::before, .bhn-acct *::after {
+    scroll-behavior: auto !important; transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important; animation-iteration-count: 1 !important;
+  }
+}
+
+/* ── Additions for the three account pages ─────────────────────────── */
+
+/* NEW composition: logo left, "Log in" right. On these three routes the
+   e2e suite pins a banner containing an exact "BioHubNet" link and an
+   exact "Log in" link (today supplied by the light SiteHeader). Carrying
+   both into the page's own header keeps that contract if the SiteHeader
+   is not rendered here. */
+.bhn-acct-header { justify-content: space-between; gap: 1rem; }
+.bhn-acct-header-link {
+  display: inline-flex; min-height: 2.75rem; align-items: center; padding-inline: 0.5rem;
+  font-size: 0.875rem; font-weight: 600; color: var(--cyan-100);
+  text-decoration: underline; text-decoration-color: rgba(165, 243, 252, 0.3); text-underline-offset: 4px;
+}
+.bhn-acct-header-link:hover { color: var(--ink-white); }
+.bhn-acct-header-link:focus-visible, .bhn-acct-header-link.is-sim-focus { outline: 2px solid var(--cyan-200); outline-offset: 3px; }
+
+/* Password pages: one panel, centred under the aurora the way the
+   pre-login hero is. 36rem, not the (auth) layout's 384px. */
+.bhn-acct-narrow { max-width: 36rem; margin-inline: auto; }
+
+/* Simulated focus, so a static screenshot can show the real focus
+   treatment. Mirrors the :focus-visible rules above exactly. */
+.bhn-acct-field.is-sim-focus { border-bottom-color: var(--field-line-focus); box-shadow: 0 1px var(--field-line-focus); }
+.bhn-acct-cta.is-sim-focus { outline: 2px solid rgba(255, 255, 255, 0.85); outline-offset: 3px; }
+.bhn-acct-back.is-sim-focus, .bhn-acct-link.is-sim-focus { outline: 2px solid var(--cyan-200); outline-offset: 3px; }
+
+input[type="date"].bhn-acct-field::-webkit-calendar-picker-indicator { cursor: pointer; opacity: 0.75; }
+input[type="date"].bhn-acct-field::-webkit-calendar-picker-indicator:hover { opacity: 1; }
+
+/* Simulation-only: stand-in for the browser's native validation bubble.
+   The live forms use native validation and define no messages of their
+   own, so the wording shown is Chrome's and varies by browser. */
+.sim-bubble {
+  position: relative; margin-top: 0.7rem; max-width: 22rem;
+  background: #ffffff; color: #1f2937; padding: 0.55rem 0.7rem 0.6rem;
+  font: 400 13px/1.35 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.45);
+}
+.sim-bubble::before { content: ""; position: absolute; top: -6px; left: 14px; width: 12px; height: 12px; background: #fff; transform: rotate(45deg); }
+.sim-bubble-tag { position: relative; display: block; margin-bottom: 0.35rem; font: 800 9px/1 var(--font); letter-spacing: 0.14em; text-transform: uppercase; color: #92400e; }
+.sim-bubble-body { position: relative; display: flex; gap: 0.5rem; align-items: flex-start; }
+.sim-bubble-icon { flex: 0 0 auto; display: inline-grid; place-items: center; width: 1.1rem; height: 1.1rem; background: #f59e0b; color: #fff; font-weight: 800; font-size: 12px; }
+
+/* Amber = simulated interaction. Pink = proposed behaviour that does not
+   exist in the live code and needs team approval. */
+.sim-tag { display: inline-block; vertical-align: middle; font: 800 9px/1 var(--font); letter-spacing: 0.14em; text-transform: uppercase; color: #1c1400; background: #fcd34d; padding: 0.28rem 0.42rem; }
+.sim-tag.is-proposed { background: #f0abfc; color: #2e0535; }
+.sim-tag-row { margin: 0.5rem 0 0; }

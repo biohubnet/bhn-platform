@@ -1,0 +1,451 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex, nofollow">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Create your account — BHN V3 mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800;900&display=swap">
+<link rel="stylesheet" href="shared.css">
+<style>
+  body { margin: 0; background: #050614; }
+
+  /* Registration layout. One column on mobile and tablet, reading order
+     intro → form → programme context. From 64rem the intro and context
+     share a left rail and the form takes the rest, so the long form gets
+     the width without the page reordering for screen readers. */
+  .reg-layout { display: grid; gap: 2rem; grid-template-areas: "intro" "form" "extra"; }
+  .reg-intro, .reg-form, .reg-extra { min-width: 0; max-width: 48rem; }
+  .reg-intro { grid-area: intro; }
+  .reg-form { grid-area: form; }
+  .reg-extra { grid-area: extra; }
+  @media (min-width: 64rem) {
+    .reg-layout {
+      grid-template-columns: minmax(0, 19rem) minmax(0, 1fr);
+      grid-template-areas: "intro form" "extra form";
+      grid-template-rows: auto 1fr;
+      column-gap: 3.5rem; row-gap: 2rem; align-items: start;
+    }
+    .reg-intro, .reg-form, .reg-extra { max-width: none; }
+    /* Intro top edge sits level with the panel's first row of content. */
+    .reg-intro { padding-top: 2rem; }
+  }
+
+  .reg-intro .bhn-acct-h1 { margin-top: 0.75rem; }
+  .reg-intro .bhn-acct-body { margin-top: 0.75rem; }
+  .reg-signin { margin-top: 1.1rem !important; }
+
+  .reg-extra { display: grid; gap: 1rem; padding-top: 1.5rem; border-top: 1px solid rgba(255, 255, 255, 0.10); }
+  .reg-extra .bhn-acct-h3 { margin-top: 0.5rem; }
+  .reg-extra .bhn-acct-body { margin-top: 0.25rem; }
+  .reg-extra .rule { padding-top: 1rem; border-top: 1px solid rgba(255, 255, 255, 0.10); }
+
+  .reg-form-inner { display: grid; gap: 1.75rem; min-width: 0; }
+  .reg-section > h2 { margin: 0; }
+  .reg-section h2:focus { outline: none; }
+  .reg-fields { margin-top: 1.5rem; }
+  .reg-foot { display: grid; gap: 0.75rem; padding-top: 1.5rem; border-top: 1px solid rgba(255, 255, 255, 0.10); }
+  .reg-actions { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 0.75rem; }
+  @media (min-width: 40rem) { .reg-actions { grid-template-columns: 11rem minmax(0, 1fr); } }
+  /* Mirrors the live form: Back keeps its slot on step 1 so Next never
+     changes width between steps. */
+  .reg-back.is-invisible { visibility: hidden; }
+  .reg-date-tag { margin: -0.5rem 0 0; }
+
+  /* ── Reproduction of the EXISTING approved pre-login page (PR #76 / #77)
+     for the "Application submitted" end of the journey. Values copied
+     from pre-login-page.css / .tsx. Not a redesign. */
+  .pl-hero { max-width: 56rem; margin-inline: auto; text-align: center; }
+  .pl-eyebrow { display: inline-flex; align-items: center; gap: 0.5rem; margin: 0; padding-block: 0.375rem; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.24em; color: #fef3c7; }
+  .pl-diamond { width: 6px; height: 6px; transform: rotate(45deg); background: #fde68a; }
+  .pl-h1 { margin: 1.25rem auto 0; max-width: 48rem; font-size: 1.875rem; line-height: 1.25; font-weight: 900; letter-spacing: -0.03em; color: #fff; }
+  @media (min-width: 40rem) { .pl-h1 { font-size: 2.25rem; } }
+  .pl-lead { margin: 1rem auto 0; max-width: 42rem; font-size: 0.875rem; line-height: 1.75rem; color: #cbd5e1; }
+  @media (min-width: 40rem) { .pl-lead { font-size: 1rem; } }
+  .pl-access { margin-top: 2.5rem; }
+  .pl-notice { margin-bottom: 1.5rem; }
+  .pl-options { display: grid; gap: 1.5rem; }
+  .pl-account { position: relative; overflow: hidden; background: rgba(17, 31, 53, 0.66); display: grid; min-width: 0; grid-template-rows: auto 1fr auto; gap: 1.5rem; padding: 1.25rem; }
+  @media (min-width: 40rem) { .pl-account { padding: 2rem; } }
+  @media (min-width: 64rem) {
+    .pl-options { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .pl-account { grid-row: span 3; grid-template-rows: subgrid; }
+  }
+  .pl-detail { display: flex; min-width: 0; flex-direction: column; padding-inline-start: 3.75rem; }
+  .pl-h3 { margin: 0.5rem 0 0; font-size: 1rem; line-height: 1.5rem; font-weight: 700; color: #fff; }
+  .pl-p { margin: 0.375rem 0 0; font-size: 0.875rem; line-height: 1.5rem; color: #cbd5e1; }
+  .pl-rule { margin-top: 1rem; border-top: 1px solid rgba(255, 255, 255, 0.10); padding-top: 1rem; }
+  .pl-hosted a { color: inherit; text-decoration: underline; text-underline-offset: 4px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="shared.js"></script>
+<script src="manifest.js"></script>
+<script>
+(function () {
+  const S = BHNSim;
+  const esc = S.esc;
+  const STATES = window.BHN_MANIFEST[0].states;
+  const qs = new URLSearchParams(location.search);
+  const state = S.stateParam("step1");
+  const root = document.getElementById("root");
+
+  /* ── Exact requirements from origin/main (681d25a) ──────────────────
+     register-form.tsx, register-steps.ts, app/(auth)/register/page.tsx.
+     Do not edit these to fit the layout. */
+  const OTHER = "__other__";
+  const INSTITUTIONS = [
+    "Baycrest Hospital", "British Columbia Institute of Technology",
+    "Centre hospitalier Universitaire Sainte-Justine", "Children's Hospital of Eastern Ontario",
+    "Concordia University of Edmonton", "Dalhousie University", "École Polytechnique de Montréal",
+    "Hospital for Sick Children", "Institut national de la recherche scientifique", "McGill University",
+    "McMaster University", "Memorial University", "Michael Garron Hospital", "Queen's University",
+    "Seneca Polytechnic", "Simon Fraser University", "Sinai Health", "Sunnybrook Research Institute",
+    "The Ottawa Hospital", "Toronto Metropolitan University", "Unity Health Toronto",
+    "University Health Network", "University of Alberta", "University of British Columbia",
+    "University of Calgary", "University of Guelph", "University of Lethbridge", "University of Manitoba",
+    "University of Ottawa", "University of Regina", "University of Saskatchewan", "University of Toronto",
+    "University of Victoria", "University of Waterloo", "University of Windsor", "Université de Montréal",
+    "Université de Sherbrooke", "Université Laval", "Vaccine and Infectious Disease Organization (VIDO)",
+    "Western University", "York University",
+  ];
+  /* PROPOSED — not in the live form. Without a max, Chrome's date field
+     lets the year segment take six digits (up to 275760). A max of
+     9999-12-31 caps the year at four digits and adds no business rule;
+     a real range (e.g. no future start dates) would be a separate call. */
+  const DATE_MAX = "9999-12-31";
+  const OCCUPATIONS = ["Graduate Program", "Postdoctoral Fellow", "Research Associate", "Laboratory Technician", "Other"];
+  const LEVELS = ["Diploma", "Bachelors", "Masters", "PhD"];
+  const ERRORS = {
+    missing: "Please fill in all required fields.",
+    exists: "An account with that email already exists. Try signing in instead.",
+    password: "That password does not meet the requirements. Use at least 8 characters with a mix of letters, numbers, and symbols.",
+    signup: "We could not create your account. Please try again.",
+    config: "Registration is temporarily unavailable. Please try again later.",
+    dbwrite: "Your account was created but your profile could not be saved. Please contact support.",
+  };
+  /* Required per step, in the order validateStep walks them. */
+  const REQUIRED = {
+    0: ["firstName", "lastName", "email", "password"],
+    1: ["secondaryEmail", "phone", "address", "institute", "instituteOther"],
+    2: ["occupation"],
+  };
+
+  /* ── Synthetic data only ──────────────────────────────────────────── */
+  const A = { firstName: "Priya", lastName: "Sample", email: "priya.sample@example.ca", password: "example-pass-42" };
+  const B = { secondaryEmail: "priya.alt@example.com", phone: "416-555-0142", address: "100 Example Street, Toronto, ON M5V 0A1", institute: "University of Toronto" };
+  const PRESETS = {
+    "step1": { step: 0, v: {} },
+    "step1-validation": { step: 0, v: { firstName: "Priya" }, validate: true },
+    "step1-focus": { step: 0, v: { firstName: "Priya", lastName: "Sample" }, focus: "email" },
+    "step2": { step: 1, v: { ...A } },
+    "step2-custom-institution": { step: 1, v: { ...A, ...B, institute: OTHER, instituteOther: "Riverbend Research Institute" }, focus: "instituteOther" },
+    "step2-validation": { step: 1, v: { ...A, secondaryEmail: "priya.sample@" }, validate: true },
+    "step3": { step: 2, v: { ...A, ...B } },
+    "step3-graduate": { step: 2, v: { ...A, ...B, occupation: "Graduate Program", levelStatus: "Masters", program: "MSc Biomedical Engineering", programStartDate: "2025-09-02" } },
+    "step3-other": { step: 2, v: { ...A, ...B, occupation: "Other", levelStatus: "Bachelors", program: "BSc Life Sciences", employmentStartDate: "2024-05-13" } },
+    "step3-employment": { step: 2, v: { ...A, ...B, occupation: "Postdoctoral Fellow", employmentStartDate: "2025-01-06" } },
+    "step3-validation": { step: 2, v: { ...A, ...B }, validate: true },
+    "server-error": { step: 0, v: {}, serverError: true },
+    "submitting": { step: 2, v: { ...A, ...B, occupation: "Research Associate", employmentStartDate: "2024-11-04" }, submitting: true },
+    "submitted": { submitted: true },
+  };
+  const preset = PRESETS[state] || PRESETS.step1;
+  const code = ERRORS[qs.get("code")] ? qs.get("code") : "exists";
+  const model = { step: preset.step || 0, v: { mailingList: true, ...(preset.v || {}) } };
+
+  /* ── Field builders ───────────────────────────────────────────────── */
+  function input(o) {
+    const req = o.required ? '<span class="req"> *</span>' : "";
+    const hint = o.helper ? `<p class="bhn-acct-hint" id="${o.name}-hint">${esc(o.helper)}</p>` : "";
+    return `<div class="${o.span2 ? "span-2" : ""}">
+      <label class="bhn-acct-label" for="${o.name}">${esc(o.label)}${req}</label>
+      <input class="bhn-acct-field" id="${o.name}" name="${o.name}"${o.type ? ` type="${o.type}"` : ""}${o.required ? " required" : ""}${o.minlength ? ` minlength="${o.minlength}"` : ""}${o.max ? ` max="${o.max}"` : ""}${o.autocomplete ? ` autocomplete="${o.autocomplete}"` : ""}${o.helper ? ` aria-describedby="${o.name}-hint"` : ""} value="${esc(o.value)}">
+      ${hint}</div>`;
+  }
+  function select(o) {
+    const req = o.required ? '<span class="req"> *</span>' : "";
+    const opts = [`<option value=""${o.placeholderDisabled ? " disabled" : ""}${!o.value ? " selected" : ""}>${esc(o.placeholder)}</option>`]
+      .concat(o.options.map((x) => `<option value="${esc(x)}"${o.value === x ? " selected" : ""}>${esc(x)}</option>`))
+      .concat((o.extra || []).map((x) => `<option value="${esc(x.value)}"${o.value === x.value ? " selected" : ""}>${esc(x.label)}</option>`))
+      .join("");
+    return `<div class="${o.span2 ? "span-2" : ""}">
+      <label class="bhn-acct-label" for="${o.name}">${esc(o.label)}${req}</label>
+      <select class="bhn-acct-field" id="${o.name}" name="${o.name}"${o.required ? " required" : ""}>${opts}</select></div>`;
+  }
+
+  function steps(current) {
+    const names = ["Account", "Contact", "Status"];
+    return `<ol class="bhn-acct-steps" aria-label="Registration progress">${names.map((n, i) => {
+      const cls = i < current ? "is-done" : i === current ? "is-current" : "";
+      const cur = i === current ? ' aria-current="step"' : "";
+      const done = i < current ? '<span class="sr-only">, completed</span>' : "";
+      return `<li class="${cls}"${cur}><span class="bar"></span><span class="meta"><span class="num">0${i + 1}</span><span class="name">${n}${done}</span></span></li>`;
+    }).join("")}</ol>`;
+  }
+
+  function section0() {
+    const v = model.v;
+    return `<section class="reg-section"${model.step !== 0 ? " hidden" : ""} aria-labelledby="reg-sec-0">
+      <h2 id="reg-sec-0" class="bhn-acct-h2" tabindex="-1">Account</h2>
+      <div class="bhn-acct-grid2 reg-fields">
+        ${input({ name: "firstName", label: "First name", required: true, autocomplete: "given-name", value: v.firstName })}
+        ${input({ name: "lastName", label: "Last name", required: true, autocomplete: "family-name", value: v.lastName })}
+        ${input({ name: "email", label: "Email address", type: "email", required: true, autocomplete: "email", helper: "Use your institutional email if applying for Training Credits.", value: v.email, span2: true })}
+        ${input({ name: "password", label: "Password", type: "password", required: true, minlength: 8, autocomplete: "new-password", helper: "At least 8 characters.", value: v.password, span2: true })}
+      </div></section>`;
+  }
+
+  function section1() {
+    const v = model.v;
+    const other = v.institute === OTHER;
+    if (!other) delete v.instituteOther;            // live form unmounts it, losing the value
+    return `<section class="reg-section"${model.step !== 1 ? " hidden" : ""} aria-labelledby="reg-sec-1">
+      <h2 id="reg-sec-1" class="bhn-acct-h2" tabindex="-1">Contact &amp; institution</h2>
+      <div class="bhn-acct-grid2 reg-fields">
+        ${input({ name: "secondaryEmail", label: "Secondary email", type: "email", required: true, helper: "Used for notifications and communications.", value: v.secondaryEmail })}
+        ${input({ name: "phone", label: "Phone number", type: "tel", required: true, autocomplete: "tel", value: v.phone })}
+        ${input({ name: "address", label: "Full current address", required: true, autocomplete: "street-address", value: v.address, span2: true })}
+        ${select({ name: "institute", label: "Institution", required: true, options: INSTITUTIONS, placeholder: "Select your institution…", placeholderDisabled: true, value: v.institute, extra: [{ value: OTHER, label: "Non-member institution (specify)" }], span2: true })}
+        ${other ? input({ name: "instituteOther", label: "Institution name", required: true, value: v.instituteOther, span2: true }) : ""}
+      </div></section>`;
+  }
+
+  function section2() {
+    const v = model.v;
+    const occ = v.occupation || "";
+    const isGrad = occ === "Graduate Program";
+    const isOther = occ === "Other";
+    const showEdu = isGrad || isOther;              // levelStatus + program
+    const showProgStart = isGrad;                   // programStartDate
+    const showEmp = !!occ && !isGrad;               // employmentStartDate
+    if (!showEdu) { delete v.levelStatus; delete v.program; }
+    if (!showProgStart) delete v.programStartDate;
+    if (!showEmp) delete v.employmentStartDate;
+    return `<section class="reg-section"${model.step !== 2 ? " hidden" : ""} aria-labelledby="reg-sec-2">
+      <h2 id="reg-sec-2" class="bhn-acct-h2" tabindex="-1">Status &amp; education</h2>
+      <div class="bhn-acct-grid2 reg-fields">
+        ${select({ name: "occupation", label: "Current status", required: true, options: OCCUPATIONS, placeholder: "Select your current status…", placeholderDisabled: true, value: v.occupation, span2: true })}
+        ${showEdu ? select({ name: "levelStatus", label: "Level of studies", options: LEVELS, placeholder: "Select…", placeholderDisabled: false, value: v.levelStatus }) : ""}
+        ${showEdu ? input({ name: "program", label: "Degree / program name", value: v.program }) : ""}
+        ${showProgStart ? input({ name: "programStartDate", label: "Program start date", type: "date", value: v.programStartDate, max: DATE_MAX }) : ""}
+        ${showEmp ? input({ name: "employmentStartDate", label: "Current position start date", type: "date", value: v.employmentStartDate, max: DATE_MAX }) : ""}
+        ${showProgStart || showEmp ? `<p class="span-2 reg-date-tag"><span class="sim-tag is-proposed">Proposed: 4-digit year on date fields</span></p>` : ""}
+      </div></section>`;
+  }
+
+  function mailing() {
+    return `<div><label class="bhn-acct-choice">
+      <input type="checkbox" name="mailingList"${model.v.mailingList !== false ? " checked" : ""}>
+      <span>Keep me on the BioHubNet mailing list for programme news and opportunities.</span>
+    </label></div>`;
+  }
+
+  function actions(o) {
+    const st = model.step;
+    const back = `<button type="button" class="bhn-acct-back reg-back${st === 0 ? " is-invisible" : ""}" data-act="back"${o.submitting ? " disabled" : ""}${st === 0 ? ' aria-hidden="true" tabindex="-1"' : ""}>${S.arrowBack()}<span>Back</span></button>`;
+    let primary;
+    if (st < 2) primary = `<button type="button" class="bhn-acct-cta" data-act="next"><span>Next</span>${S.arrow()}</button>`;
+    else if (o.submitting) primary = `<button type="submit" class="bhn-acct-cta" disabled aria-busy="true"><span>Creating account</span><span class="bhn-acct-spinner" aria-hidden="true"></span></button>`;
+    else primary = `<button type="submit" class="bhn-acct-cta" data-act="submit"><span>Create account</span>${S.arrow()}</button>`;
+    const tag = o.submitting ? ' <span class="sim-tag is-proposed">Proposed pending state</span>' : "";
+    return `<div class="reg-foot">
+      <p class="bhn-acct-fine">Step ${st + 1} of 3${tag}</p>
+      <div class="reg-actions">${back}${primary}</div>
+    </div>`;
+  }
+
+  function intro() {
+    return `<section class="reg-intro" aria-labelledby="reg-title">
+      <p class="bhn-acct-eyebrow is-cyan">New to BioHubNet</p>
+      <h1 id="reg-title" class="bhn-acct-h1" data-keep-last>Create your account</h1>
+      <p class="bhn-acct-body" data-keep-last>Join the BioHubNet marketplace. It takes about a minute.</p>
+      <p class="bhn-acct-fine reg-signin">Already have an account? <a class="bhn-acct-link" href="#" onclick="return false">Sign in</a></p>
+    </section>`;
+  }
+
+  function extra() {
+    return `<aside class="reg-extra" aria-label="ENGAGE and EXPERIENCE programs">
+      <p style="margin:0"><span class="sim-tag is-proposed">Proposed content · approved pre-login copy</span></p>
+      <div>
+        <p class="bhn-acct-section-label is-cyan">ENGAGE</p>
+        <h3 class="bhn-acct-h3">Course marketplace</h3>
+        <p class="bhn-acct-body" data-keep-last>Microcredentials for job-ready skills.</p>
+        <h3 class="bhn-acct-h3" style="margin-top:0.75rem">Learning pathways</h3>
+        <p class="bhn-acct-body" data-keep-last>Structured training for your career goals.</p>
+      </div>
+      <div class="rule">
+        <p class="bhn-acct-section-label">EXPERIENCE</p>
+        <h3 class="bhn-acct-h3">Internship talent pool</h3>
+        <p class="bhn-acct-body" data-keep-last>Paid internships and lab exchanges across Canada.</p>
+      </div>
+    </aside>`;
+  }
+
+  function panel(o) {
+    const alert = o.serverError
+      ? `<div class="bhn-acct-alert-strip" role="alert">${esc(ERRORS[code])}</div>`
+      : "";
+    return `<article class="bhn-acct-panel reg-form" aria-labelledby="reg-sec-${model.step}">
+      <form id="reg" class="reg-form-inner" action="#" method="post" novalidate data-live-action="/api/register">
+        ${alert}
+        ${steps(model.step)}
+        ${section0()}${section1()}${section2()}
+        ${model.step === 2 ? mailing() : ""}
+        ${actions(o)}
+      </form>
+    </article>`;
+  }
+
+  function prelogin() {
+    const accountIcon = '<svg aria-hidden="true" viewBox="0 0 24 24" fill="none"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-7 8c.8-3.4 3.1-5 7-5s6.2 1.6 7 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M19 8v5m-2.5-2.5h5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>';
+    const loginIcon = '<svg aria-hidden="true" viewBox="0 0 24 24" fill="none"><path d="M14 5h4a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-4M4 12h11m-4-4 4 4-4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    return `
+      <section class="pl-hero">
+        <p class="pl-eyebrow"><span class="pl-diamond" aria-hidden="true"></span>Transformative talent development</p>
+        <h1 class="pl-h1"><span class="bhn-acct-gradient-text">BioHubNet</span> <span style="white-space:nowrap">Training Platform</span></h1>
+        <p class="pl-lead">For ENGAGE learners and EXPERIENCE participants. Build skills through courses and learning pathways, and prepare for internship&nbsp;opportunities.</p>
+      </section>
+      <section class="pl-access" aria-label="Account access">
+        <div role="status" class="bhn-acct-success pl-notice">
+          <p style="font-weight:700">Application submitted</p>
+          <p>Thanks for registering. Your application has been submitted and will be reviewed. Sign in to track its progress.</p>
+        </div>
+        <div class="pl-options">
+          <article class="pl-account">
+            <div class="bhn-acct-title-row"><span class="bhn-acct-icon">${accountIcon}</span>
+              <div style="min-width:0"><p class="bhn-acct-eyebrow is-cyan">New to BioHubNet</p><h2 class="bhn-acct-h2">Create an account</h2></div></div>
+            <section class="pl-detail" aria-label="ENGAGE and EXPERIENCE programs">
+              <div>
+                <p class="bhn-acct-section-label is-cyan">ENGAGE</p>
+                <h3 class="pl-h3">Course marketplace</h3><p class="pl-p">Microcredentials for job-ready&nbsp;skills.</p>
+                <h3 class="pl-h3" style="margin-top:1rem">Learning pathways</h3><p class="pl-p">Structured training for your career&nbsp;goals.</p>
+              </div>
+              <div class="pl-rule">
+                <p class="bhn-acct-section-label">EXPERIENCE</p>
+                <h3 class="pl-h3">Internship talent pool</h3><p class="pl-p">Paid internships and lab exchanges across&nbsp;Canada.</p>
+              </div>
+            </section>
+            <a href="#" class="bhn-acct-cta" onclick="return false"><span>Create an account</span>${S.arrow()}</a>
+          </article>
+          <article class="pl-account">
+            <div class="bhn-acct-title-row"><span class="bhn-acct-icon is-emerald">${loginIcon}</span>
+              <div style="min-width:0"><p class="bhn-acct-eyebrow is-emerald">Welcome back</p><h2 class="bhn-acct-h2">Sign in</h2></div></div>
+            <section class="pl-detail" aria-labelledby="sign-in-fields-title">
+              <h3 id="sign-in-fields-title" class="bhn-acct-section-label">Account credentials</h3>
+              <div style="margin-top:1rem;min-width:0">
+                <div><label class="bhn-acct-label" for="sign-in-email">Email address</label>
+                  <input class="bhn-acct-field" id="sign-in-email" type="email" autocomplete="email" placeholder="you@example.com"></div>
+                <div style="margin-top:1rem"><label class="bhn-acct-label" for="sign-in-password">Password</label>
+                  <input class="bhn-acct-field" id="sign-in-password" type="password" autocomplete="current-password" placeholder="Enter your password"></div>
+              </div>
+              <a class="bhn-acct-link" style="margin-top:1rem;align-self:flex-start" href="#" onclick="return false">Forgot your password?</a>
+              <p class="bhn-acct-fine pl-hosted" style="margin-top:1rem">Prefer the hosted page? <a href="#" onclick="return false">Continue with Auth0 instead</a>.</p>
+            </section>
+            <button type="button" class="bhn-acct-cta is-returning"><span>Sign in</span>${S.arrow()}</button>
+          </article>
+        </div>
+      </section>`;
+  }
+
+  /* ── Render + simulated behaviour ─────────────────────────────────── */
+  let submitted = !!preset.submitted;
+  function render(o) {
+    o = o || {};
+    if (submitted) {
+      root.innerHTML = S.frame(prelogin(), { logoLabel: "BioHubNet home" });
+    } else {
+      root.innerHTML = S.frame(
+        `<div class="reg-layout">${intro()}${panel(o)}${extra()}</div>`,
+        { login: true, logoLabel: "BioHubNet" },
+      );
+    }
+    S.keepLastWordsTogether(root);
+  }
+
+  function collect() {
+    const f = root.querySelector("#reg");
+    if (!f) return;
+    f.querySelectorAll("input, select").forEach((el) => {
+      if (!el.name) return;
+      model.v[el.name] = el.type === "checkbox" ? el.checked : el.value;
+    });
+  }
+
+  function validateStep(i) {
+    S.clearBubbles(root);
+    for (const name of REQUIRED[i]) {
+      const el = root.querySelector(`[name="${name}"]`);
+      if (!el) continue;                            // unmounted conditional fields do not count
+      const val = el.value || "";
+      let msg = null;
+      if (el.tagName === "SELECT" && !val) msg = "Please select an item in the list.";
+      else if (!val.trim()) msg = "Please fill out this field.";
+      else if (el.type === "email") msg = S.emailMessage(val);
+      else if (name === "password" && val.length < 8) {
+        msg = `Please lengthen this text to 8 characters or more (you are currently using ${val.length} character${val.length === 1 ? "" : "s"}).`;
+      }
+      if (msg) { S.bubble(el, msg); el.focus(); return false; }
+    }
+    return true;
+  }
+
+  function focusHeading() {
+    const h = root.querySelector(`#reg-sec-${model.step}`);
+    if (h) h.focus();
+  }
+
+  root.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-act]");
+    if (!b || b.disabled) return;
+    if (b.dataset.act === "next") {
+      e.preventDefault(); collect();
+      if (validateStep(model.step)) { model.step += 1; render(); focusHeading(); }
+    } else if (b.dataset.act === "back") {
+      e.preventDefault(); collect();
+      model.step = Math.max(0, model.step - 1); render(); focusHeading();
+    }
+  });
+
+  root.addEventListener("submit", (e) => {
+    e.preventDefault(); collect();
+    if (model.step < 2) { if (validateStep(model.step)) { model.step += 1; render(); focusHeading(); } return; }
+    if (!validateStep(2)) return;
+    render({ submitting: true });
+    setTimeout(() => {
+      submitted = true;
+      history.replaceState(null, "", "?state=submitted");
+      render(); window.scrollTo(0, 0);
+    }, 1300);
+  });
+
+  root.addEventListener("change", (e) => {
+    const n = e.target.name;
+    if (n === "institute" || n === "occupation") {
+      collect(); render();
+      const el = root.querySelector(`[name="${n}"]`);
+      if (el) el.focus();
+    }
+  });
+
+  render({ serverError: preset.serverError, submitting: preset.submitting });
+  if (preset.validate) validateStep(model.step);
+  if (preset.focus) {
+    const el = root.querySelector(`[name="${preset.focus}"]`);
+    if (el) { el.classList.add("is-sim-focus"); el.focus(); el.addEventListener("blur", () => el.classList.remove("is-sim-focus"), { once: true }); }
+  }
+
+  S.banner({
+    page: submitted ? "Registration → /login?registered=1 (existing approved page)" : "Registration · /register",
+    states: STATES,
+    current: state,
+    extra: state === "server-error"
+      ? Object.keys(ERRORS).map((k) => ({ href: `?state=server-error&code=${k}`, label: `?error=${k}`, current: k === code }))
+      : [],
+  });
+})();
+</script>
+</body>
+</html>

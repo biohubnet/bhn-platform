@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex, nofollow">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>V3 Account Pages — Design Review</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800;900&display=swap">
+<link rel="stylesheet" href="shared.css">
+<style>
+  body { margin: 0; background: #050614; }
+  .hub-intro { max-width: 46rem; }
+  .hub-intro .bhn-acct-body { margin-top: 0.9rem; }
+  .hub-meta { display: flex; flex-wrap: wrap; gap: 0.5rem 1.25rem; margin-top: 1.25rem; }
+  .hub-meta a { font-size: 0.875rem; }
+  .hub-groups { display: grid; gap: 1.5rem; margin-top: 2.5rem; }
+  /* Same move the approved pre-login panels make: a subgrid, so each
+     panel's heading block takes the height of the tallest one and the
+     state lists start on one line across all three. Without it the lists
+     began at different heights because "Reset-password confirmation"
+     wraps to two lines. */
+  @media (min-width: 64rem) {
+    .hub-groups { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .hub-groups > .bhn-acct-panel { grid-row: span 2; grid-template-rows: subgrid; }
+  }
+  .hub-states { list-style: none; margin: 0; padding: 0; }
+  .hub-states li + li { border-top: 1px solid rgba(255,255,255,0.08); }
+  .hub-states a {
+    display: flex; justify-content: space-between; gap: 0.75rem; align-items: baseline;
+    padding: 0.7rem 0; color: #e2e8f0; text-decoration: none; font-size: 0.875rem; line-height: 1.25rem;
+  }
+  .hub-states a:hover { color: #fff; }
+  .hub-states a:focus-visible { outline: 2px solid #a5f3fc; outline-offset: 2px; }
+  .hub-tag {
+    flex: 0 0 auto; font-size: 9px; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase;
+    color: #1c1400; background: #fcd34d; padding: 0.2rem 0.4rem;
+  }
+  .hub-tag.is-proposed { background: #f0abfc; color: #2e0535; }
+  .hub-legend { display: flex; flex-wrap: wrap; gap: 0.5rem 1.25rem; margin-top: 1rem; font-size: 0.75rem; color: #94a3b8; }
+  .hub-legend span { display: inline-flex; align-items: center; gap: 0.4rem; }
+  .hub-route { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.75rem; color: #a5f3fc; }
+  .hub-warn { margin-top: 2.5rem; }
+  .hub-warn ul { margin: 0.6rem 0 0; padding-left: 1.1rem; }
+  .hub-warn li { margin-top: 0.35rem; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="shared.js"></script>
+<script src="manifest.js"></script>
+<script>
+  const groups = window.BHN_MANIFEST.map((g) => `
+    <article class="bhn-acct-panel">
+      <div class="bhn-acct-stack" style="--stack:.35rem">
+        <p class="bhn-acct-eyebrow is-cyan">${g.pr}</p>
+        <h2 class="bhn-acct-h2" style="margin:0">${g.title}</h2>
+        <p class="hub-route">${g.route} → ${g.file}</p>
+      </div>
+      <ul class="hub-states">
+        ${g.states.map((s) => `
+          <li><a href="${g.file}?state=${s.id}">
+            <span>${s.label}</span>${s.proposed ? '<span class="hub-tag is-proposed">Proposed</span>' : s.sim ? '<span class="hub-tag">Simulated</span>' : ""}
+          </a></li>`).join("")}
+      </ul>
+    </article>`).join("");
+
+  document.getElementById("root").innerHTML = BHNSim.frame(`
+    <section class="hub-intro">
+      <p class="bhn-acct-eyebrow is-amber">Design review · not integrated</p>
+      <h1 class="bhn-acct-h1" style="margin-top:1rem" data-keep-last>
+        <span class="bhn-acct-gradient-text">BioHubNet</span> V3 account pages
+      </h1>
+      <p class="bhn-acct-body" data-keep-last>
+        Isolated mockups for registration, forgot password and the reset confirmation,
+        built to match the approved pre-login page. Every state below uses synthetic data.
+        Nothing here signs anyone up, sends an email, or reaches Auth0, an API or a database.
+      </p>
+      <p class="hub-legend">
+        <span><span class="hub-tag">Simulated</span> interaction or data state</span>
+        <span><span class="hub-tag is-proposed">Proposed</span> not in the live code — needs team approval</span>
+      </p>
+      <div class="hub-meta">
+        <a class="bhn-acct-link" href="gallery.html">Desktop and mobile gallery</a>
+      </div>
+    </section>
+    <section class="hub-groups" aria-label="Pages and states">${groups}</section>
+    <section class="hub-warn bhn-acct-alert-strip" aria-label="Implementation warning">
+      <strong>Implementation affects shared auth wrappers</strong>
+      These pages cannot be dropped in untouched. Main renders every auth route inside the root
+      layout's site header, a light-only <code>globals.css</code>, and an <code>(auth)</code> layout
+      capped at <code>max-w-sm</code>.
+    </section>
+  `);
+  BHNSim.banner({ page: "Review hub", states: [], current: "" });
+  BHNSim.keepLastWordsTogether();
+</script>
+</body>
+</html>
