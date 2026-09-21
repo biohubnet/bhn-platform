@@ -2,7 +2,7 @@ import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { ArrowRight, Compass, CalendarDays, Route, Activity } from "lucide-react";
+import { ArrowRight, CalendarDays, Route, Activity } from "lucide-react";
 import { creditUtilization, CREDIT_AWARD_TOTAL } from "@/lib/credits/utilization";
 import { InstructorDashboard } from "@/components/dashboards/InstructorDashboard";
 import { AdminDashboard } from "@/components/dashboards/AdminDashboard";
@@ -415,32 +415,6 @@ export default async function DashboardPage() {
                 <p className="text-sm sm:text-base text-white/85 leading-relaxed">
                   {heroLead}
                 </p>
-              </div>
-
-              {/* Actions — white primary + frosted ghost. */}
-              <div className="mt-5 flex flex-wrap gap-3">
-                <Link
-                  href={inProgress > 0 ? "/progress" : "/courses"}
-                  // `text-[#0f172a]` is a literal hex (Tailwind arbitrary
-                  // value), NOT `text-slate-900`. Voltage theme globally
-                  // overrides `.text-slate-900` to lift it to slate-100 so
-                  // unscoped slate-900 text stays readable against the
-                  // dark page bg — but the override silently breaks any
-                  // white pill that wanted slate-900 to MEAN slate-900
-                  // (Continue button = white background + dark text →
-                  // override turned the text near-white = invisible).
-                  // Arbitrary-value Tailwind classes don't match
-                  // `.text-slate-900` so they survive the override.
-                  className="inline-flex items-center gap-1.5 bg-white text-[#0f172a] hover:bg-white/90 font-bold text-xs px-4 py-2.5 rounded-full shadow-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
-                >
-                  {inProgress > 0 ? "Continue" : "Browse courses"} <ArrowRight size={13} />
-                </Link>
-                <Link
-                  href="/experience"
-                  className="inline-flex items-center gap-1.5 bg-white/8 hover:bg-white/14 border border-white/25 text-white text-xs font-semibold px-4 py-2.5 rounded-full transition-colors backdrop-blur-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
-                >
-                  <Compass size={13} /> How it works
-                </Link>
               </div>
             </div>
 

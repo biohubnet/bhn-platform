@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Trainee dashboard · hero buttons removed
+  {
+    title: "The dashboard welcome banner no longer has Continue or How it works buttons",
+    body: "The two buttons in the welcome banner at the top of your dashboard are gone: **Continue** (shown as **Browse courses** before you had started one) and **How it works**. The same places are one click away in the sidebar: **My Courses**, **On-Demand Courses**, and **How it works** under EXPERIENCE.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Admin · V3 account-page mockups tab
   {
     title: "The V3 account-page mockups have their own sidebar tab",
