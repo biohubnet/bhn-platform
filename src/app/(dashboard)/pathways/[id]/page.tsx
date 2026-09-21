@@ -119,17 +119,8 @@ export default async function PathwayDetailPage({ params }: { params: Promise<{ 
     <div className="space-y-6">
       {/* Hero */}
       <div className="rounded-[var(--radius-xl)] bg-gradient-to-br from-brand-600 via-brand-700 to-brand-900 text-white shadow-xl shadow-brand-900/20 px-8 py-10 relative overflow-hidden">
-        {/* AI thumbnail behind the gradient — opacity-controlled so the hero stays readable */}
-        {pathway.thumbnail && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={pathway.thumbnail}
-            alt=""
-            className="absolute inset-0 w-full h-full object-cover opacity-40 mix-blend-overlay"
-          />
-        )}
-        {/* Optional admin-stamped colour / gradient wash. Sits above
-            the AI thumbnail and below the readable hero content. */}
+        {/* Optional admin-stamped colour / gradient wash, below the
+            readable hero content. */}
         {(() => {
           const overlay = parseOverlay(pathway.thumbnailOverlay);
           return overlay ? <div className="absolute inset-0" style={overlayStyle(overlay)} /> : null;
@@ -146,21 +137,28 @@ export default async function PathwayDetailPage({ params }: { params: Promise<{ 
           </div>
         )}
         <div className="relative flex items-start justify-between gap-6">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-3">
-              <span className="inline-flex items-center gap-1 text-xs font-medium uppercase tracking-wider text-brand-200">
-                <Layers size={12} /> Training Pathway
-              </span>
-              {pathway.category && <span className="text-xs bg-white/15 px-2 py-0.5 rounded">{pathway.category}</span>}
-              {pathway.status === "draft" && <Badge tone="warning">Draft</Badge>}
-            </div>
-            <h1 className="text-3xl font-bold tracking-tight">{pathway.title}</h1>
-            {pathway.description && (
-              <p className="mt-3 text-brand-100 leading-relaxed max-w-2xl">{pathway.description}</p>
+          <div className="flex-1 min-w-0 flex items-start gap-5">
+            {/* Pathway badge — shown whole, beside the title it belongs to. */}
+            {pathway.thumbnail && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={pathway.thumbnail} alt="" className="shrink-0 h-16 w-16 sm:h-24 sm:w-24 object-contain" />
             )}
-            <div className="mt-5 flex items-center gap-6 text-sm text-brand-100">
-              <span className="inline-flex items-center gap-1.5"><BookOpen size={14} />{pathway._count.courses} courses</span>
-              <span className="inline-flex items-center gap-1.5"><Award size={14} />Pathway certificate</span>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="inline-flex items-center gap-1 text-xs font-medium uppercase tracking-wider text-brand-200">
+                  <Layers size={12} /> Training Pathway
+                </span>
+                {pathway.category && <span className="text-xs bg-white/15 px-2 py-0.5 rounded">{pathway.category}</span>}
+                {pathway.status === "draft" && <Badge tone="warning">Draft</Badge>}
+              </div>
+              <h1 className="text-3xl font-bold tracking-tight">{pathway.title}</h1>
+              {pathway.description && (
+                <p className="mt-3 text-brand-100 leading-relaxed max-w-2xl">{pathway.description}</p>
+              )}
+              <div className="mt-5 flex items-center gap-6 text-sm text-brand-100">
+                <span className="inline-flex items-center gap-1.5"><BookOpen size={14} />{pathway._count.courses} courses</span>
+                <span className="inline-flex items-center gap-1.5"><Award size={14} />Pathway certificate</span>
+              </div>
             </div>
           </div>
 

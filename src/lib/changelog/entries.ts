@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Learning Pathways · new badges
+  {
+    title: "Each Learning Pathway now has its own badge",
+    body: "The six Learning Pathways (Biomanufacturing, Entrepreneurship, Medical Affairs, QA/QC, Regulatory Affairs, and Research and Development) now show the official BioHubNet pathway badges instead of the old banner artwork. On **Learning Pathways** each badge is shown whole beside its pathway, and on a pathway's own page it sits next to the title.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Trainee dashboard · hero buttons removed
   {
     title: "The dashboard welcome banner no longer has Continue or How it works buttons",

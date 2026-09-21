@@ -278,7 +278,8 @@ export function PathwayAccordion({ pathways }: { pathways: PathwayEntry[] }) {
                 the row reads as one unit.
 
                 `self-stretch` lets the panel match whatever height the copy
-                needs, and object-cover crops the 3.5:1 artwork to fit. */}
+                needs. The art is a round pathway badge, so object-contain
+                keeps the whole circle in view instead of cropping it. */}
             <div className="flex items-stretch">
               <div
                 className={cn(
@@ -288,7 +289,7 @@ export function PathwayAccordion({ pathways }: { pathways: PathwayEntry[] }) {
               >
                 {p.thumbnail && (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={p.thumbnail} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                  <img src={p.thumbnail} alt="" className="absolute inset-0 w-full h-full object-contain p-3 sm:p-4" />
                 )}
               </div>
 
