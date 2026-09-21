@@ -2,7 +2,7 @@ import Link from "next/link";
 import {
   ArrowRight, ClipboardList,
   Building2, Briefcase, BookOpen, Inbox, Rocket,
-  Layers, Sparkles, Activity, Clock, Coins,
+  Layers, Sparkles, Activity, Clock,
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 
@@ -268,18 +268,6 @@ export async function AdminDashboard({
                 {pendingRoleRequests > 0 && <span className="warn"><strong>{pendingRoleRequests}</strong> role req.</span>}
               </div>
             </Link>
-            <Link className="pillar pillar-equip" href="/admin/equip">
-              <div className="ph">
-                <span className="px">Equip</span>
-                <span className={pendingCreditApps > 0 ? "pn warn" : "pn"}>{pendingCreditApps}</span>
-              </div>
-              <p className="pd">commercialization apps pending</p>
-              <div className="pm">
-                {anyExpiry && <span className="warn"><strong>{expiring30.users}</strong> credit expiring 30d</span>}
-                {!anyExpiry && <span>no expiry watch</span>}
-                {isSuperAdmin && <span><strong>{aiCalls7d}</strong> AI calls · 7d</span>}
-              </div>
-            </Link>
             <Link href="/admin/insights" className="toc-cta">
               Open the operations briefing <ArrowRight size={11} />
             </Link>
@@ -487,15 +475,7 @@ export async function AdminDashboard({
               </div>
             </Link>
 
-            {/* EQUIP — commercialization pillar. */}
-            <p className="rail-h">Equip</p>
-            <Link href="/admin/equip" className="qa">
-              <Coins size={15} />
-              <div>
-                <p className="qa-t">Commercialization queue</p>
-                <p className="qa-s">{pendingCreditApps > 0 ? `${pendingCreditApps} apps awaiting review` : "No pending review"}</p>
-              </div>
-            </Link>
+            <p className="rail-h">Credits</p>
             <Link href="/admin/credit-applications" className="qa">
               <ClipboardList size={15} />
               <div>

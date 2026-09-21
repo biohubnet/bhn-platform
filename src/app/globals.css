@@ -963,7 +963,8 @@ button[data-section-tone="hr-preview"] {
  * (500) feels chunky against the neon cyan. font-normal (400)
  * gives the lab-monitor vibe the rest of the theme commits to. */
 [data-theme="hitech"] [data-sidebar-nav] a,
-[data-theme="hitech"] [data-sidebar-nav] button {
+[data-theme="hitech"] [data-sidebar-nav] button,
+[data-theme="hitech"] [data-sidebar-nav] [data-nav-pending] {
   font-weight: 400 !important;
 }
 

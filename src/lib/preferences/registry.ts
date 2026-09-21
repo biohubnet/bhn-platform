@@ -44,7 +44,6 @@ export type FeatureGroupId =
   | "profile"
   | "learn"
   | "experience"
-  | "equip"
   | "engage"
   | "admin"
   | "account";
@@ -74,14 +73,8 @@ export const GROUPS: FeatureGroupDef[] = [
   {
     id: "experience",
     label: "Experience",
-    description: "Industry placements — talent pool, internships, applications, interviews, matches.",
+    description: "Industry placements.",
     gradient: "from-violet-400/30 via-violet-300/20 to-transparent",
-  },
-  {
-    id: "equip",
-    label: "EQUIP",
-    description: "Equipment & infrastructure funding pillar — applications, deadlines, review.",
-    gradient: "from-amber-400/30 via-amber-300/20 to-transparent",
   },
   {
     id: "engage",
@@ -122,13 +115,6 @@ export interface FeatureDef {
  *  Each id corresponds 1:1 to a NavItem.featureId in Sidebar.tsx. */
 export const FEATURES: FeatureDef[] = [
   // Profile -------------------------------------------------------
-  { id: "profile-application", label: "Application Builder",      description: "Build your reusable resume + 1-min video intro + elevator pitch.",                         group: "profile",    defaultEnabled: true },
-  { id: "profile-master",      label: "Bullet Bank",               description: "Your library of every accomplishment bullet. Tailored drafts pull from it; AI uses it to fit any posting. Snapshots are downloadable.", group: "profile",    defaultEnabled: true },
-  { id: "profile-tailor",      label: "Job Tailor",                description: "Paste a job URL or JD — AI detects the ATS, runs a gap analysis vs your master, drafts a grounded resume + cover, QA-checks them, and exports per-ATS files.", group: "profile",    defaultEnabled: true },
-  { id: "profile-resumes",     label: "Resume tailoring",          description: "Tailored drafts that pull from your master library, with version history, mentor comments, PDF export.",            group: "profile",    defaultEnabled: true },
-  { id: "profile-skills",      label: "My skills",                 description: "Your skill profile — inferred, extracted, self-claimed.",                                 group: "profile",    defaultEnabled: true },
-  { id: "profile-stories",     label: "STAR stories",              description: "Reusable behavioural-interview stories you draft once and pull into applications.",       group: "profile",    defaultEnabled: true },
-  { id: "profile-job-folders", label: "Job folders",               description: "Per-role workspaces — JD + tailored resume + cover letter + interview prep, all in one place.", group: "profile",    defaultEnabled: true },
 
   // Learn ---------------------------------------------------------
   { id: "learn-dashboard",     label: "Dashboard",                 description: "Your home — pickup-where-you-left-off, upcoming events, notifications.",                  group: "learn",      defaultEnabled: true },
@@ -143,18 +129,7 @@ export const FEATURES: FeatureDef[] = [
   { id: "learn-rewards",       label: "Rewards",                   description: "BHN merch milestones at credit thresholds.",                                              group: "learn",      defaultEnabled: false },
 
   // Experience ----------------------------------------------------
-  { id: "experience-guide",        label: "Experience guide",        description: "End-to-end explainer for the EXPERIENCE program.",                                  group: "experience", defaultEnabled: true },
-  { id: "experience-talent",       label: "Talent Application",      description: "Submit your bio + supervisor letter + transcript + resume + STAR video.",          group: "experience", defaultEnabled: true },
-  { id: "experience-internships",  label: "Internships",             description: "Live job board from BHN industry partners.",                                       group: "experience", defaultEnabled: true },
-  { id: "experience-tracker",      label: "Application tracker",     description: "Every application you've submitted + employer's pipeline stage.",                  group: "experience", defaultEnabled: true },
-  { id: "experience-interviews",   label: "Interviews",              description: "Scheduled interviews + prep checklists.",                                          group: "experience", defaultEnabled: true },
-  { id: "experience-matches",      label: "AI Matches",              description: "AI-ranked internship + posting matches based on your skill profile.",              group: "experience", defaultEnabled: true },
   { id: "experience-talent-pool",  label: "Talent pool",             description: "If you're admin: the shared employer-facing pool. If you're a trainee: nothing.", group: "experience", defaultEnabled: false },
-  { id: "experience-simulator",    label: "Role-play (RPG)",         description: "AI role-play simulator for interview + workplace scenarios.",                      group: "experience", defaultEnabled: true },
-  { id: "experience-mock-interview", label: "Mock Interview",        description: "Voice-or-type interview practice: AI asks role-tailored questions, scores each answer, gives an overall debrief.", group: "experience", defaultEnabled: true },
-  { id: "experience-career-paths", label: "Career paths",            description: "Six tracks mapping Junior → VP journeys with course recommendations + cross-tree branch points.", group: "experience", defaultEnabled: true },
-  { id: "experience-facilities",   label: "Facilities map",          description: "Map of Canadian biomanufacturing facilities — every dot is a real plant or institute. Zoom + click for details.", group: "experience", defaultEnabled: true },
-  { id: "experience-equip-page",   label: "Equip me",                description: "Personal-development equipment grants.",                                           group: "experience", defaultEnabled: false },
   { id: "experience-buddy",        label: "Buddy hub",               description: "Find a study/accountability buddy.",                                               group: "experience", defaultEnabled: false, requiredRoleRank: 1 },
 
   // Engage --------------------------------------------------------
@@ -164,11 +139,6 @@ export const FEATURES: FeatureDef[] = [
   { id: "engage-roadmap",      label: "Roadmap",                   description: "What's coming next + ideas the community has voted on.",                                  group: "engage",     defaultEnabled: false },
   { id: "engage-themes",       label: "Themes",                    description: "Theme proposals + voting.",                                                                group: "engage",     defaultEnabled: false },
 
-  // EQUIP ---------------------------------------------------------
-  { id: "equip-funding",       label: "EQUIP · Funding",           description: "VentureConnect + VentureLift funding applications.",                                       group: "equip",      defaultEnabled: true },
-  { id: "equip-tracker",       label: "EQUIP · My applications",   description: "Your in-flight EQUIP funding applications + their status.",                              group: "equip",      defaultEnabled: true },
-  { id: "equip-deadlines",     label: "EQUIP · Deadlines",         description: "Upcoming review windows + submission deadlines.",                                          group: "equip",      defaultEnabled: false },
-  // (Most EQUIP entries are admin-only — they're toggled under "admin" below.)
 
   // Account -------------------------------------------------------
   { id: "account-profile",     label: "My profile",                description: "Account info, password, role requests, and the Feature switcher board (this).",         group: "account",    defaultEnabled: true },
@@ -204,7 +174,34 @@ export const FEATURE_SUCCESSORS: Record<string, string> = {
 // "learn-my-courses" — My Courses was folded into the Progress
 // Tracker (Sep 2026). Parked here for a release so a user who had it
 // hidden or reordered does not see their prefs silently rewritten.
-export const DEPRECATED_FEATURE_IDS: string[] = ["learn-my-courses"];
+// EXPERIENCE trimmed to one item and EQUIP retired from the menu (Sep 2026).
+// Documentation only: nothing reads this list, and stored prefs that still
+// hold these ids are ignored and dropped on the user's next save. Never
+// reuse these ids for a different feature.
+export const DEPRECATED_FEATURE_IDS: string[] = [
+  "learn-my-courses",
+  "experience-guide",
+  "experience-talent",
+  "experience-internships",
+  "experience-tracker",
+  "experience-interviews",
+  "experience-matches",
+  "experience-simulator",
+  "experience-mock-interview",
+  "experience-career-paths",
+  "experience-facilities",
+  "experience-equip-page",
+  "equip-funding",
+  "equip-tracker",
+  "equip-deadlines",
+  "profile-application",
+  "profile-master",
+  "profile-tailor",
+  "profile-resumes",
+  "profile-job-folders",
+  "profile-skills",
+  "profile-stories",
+];
 
 /** Quick lookup. */
 export const FEATURES_BY_ID = new Map(FEATURES.map((f) => [f.id, f]));
@@ -215,8 +212,6 @@ export const MINIMAL_PRESET = new Set([
   "learn-dashboard",
   "learn-courses",
   "learn-progress",
-  "profile-master",
-  "profile-resumes",
   "account-preferences",
 ]);
 

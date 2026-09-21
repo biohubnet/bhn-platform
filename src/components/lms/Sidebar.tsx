@@ -52,25 +52,25 @@ import {
   Menu,
   X,
   Compass,
-  Milestone,
-  MapPin,
-  Mic,
   Gift,
   Rocket,
   Palette,
   Ghost,
   MessageSquare,
   Gauge,
-  Sliders, FolderOpen, Library,
+  Sliders,
   Eye,
   Drama,
   Theater,
   Clapperboard,
   BookUser,
-  Radar,
-  CalendarClock, MessageSquareText, PanelsTopLeft} from "lucide-react";
+  CalendarClock, MessageSquareText, PanelsTopLeft, Network} from "lucide-react";
 import { NotificationBell } from "@/components/ui/NotificationInbox";
 import { AdminGlobalSearch } from "@/components/admin/AdminGlobalSearch";
+
+/** A learner-menu entry. `href: null` = no destination yet: it renders as
+ *  a "Soon" row instead of a link. Give it an href to make it a link. */
+type LearnerItem = Omit<NavItem, "href"> & { href: string | null; labelKey: string };
 
 interface NavItem {
   label: string;
@@ -145,66 +145,17 @@ const engageItems: (NavItem & { labelKey: string })[] = [
 // 1:1 MENTORSHIP — a sustained pairing, distinct from the fifteen-minute
 // advisor booking that lives on /pathways. Mirrors the group the current
 // platform carries beside ENGAGE.
-const mentorshipItems: (NavItem & { labelKey: string })[] = [
+const mentorshipItems: LearnerItem[] = [
   { label: "Program Details & FAQ", labelKey: "nav.mentorshipFaq", href: "/mentorship", icon: Users,
     featureId: "mentorship-faq",
     description: "How mentor pairing works, what to expect, and how it differs from booking an advisor." },
+  // No destination yet — set href to link it.
+  { label: "Networking", labelKey: "nav.networking", href: null, icon: Network },
 ];
 
-const experienceItems: (NavItem & { labelKey: string })[] = [
-  { label: "How it works",              labelKey: "nav.experienceGuide", href: "/experience",            icon: Compass,
-    featureId: "experience-guide",
-    description: "End-to-end explainer for the EXPERIENCE program — flow chart + step-by-step. Hover any highlighted item to find the matching control in your sidebar." },
-  { label: "Application Builder",       labelKey: "nav.application", href: "/profile/application",      icon: FileText,
-    featureId: "profile-application",
-    description: "Build a reusable resume + 1-min video intro + elevator pitch. Made once; auto-attached to every application form." },
-  { label: "Bullet Bank",               labelKey: "nav.masterResume", href: "/profile/master",       icon: Library,
-    featureId: "profile-master",
-    description: "Your library of every accomplishment bullet you've ever written. Tailored drafts pull from it; AI uses it to fit any posting. Version-locked + downloadable snapshots." },
-  { label: "Job Tailor",                 labelKey: "nav.jobTailor", href: "/profile/tailor",         icon: Sparkles,
-    featureId: "profile-tailor",
-    description: "Paste a job URL or JD. AI detects the ATS, runs an honest gap analysis against your master library, drafts a grounded resume + cover (never inventing facts), QA-checks them, and exports the right files per ATS." },
-  { label: "Resume Tailoring",           labelKey: "nav.resumeStructured", href: "/profile/resumes",       icon: FileText,
-    featureId: "profile-resumes",
-    description: "Tailored drafts that pull from your master library. Each has its own version history, mentor comments, and PDF export." },
-  { label: "Job Folders",               labelKey: "nav.jobFolders", href: "/profile/job-folders",        icon: FolderOpen,
-    featureId: "profile-job-folders",
-    description: "One folder per role — JD, tailored resume, cover letter, interview prep. AI-generates cover letter + prep guide from your linked resume." },
-  { label: "Talent Application",        labelKey: "nav.talent",      href: "/forms/talent-application", icon: Briefcase,
-    featureId: "experience-talent",
-    description: "Submit bio, supervisor letter, transcript, resume, and STAR video — we share with vetted industry partners." },
-  { label: "Internships",               labelKey: "nav.internships", href: "/internships",              icon: Briefcase,
-    featureId: "experience-internships",
-    description: "Live job board of internship and co-op postings from BHN industry partners. Apply directly from here." },
-  { label: "Matches for you",           labelKey: "nav.matches",     href: "/profile/matches",          icon: Sparkles,
-    featureId: "experience-matches",
-    description: "AI-ranked internship postings, scored against your skill profile + completed pathways. Each row shows the receipts — direct overlap, semantic similarity, pathway alignment, gaps, and honest caveats." },
-  { label: "Career Simulator",          labelKey: "nav.simulator",   href: "/simulator",                icon: Drama,
-    featureId: "experience-simulator",
-    description: "Practise any role before you apply. Paste a job-posting URL and live through a 12-week quarter as that person — 1:1s, escalations, hiring, the QBR. Every choice moves five stats. End-of-quarter performance review from your VP." },
-  { label: "Mock Interview",            labelKey: "nav.mockInterview", href: "/mock-interview",      icon: Mic,
-    featureId: "experience-mock-interview",
-    description: "Practise interviews out loud. The AI asks role-tailored questions; answer by voice (auto-transcribed) or by typing, and get an honest score + specific feedback on each answer, then an overall debrief." },
-  { label: "Career Paths",              labelKey: "nav.careerPaths", href: "/career-paths",             icon: Milestone,
-    featureId: "experience-career-paths",
-    description: "Junior → VP journeys across six tracks (Bioprocess, Quality, Cell & Gene Therapy, Clinical, Business, Project Leadership). Each station carries typical roles, focus areas, recommended courses, and cross-tree branch points where careers commonly fork." },
-  { label: "Facilities Map",            labelKey: "nav.facilitiesMap", href: "/experience/facilities",  icon: MapPin,
-    featureId: "experience-facilities",
-    description: "Interactive map of Canadian biomanufacturing facilities — every dot is a real company / plant / institute. Filter by province, zoom in to disambiguate dots in the same metro, click for the full record (status, address, specialisation, scale). Staff can rescan from the source URL." },
-  { label: "Application Tracker",       labelKey: "nav.applications", href: "/profile/applications",    icon: ClipboardList,
-    featureId: "experience-tracker",
-    description: "Status of every application you've submitted across the platform — submitted, reviewed, interview, offer.",
-    badgeKey: "offer-requests" },
-  { label: "My Skills",                 labelKey: "nav.skills",      href: "/profile/skills",           icon: Lightbulb,
-    featureId: "profile-skills",
-    description: "Skills you've earned through training. Mapped against postings to surface ones you'd be strong for." },
-  { label: "Story Bank",                labelKey: "nav.stories",     href: "/profile/stories",          icon: BookOpen,
-    featureId: "profile-stories",
-    description: "Reusable STAR-format stories from your application prep. Tagged by skill so the prep flow can suggest 'use this story' on the next posting." },
-  { label: "Interviews",                labelKey: "nav.interviews",  href: "/interviews",               icon: Calendar,
-    featureId: "experience-interviews",
-    description: "Interviews scheduled with employers — date, format, link, and prep notes in one place.",
-    badgeKey: "interview-requests" },
+const experienceItems: LearnerItem[] = [
+  // No destination yet — set href to link it.
+  { label: "Industry Internship", labelKey: "nav.industryInternship", href: null, icon: Briefcase },
 ];
 
 // Other top-level items rendered after the groups.
@@ -227,20 +178,6 @@ const miscItems: (NavItem & { labelKey: string })[] = [
     featureId: "engage-changelog", minRole: "instructor",
     description: "What's shipped recently — features, fixes, and improvements." },
   // Roadmap moved to the admin Platform group on user request.
-];
-
-// EQUIP — the funding loop: pillar #3 alongside Engage / Experience.
-// Trainee-entrepreneurs apply for VentureConnect ($5K, conferences /
-// pitch / networking) or VentureLift ($25K, accelerator / IP / proto)
-// fully in-platform. No PDFs, profile pre-fill, auto-save, status
-// tracking visible to the applicant.
-const equipItems: (NavItem & { labelKey: string })[] = [
-  { label: "Funding",                    labelKey: "nav.equip.funding",    href: "/equip", icon: Rocket, exact: true,
-    featureId: "equip-funding",
-    description: "BHN's commercialization-funding pillar. Start a new VentureConnect (≤$5K) or VentureLift (≤$25K) application; the 3-question wizard routes you to the right stream and pre-fills everything from your profile." },
-  { label: "My applications",            labelKey: "nav.equip.tracker",    href: "/equip/my-applications", icon: ClipboardList,
-    featureId: "equip-tracker",
-    description: "Status of every EQUIP application you've submitted — draft, submitted, under review, approved, funded. Click any row for the full submission body and reviewer notes." },
 ];
 
 // EMPLOYER PORTAL — visible only when role === "employer".
@@ -445,23 +382,6 @@ const adminExperienceItems: NavItem[] = [
   // privilege. The route itself re-checks isStaffReviewer(role).
   { label: "Trainee resumes",     href: "/mentor/trainees",           icon: FileText,     minRole: "instructor",
     description: "Open a trainee's structured resume, pin comments to specific bullets, and watch them adopt the suggestions. Read-only — the trainee owns what to apply." },
-];
-
-// EQUIP — the third pillar surface on the admin side. Was buried
-// in Platform initially but it deserves its own group: three
-// dedicated pages (overview / review queue / deadlines) that all
-// belong to the funding workflow rather than platform plumbing.
-const adminEquipItems: NavItem[] = [
-  { label: "EQUIP overview",       href: "/admin/equip/overview",      icon: Activity,      minRole: "admin",
-    description: "Program-management dashboard for the EQUIP pillar — apps in flight, approved this quarter, $ funded YTD, stalled-app alerts, per-stream funnel, open windows, recent activity. Renders in Studio." },
-  { label: "EQUIP review",         href: "/admin/equip",               icon: Rocket,        minRole: "admin",
-    description: "Review queue for the EQUIP funding pillar — VentureConnect (≤$5K) + VentureLift (≤$25K). Claim, approve / reject with a note + amount, mark funded. Mirrors the credit-applications shape." },
-  { label: "EQUIP deadlines",      href: "/admin/equip/deadlines",     icon: ClipboardList, minRole: "admin",
-    description: "Schedule + manage the funding-window deadlines for VentureConnect (monthly) and VentureLift (quarterly). List + calendar views. Open / close / extend any window. Late submissions are blocked automatically." },
-  { label: "Recipient tracker",    href: "/admin/equip/tracker",       icon: Radar,         minRole: "admin",
-    description: "Post-award intelligence dossier — every company funded by a VentureConnect or VentureLift grant, tracked across LinkedIn and the open web. Flags fresh raises, awards, partnerships and milestones, each linked to its source. Filter by track, search, or show highlights only." },
-  { label: "EQUIP Review Committee", href: "/admin/committees/equip-review", icon: Users2, minRole: "admin",
-    description: "Manage EQUIP Review Committee membership. Members get queue access without holding an admin role. Roster + a shortcut into the funding review queue." },
 ];
 
 // INSIGHTS — was DESIGN & RESEARCH. Expanded with the analytics
@@ -1096,6 +1016,20 @@ function AdminSubgroup({
   );
 }
 
+/** A menu entry with no destination yet: shaped like a nav row but plain
+ *  text with a "Soon" tag, so it can never be clicked into a 404. */
+function PendingNavItem({ label, soon, icon: Icon }: { label: string; soon: string; icon: React.ElementType }) {
+  return (
+    <div data-nav-pending className="flex items-center gap-3 px-3 py-2 rounded text-sm font-medium text-muted cursor-default">
+      <Icon size={16} className="shrink-0" />
+      <span className="flex-1 truncate">{label}</span>
+      <span className="shrink-0 rounded-full bg-elevated px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted ring-1 ring-inset ring-line">
+        {soon}
+      </span>
+    </div>
+  );
+}
+
 function NavLink({ item, pathname, onNavigate, queueCounts }: {
   item: NavItem;
   pathname: string;
@@ -1345,6 +1279,13 @@ export function Sidebar({
   // here rather than in the parent layout so the rest of the page
   // doesn't need to know about the toggle.
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  const learnerRow = (item: LearnerItem) => {
+    const label = t(item.labelKey);
+    return item.href
+      ? <NavLink key={item.href} item={{ ...item, href: item.href, label }} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
+      : <PendingNavItem key={item.labelKey} label={label} soon={t("nav.soon")} icon={item.icon} />;
+  };
   // Close drawer on route change so the next page isn't covered.
   useEffect(() => { setMobileOpen(false); }, [pathname]);
   // Body scroll-lock while the drawer is open.
@@ -1368,7 +1309,6 @@ export function Sidebar({
   const visibleEngageAdmin     = adminEngageItems.filter(filterByRole);
   const visibleOperationsAdmin = adminOperationsItems.filter(filterByRole);
   const visibleExperienceAdmin = adminExperienceItems.filter(filterByRole);
-  const visibleEquipAdmin      = adminEquipItems.filter(filterByRole);
   const visibleInsightsAdmin   = adminInsightsItems.filter(filterByRole);
   const visiblePlatformAdmin   = adminPlatformItems.filter(filterByRole);
   const visibleSecurityAdmin   = adminSecurityItems.filter(filterByRole);
@@ -1376,12 +1316,12 @@ export function Sidebar({
   // Committee memberships → registry meta. Drops slugs the registry
   // no longer knows about (e.g. a column value left over from a
   // retired committee). Empty list → no COMMITTEES section rendered.
-  const rawVisibleCommittees = COMMITTEES.filter((c) => committees.includes(c.slug));
+  // EQUIP is retired from the menu, so its review committee's shortcuts go too.
+  const rawVisibleCommittees = COMMITTEES.filter((c) => committees.includes(c.slug) && c.slug !== "equip_review");
 
-  // COMMITTEES sidebar items pointing at admin routes (e.g. the
-  // EQUIP Review committee's shortcuts at /admin/equip/*) should
-  // never render in this section, regardless of who's viewing:
-  //   • Admins already see those routes under Administration → EQUIP,
+  // COMMITTEES sidebar items pointing at admin routes should never
+  // render in this section, regardless of who's viewing:
+  //   • Admins already see those routes under Administration,
   //     so showing them again under COMMITTEES is a duplicate.
   //   • Non-admins can't access admin routes anyway — surfacing a
   //     link they'll 403 on is worse than hiding it.
@@ -1393,7 +1333,6 @@ export function Sidebar({
     ...adminEngageItems.map((i) => i.href),
     ...adminOperationsItems.map((i) => i.href),
     ...adminExperienceItems.map((i) => i.href),
-    ...adminEquipItems.map((i) => i.href),
     ...adminInsightsItems.map((i) => i.href),
     ...adminPlatformItems.map((i) => i.href),
     ...adminSecurityItems.map((i) => i.href),
@@ -1589,9 +1528,7 @@ export function Sidebar({
             tone="electric"
             description="A sustained pairing with someone already working in the part of the sector you're moving toward."
           >
-            {mentorshipItems.map((item) => (
-              <NavLink key={item.href} item={{ ...item, label: t(item.labelKey) }} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
-            ))}
+            {mentorshipItems.map(learnerRow)}
           </SectionGroup>
         )}
 
@@ -1600,63 +1537,8 @@ export function Sidebar({
             title="EXPERIENCE"
             tone="experience"
             description="Bridging theory and practice through experiential learning."
-            programs={[
-              {
-                title: "My Application",
-                body: "Resume, 1-minute video, and elevator pitch — built once, reused by every form you submit.",
-              },
-              {
-                title: "Knowledge Exchange — Round 4",
-                body: "Industry placements running 1, 4, or 6 months. Application deadline 29 May 2026.",
-              },
-              {
-                title: "Talent Application",
-                body: "Submit your bio, supervisor letter, transcript, resume, and STAR video — we share with vetted partners.",
-              },
-              {
-                title: "Internships",
-                body: "Live job board of internship and co-op postings from BHN industry partners.",
-              },
-            ]}
           >
-            {visibleByPrefs(experienceItems).map((item) => {
-              const labeled = { ...item, label: t(item.labelKey) };
-              return <NavLink key={item.href} item={labeled} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />;
-            })}
-          </SectionGroup>
-        )}
-
-        {showLearnerNav && equipItems.length > 0 && (
-          <SectionGroup
-            title="EQUIP"
-            tone="equip"
-            description="Funding for trainee-entrepreneurs commercializing biomanufacturing innovations."
-            programs={[
-              {
-                title: "VentureConnect — up to $5,000",
-                body: "Conferences, demo days, pitch competitions. Monthly funding cycle.",
-              },
-              {
-                title: "VentureLift — up to $25,000",
-                body: "Accelerator participation, IP filings, prototype builds, commercialization roadmap. Quarterly cycle.",
-              },
-            ]}
-          >
-            {/* Admin+ always see the EQUIP learner section regardless of
-                their per-user preferences. The registry has both equip
-                learner items (`equip-funding`, `equip-tracker`) at
-                `defaultEnabled: false` because most trainees don't apply
-                for funding — but admins need the menu to navigate the
-                trainee-side funding surfaces (review queues, deadlines
-                management, application context for the review pillar)
-                without having to flip individual toggles in
-                /profile/preferences first.
-                Non-admin roles keep the preference-respecting
-                `visibleByPrefs(equipItems)` behaviour. */}
-            {(isAdmin ? equipItems : visibleByPrefs(equipItems)).map((item) => {
-              const labeled = { ...item, label: t(item.labelKey) };
-              return <NavLink key={item.href} item={labeled} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />;
-            })}
+            {experienceItems.map(learnerRow)}
           </SectionGroup>
         )}
 
@@ -1668,7 +1550,7 @@ export function Sidebar({
         {visibleCommittees.length > 0 && (
           <SectionGroup
             title="COMMITTEES"
-            description="Your committee surfaces. Equip Review members can claim + decide on funding apps; HQP members coordinate via the HQP dashboard."
+            description="Your committee surfaces. HQP members coordinate via the HQP dashboard."
           >
             {visibleCommittees.flatMap((c) =>
               c.sidebarItems.map((s: CommitteeSidebarItem) => {
@@ -1789,7 +1671,7 @@ export function Sidebar({
           <SectionGroup
             title={t("nav.administration").toUpperCase()}
             tone="electric"
-            description="Privileged territory — manage learners, employers, the EQUIP pillar, the platform itself, and security. Sub-grouped into ENGAGE / EXPERIENCE / EQUIP / Insights / Platform / Security & compliance / System so each list stays scannable."
+            description="Privileged territory — manage learners, employers, the platform itself, and security. Sub-grouped into ENGAGE / EXPERIENCE / Operations / Insights / Platform / Security & compliance / System so each list stays scannable."
           >
             {/* Overview sits at the top, ungrouped — single canonical link. */}
             <NavLink item={adminOverview} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
@@ -1810,17 +1692,9 @@ export function Sidebar({
               </AdminSubgroup>
             )}
 
-            {visibleEquipAdmin.length > 0 && (
-              <AdminSubgroup tone={ADMIN_SUBGROUP_TONES.equip} label="Equip">
-                {visibleEquipAdmin.map((item) => (
-                  <NavLink key={item.href} item={item} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
-                ))}
-              </AdminSubgroup>
-            )}
-
             {/*
-              Operations sits between Equip and Insights — the three
-              pillars (Engage / Experience / Equip) are pipeline-shaped
+              Operations sits between Experience and Insights — the
+              pillars (Engage / Experience) are pipeline-shaped
               work that happens IN the platform, then Operations is the
               cross-pillar mechanics that keep the platform running,
               and Insights is what you look at after the work is done.
