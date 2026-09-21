@@ -4463,26 +4463,6 @@ h1, h2, h3 {
 
 
 /*
- * The ground behind a Learning Pathway's cover art, at the top of the
- * media column. Scope narrowed once the colour moved to the card's
- * outline: the continuation beside the programmes is now plain card
- * ground, so this is only what shows through when a pathway has no
- * artwork of its own — a safety net rather than a surface anyone is
- * meant to see.
- *
- * Still a dark charcoal, because what normally sits on it is a
- * photograph and the two should not disagree at the edges of a crop.
- * Anchored to a fixed value instead of a var(--fg) mix: fg inverts on
- * the dark themes and a mix would turn this pale on exactly the themes
- * it should be quietest. The 14% of --card keeps it from looking pasted
- * on — Nightfall's is a shade cooler than Mist's.
- */
-.pathway-column {
-  background: color-mix(in srgb, var(--card) 14%, #2a2d31);
-}
-
-
-/*
  * Learning Pathway programme rows.
  *
  * Every value here was swept against all seventeen themes for the lowest

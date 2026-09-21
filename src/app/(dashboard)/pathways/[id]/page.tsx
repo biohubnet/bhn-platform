@@ -136,7 +136,7 @@ export default async function PathwayDetailPage({ params }: { params: Promise<{ 
             />
           </div>
         )}
-        <div className="relative flex items-start justify-between gap-6">
+        <div className="relative flex flex-col sm:flex-row sm:items-start sm:justify-between gap-6">
           <div className="flex-1 min-w-0 flex items-start gap-5">
             {/* Pathway badge — shown whole, beside the title it belongs to. */}
             {pathway.thumbnail && (
@@ -162,7 +162,7 @@ export default async function PathwayDetailPage({ params }: { params: Promise<{ 
             </div>
           </div>
 
-          <div className="shrink-0 flex flex-col items-end gap-2">
+          <div className="shrink-0 flex flex-col items-start sm:items-end gap-2">
             {isStaff && (
               <PathwayManageButton
                 mode="edit"

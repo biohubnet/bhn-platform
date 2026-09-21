@@ -115,7 +115,7 @@ const EXIT_EASE = "cubic-bezier(.55, 0, 1, .45)";
  *  left the interior entirely — it is the card's outline now, plus the
  *  marker beside the title. Area was the problem, not hue: an outline and a
  *  marker carry the same colour at any card height without ever growing. */
-const MEDIA_COL = "w-32 sm:w-48";
+const MEDIA_COL = "w-24 sm:w-28";
 
 /**
  * One programme inside an expanded pathway.
@@ -283,13 +283,13 @@ export function PathwayAccordion({ pathways }: { pathways: PathwayEntry[] }) {
             <div className="flex items-stretch">
               <div
                 className={cn(
-                  "relative shrink-0 overflow-hidden border-r border-line pathway-column",
+                  "relative shrink-0 overflow-hidden border-r border-line",
                   MEDIA_COL,
                 )}
               >
                 {p.thumbnail && (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={p.thumbnail} alt="" className="absolute inset-0 w-full h-full object-contain p-3 sm:p-4" />
+                  <img src={p.thumbnail} alt="" className="absolute inset-0 w-full h-full object-contain p-2" />
                 )}
               </div>
 
