@@ -42,7 +42,7 @@ const en: Dict = {
   "nav.experienceGuide": "How it works",
   "nav.industryInternship": "Industry Internship",
   "nav.networking": "Networking",
-  "nav.soon": "Soon",
+  "nav.soon": "Coming soon",
   "nav.application": "Application Builder",
   "nav.resumeStructured": "Resume Tailoring",
   "nav.jobFolders": "Job Folders",

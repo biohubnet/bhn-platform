@@ -1017,14 +1017,17 @@ function AdminSubgroup({
 }
 
 /** A menu entry with no destination yet: shaped like a nav row but plain
- *  text with a "Soon" tag, so it can never be clicked into a 404. */
+ *  text with a "Coming soon" caption, so it can never be clicked into a
+ *  404. The caption sits under the label, not beside it: beside it, a
+ *  tag left "Industry Internship" 104px of the sidebar's width and cut
+ *  it to "Industry Interns…". */
 function PendingNavItem({ label, soon, icon: Icon }: { label: string; soon: string; icon: React.ElementType }) {
   return (
     <div data-nav-pending className="flex items-center gap-3 px-3 py-2 rounded text-sm font-medium text-muted cursor-default">
       <Icon size={16} className="shrink-0" />
-      <span className="flex-1 truncate">{label}</span>
-      <span className="shrink-0 rounded-full bg-elevated px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted ring-1 ring-inset ring-line">
-        {soon}
+      <span className="flex-1 min-w-0">
+        <span className="block truncate">{label}</span>
+        <span className="block text-[11px] font-normal leading-tight">{soon}</span>
       </span>
     </div>
   );

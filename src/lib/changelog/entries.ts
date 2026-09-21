@@ -25,7 +25,7 @@ export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   // ── Sidebar · EXPERIENCE trimmed, EQUIP retired, Networking added
   {
     title: "A shorter menu: EXPERIENCE is now Industry Internship, EQUIP is gone, and Networking is coming",
-    body: "The sidebar is simpler. **EXPERIENCE** now has a single entry, **Industry Internship**, and **1:1 Mentorship** gains **Networking**. Both are marked *Soon* until their pages are ready. The **EQUIP** funding section has been removed from the menu.",
+    body: "The sidebar is simpler. **EXPERIENCE** now has a single entry, **Industry Internship**, and **1:1 Mentorship** gains **Networking**. Both are marked *Coming soon* until their pages are ready. The **EQUIP** funding section has been removed from the menu.",
     kind: "improvement",
     visibleTo: ALL,
     daysAgo: 0,
