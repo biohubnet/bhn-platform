@@ -75,7 +75,7 @@ function FreshCta({ ttlDays, variant }: { ttlDays: number; variant: "prominent" 
       className={
         "relative overflow-hidden " +
         (variant === "prominent"
-          ? "rounded-2xl border-2 border-brand-300 bg-gradient-to-br from-brand-50 via-brand-100/50 to-amber-50 shadow-elevated p-6 sm:p-8"
+          ? "rounded-2xl border-2 border-brand-300 bg-gradient-to-br from-brand-50 via-brand-100/50 to-amber-50 shadow-elevated p-5 sm:p-6"
           : "rounded-2xl border-2 border-brand-200 bg-gradient-to-br from-brand-50 to-brand-100/40 p-6")
       }
     >
@@ -86,14 +86,14 @@ function FreshCta({ ttlDays, variant }: { ttlDays: number; variant: "prominent" 
         style={{ background: "radial-gradient(closest-side, #f59e0b, transparent 70%)" }}
       />
 
-      <div className="relative flex flex-col sm:flex-row items-start gap-4 sm:gap-5">
+      <div className="relative flex flex-col sm:flex-row items-start gap-3 sm:gap-4">
         <div
           className={cn(
             "rounded-xl bg-brand-600 text-white flex items-center justify-center shrink-0",
-            variant === "prominent" ? "w-12 h-12 sm:w-14 sm:h-14" : "w-10 h-10",
+            variant === "prominent" ? "w-10 h-10 sm:w-11 sm:h-11" : "w-10 h-10",
           )}
         >
-          <Coins size={variant === "prominent" ? 26 : 20} />
+          <Coins size={variant === "prominent" ? 22 : 20} />
         </div>
 
         <div className="flex-1 min-w-0">
@@ -108,14 +108,14 @@ function FreshCta({ ttlDays, variant }: { ttlDays: number; variant: "prominent" 
             className={cn(
               "font-bold text-fg leading-tight tracking-tight mt-1",
               variant === "prominent"
-                ? "text-xl sm:text-2xl"
+                ? "text-lg sm:text-xl"
                 : "text-base sm:text-lg",
             )}
           >
             Apply for up to{" "}
             <span className="text-brand-700">5,000 free training credits</span>
           </h2>
-          <p className="text-sm text-fg-muted leading-relaxed mt-2 max-w-prose">
+          <p className="text-sm text-fg-muted leading-relaxed mt-1.5 max-w-prose">
             Eligible Highly Qualified Personnel (HQP) at one of the 14 partner Ontario
             institutions can receive up to <strong className="text-fg">5,000 ENGAGE credits</strong>{" "}
             at no cost. An admin reviews each application personally — typically within a few
@@ -123,23 +123,23 @@ function FreshCta({ ttlDays, variant }: { ttlDays: number; variant: "prominent" 
           </p>
 
           {variant === "prominent" && (
-            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-              <div className="rounded-xl bg-card/85 backdrop-blur border border-line p-3">
+            <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
+              <div className="rounded-xl bg-card/85 backdrop-blur border border-line px-3 py-2.5">
                 <p className="font-bold text-fg mb-1 text-[11px] uppercase tracking-[0.18em]">
                   Who qualifies
                 </p>
-                <ul className="list-disc list-inside leading-relaxed space-y-0.5 text-fg-muted">
+                <ul className="list-disc list-inside leading-snug space-y-0.5 text-fg-muted">
                   <li>Grad students (MSc / PhD, 2+ semesters)</li>
                   <li>Postdoctoral fellows</li>
                   <li>Research associates</li>
                   <li>Lab technicians in STEM programs</li>
                 </ul>
               </div>
-              <div className="rounded-xl bg-card/85 backdrop-blur border border-line p-3">
+              <div className="rounded-xl bg-card/85 backdrop-blur border border-line px-3 py-2.5">
                 <p className="font-bold text-fg mb-1 text-[11px] uppercase tracking-[0.18em]">
                   What you&apos;ll upload
                 </p>
-                <ul className="list-disc list-inside leading-relaxed space-y-0.5 text-fg-muted">
+                <ul className="list-disc list-inside leading-snug space-y-0.5 text-fg-muted">
                   <li>
                     <span className="text-fg">Grad students:</span> unofficial transcript +
                     grad-office signed verification
@@ -153,7 +153,7 @@ function FreshCta({ ttlDays, variant }: { ttlDays: number; variant: "prominent" 
             </div>
           )}
 
-          <p className="mt-3 text-[11.5px] text-fg-subtle leading-relaxed">
+          <p className="mt-2.5 text-[11.5px] text-fg-subtle leading-relaxed">
             Credits expire <strong className="text-fg-muted">{ttlDays} days</strong> from approval.
             BHN policy also expires the remainder if fewer than 2,500 are used in the first 6
             months — plan your enrolments accordingly. Full eligibility at{" "}
@@ -168,10 +168,10 @@ function FreshCta({ ttlDays, variant }: { ttlDays: number; variant: "prominent" 
             .
           </p>
 
-          <div className="mt-4 flex flex-wrap items-center gap-3">
+          <div className="mt-3 flex flex-wrap items-center gap-3">
             <Link
               href="/credits/apply"
-              className="inline-flex items-center justify-center gap-2 bg-brand-600 hover:bg-brand-700 text-white font-bold py-2.5 px-5 rounded-xl shadow-md shadow-brand-600/25 transition-all hover:-translate-y-0.5"
+              className="inline-flex items-center justify-center gap-2 bg-brand-600 hover:bg-brand-700 text-white font-bold py-2 px-4 rounded-xl shadow-md shadow-brand-600/25 transition-all hover:-translate-y-0.5"
             >
               <FileText size={15} />
               Start application

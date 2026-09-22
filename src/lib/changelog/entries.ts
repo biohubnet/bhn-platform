@@ -25,7 +25,7 @@ export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   // ── Home + profile · Training Credits, credit box back, lighter profile
   {
     title: "BHN Credits are now Training Credits, and the credit application is back on your home page",
-    body: "Credits are called **Training Credits** everywhere now. If you have not applied for your training credits yet, the application box is back at the top of your home page; it disappears once your credits are approved. The home page also drops the welcome note and the line under your name, and **My profile** is simpler: the feature switcher, the sample-profile button and the language picker are gone.",
+    body: "Credits are called **Training Credits** everywhere now. If you have not applied for your training credits yet, the application box is back at the top of your home page in a more compact card; it disappears once your credits are approved. The home page also drops the welcome note and the line under your name, and **My profile** is simpler: the feature switcher, the sample-profile button and the language picker are gone.",
     kind: "improvement",
     visibleTo: ALL,
     daysAgo: 0,
