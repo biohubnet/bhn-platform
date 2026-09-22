@@ -11,6 +11,7 @@ import { STAGE_LABELS, legalNextStages, type Stage } from "@/lib/hiring/stages";
 import { ApplicantActions } from "@/components/hiring/ApplicantActions";
 import { scoreFitForTrainee } from "@/lib/matching/fit";
 import { FitExplain } from "@/components/matching/FitExplain";
+import { RecordProfileView } from "@/components/profile/RecordProfileView";
 
 /**
  * /employer/postings/[id]/applicants/[appId] — per-applicant ATS view.
@@ -167,6 +168,7 @@ export default async function ApplicantDetailPage({
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+      <RecordProfileView userId={app.applicantId} surface="applicant" />
       <Link
         href={`/employer/postings/${app.postingId}/pipeline`}
         className="text-xs text-muted hover:text-fg inline-flex items-center gap-1"

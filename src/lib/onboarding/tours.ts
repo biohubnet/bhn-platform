@@ -30,9 +30,20 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.09.22a";
+export const TOUR_VERSION = "2026.09.22b";
 
 export const TOUR_STEPS: TourStep[] = [
+  // ─── Trainee home split into ENGAGE | EXPERIENCE (Sep 2026)
+  {
+    id: "trainee.engage-experience-home",
+    title: "ENGAGE and EXPERIENCE, side by side",
+    body: "Apply for training credits and the Industry Internship program from the two cards under the banner; each shows where your application stands. Below, ENGAGE on the left has your credits and courses to resume, and EXPERIENCE on the right shows profile views, interviews and open postings.",
+    path: "/dashboard",
+    placement: "center",
+    roles: ["trainee", "evaluating"],
+    cta: { label: "Open my home page", href: "/dashboard" },
+    since: "2026.09.22b",
+  },
   // ─── "What's on" band under the dashboard hero (Sep 2026)
   {
     id: "dashboard.whats-on",

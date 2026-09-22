@@ -22,6 +22,7 @@ import { PageHero } from "@/components/ui/PageHero";
 import { canViewResume, canCommentOnResume } from "@/lib/resume/permissions";
 import type { ResumeContent } from "@/lib/resume/types";
 import { ResumeViewer } from "@/components/resume/ResumeViewer";
+import { RecordProfileView } from "@/components/profile/RecordProfileView";
 
 export const dynamic = "force-dynamic";
 
@@ -108,6 +109,7 @@ export default async function MentorResumePage({ params }: PageProps) {
             : "This trainee hasn't started their structured resume yet. You can still leave a resume-wide comment they'll see on first visit."
         }
       />
+      <RecordProfileView userId={ownerId} surface="resume" />
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 space-y-4">
         <div className="flex flex-wrap items-center gap-2 text-xs">

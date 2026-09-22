@@ -234,6 +234,8 @@ model User {
   statusEdits           ApplicationStatus[]   @relation("StatusEditor")
   interviews            Interview[]           @relation("Interviewee")
   scheduledInterviews   Interview[]           @relation("Interviewer")
+  profileViewsReceived  ProfileView[]         @relation("ProfileViewTarget")
+  profileViewsMade      ProfileView[]         @relation("ProfileViewViewer")
   accessRequestsHandled AccessRequest[]       @relation("AccessRequestHandler")
   formSubmissions       EventFormSubmission[] @relation("FormSubmitter")
   savedPostings         UserSavedPosting[]    @relation("SavedPostingUser")
@@ -2155,6 +2157,27 @@ model DashboardPromo {
   updatedAt    DateTime  @updatedAt
 
   @@index([status, kind, displayOrder])
+}
+
+/// One employer's view of a trainee's profile (talent-pool entry,
+/// job application or resume) on one calendar day — the unique key keeps
+/// reloads and repeat visits to a single row. Feeds "profile views" on
+/// the trainee dashboard. Written by POST /api/profile-views from a
+/// visible-tab client effect, never during a render.
+model ProfileView {
+  id        String   @id @default(cuid())
+  /// The trainee whose profile was viewed.
+  userId    String
+  viewerId  String
+  surface   String // talent_pool | applicant | resume
+  day       DateTime @db.Date
+  createdAt DateTime @default(now())
+
+  user   User @relation("ProfileViewTarget", fields: [userId], references: [id], onDelete: Cascade)
+  viewer User @relation("ProfileViewViewer", fields: [viewerId], references: [id], onDelete: Cascade)
+
+  /// Also serves "this trainee's views since X": userId leads.
+  @@unique([userId, viewerId, day])
 }
 
 model AuditLog {

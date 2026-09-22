@@ -1,19 +1,19 @@
 "use client";
 
 /**
- * Admin preview of the training-credit application box a new trainee
- * sees on their home page. Tap Option (⌥, Alt on Windows) on its own to
- * show or hide it. It always shows the "never applied" state, whatever
- * the admin's own application status is.
+ * Admin preview of the two application cards (ENGAGE training credits,
+ * EXPERIENCE Industry Internship) a new trainee sees on their home page.
+ * Tap Option (⌥, Alt on Windows) on its own to show or hide it. It always
+ * shows the "never applied" state, whatever the admin's own status is.
  *
  * Only a lone tap toggles: holding Option as part of a shortcut
  * (Option+key) never does, so it can't fight other key bindings.
  */
 
 import { useEffect, useState } from "react";
-import { CreditApplicationCallout } from "@/components/dashboards/CreditApplicationCallout";
+import { ApplicationStrip } from "@/components/dashboards/ApplicationStrip";
 
-export function CreditCalloutPreview({ ttlDays, className }: { ttlDays: number; className?: string }) {
+export function ApplicationStripPreview({ ttlDays, className }: { ttlDays: number; className?: string }) {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -43,9 +43,9 @@ export function CreditCalloutPreview({ ttlDays, className }: { ttlDays: number; 
   return (
     <div className={className}>
       <p className="mb-2 text-xs font-medium text-muted">
-        Admin preview: the training-credit box a trainee sees before applying. Press ⌥ Option to hide.
+        Admin preview: the application cards a trainee sees before applying. Press ⌥ Option to hide.
       </p>
-      <CreditApplicationCallout latestApp={null} ttlDays={ttlDays} variant="prominent" />
+      <ApplicationStrip credit={{ state: "none" }} internship={{ state: "none" }} ttlDays={ttlDays} />
     </div>
   );
 }

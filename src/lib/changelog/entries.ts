@@ -22,6 +22,21 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Trainee home · ENGAGE + EXPERIENCE side by side
+  {
+    title: "Your home page now puts ENGAGE and EXPERIENCE side by side",
+    body: "Under the What's on band, two application cards now sit side by side: **ENGAGE training credits** and the **EXPERIENCE Industry Internship program**. Each shows where your application stands (not applied, under review, not approved or approved), and the pair disappears once both are approved.\n\nBelow them the page splits in two. **ENGAGE** on the left has your credit tracker, the courses you can resume or start, and pathways open for enrolment. **EXPERIENCE** on the right shows how many times employers viewed your profile in the past 30 days, the interviews you've done, and open internship postings.",
+    kind: "improvement",
+    visibleTo: ["trainee", "evaluating"],
+    daysAgo: 0,
+  },
+  {
+    title: "Admins: ⌥ Option now previews both application cards",
+    body: "Tapping **⌥ Option** on the home page now shows both cards a new trainee sees before applying: ENGAGE training credits and the EXPERIENCE Industry Internship program. Employer views of a trainee's talent-pool profile, job application or resume are now counted (once per employer per day) for the trainee's *Profile views* figure.",
+    kind: "improvement",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── Home · "What's on" band + its admin tab
   {
     title: "Your home page now shows what's on: events, workshops and announcements",

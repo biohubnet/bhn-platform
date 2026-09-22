@@ -1,39 +1,21 @@
 import { getSession, ROLE_RANK } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
-import Link from "next/link";
-import { ArrowRight, CalendarDays, Route, Activity } from "lucide-react";
 import { creditUtilization, CREDIT_AWARD_TOTAL } from "@/lib/credits/utilization";
 import { InstructorDashboard } from "@/components/dashboards/InstructorDashboard";
 import { AdminDashboard } from "@/components/dashboards/AdminDashboard";
 import { type ReviewQuestion } from "@/components/adaptive/TodaysReviewsCard";
 import { CommitteeBadgeStrip } from "@/components/lms/CommitteeBadgeStrip";
-import { CreditApplicationCallout } from "@/components/dashboards/CreditApplicationCallout";
-import { CreditCalloutPreview } from "@/components/dashboards/CreditCalloutPreview";
+import { ApplicationStrip, creditAppStatus, internshipAppStatus } from "@/components/dashboards/ApplicationStrip";
+import { ApplicationStripPreview } from "@/components/dashboards/ApplicationStripPreview";
+import { EngageColumn, ExperienceColumn, type EngageCourse } from "@/components/dashboards/TraineePillarColumns";
+import { getExperienceStanding } from "@/lib/experience/where-you-stand";
+import { classifyEnrollment } from "@/lib/courses/enrollment-status";
 import { CREDIT_GRANT_TTL_DAYS } from "@/lib/credits/expiry";
 import { getDisplayName } from "@/lib/user/display-name";
 import { PreferredNameEditor } from "@/components/profile/PreferredNameEditor";
 import { DashboardPromos } from "@/components/dashboards/DashboardPromos";
 import { getLivePromos } from "@/lib/dashboard-promos/queries";
-
-interface EnrollmentWithCourse {
-  id: string;
-  courseId: string;
-  status: string;
-  progress: number;
-  score: number | null;
-  enrolledAt: Date;
-  course: { id: string; title: string; category: string | null };
-}
-
-interface ScormSessionWithCourse {
-  id: string;
-  attemptNumber: number;
-  status: string;
-  score: number | null;
-  updatedAt: Date;
-  package: { course: { id: string; title: string } };
-}
 
 export default async function DashboardPage() {
   const session = await getSession();
@@ -82,8 +64,8 @@ export default async function DashboardPage() {
         committeeBadge={
           <>
             <DashboardPromos groups={promos} canManage />
-            {/* Tap ⌥ Option to preview the new-trainee credit box. */}
-            <CreditCalloutPreview ttlDays={CREDIT_GRANT_TTL_DAYS} />
+            {/* Tap ⌥ Option to preview a new trainee's application cards. */}
+            <ApplicationStripPreview ttlDays={CREDIT_GRANT_TTL_DAYS} />
             <CommitteeBadgeStrip userId={userId} />
           </>
         }
@@ -134,16 +116,22 @@ export default async function DashboardPage() {
     util,
     openPathways,
     myPathwayIds,
-    upcomingEvents,
+    scormSessions,
     latestCreditApp,
+    latestInternshipApp,
+    experience,
     promos,
   ] = await Promise.all([
+    // Every active course — trainees hold at most a few — so the ENGAGE
+    // column can offer Resume / Start and the hero can count them.
     prisma.enrollment.findMany({
       where: { userId, status: "active" },
-      include: { course: { select: { id: true, title: true, category: true } } },
       orderBy: { enrolledAt: "desc" },
-      take: 1,
-    }) as Promise<EnrollmentWithCourse[]>,
+      select: {
+        courseId: true, status: true, progress: true,
+        course: { select: { title: true, scormPackage: { select: { id: true } }, _count: { select: { modules: true } } } },
+      },
+    }),
     prisma.certificate.count({ where: { userId, revokedAt: null } }),
     prisma.enrollment.count({ where: { userId, status: "completed" } }),
     creditUtilization(userId),
@@ -162,22 +150,42 @@ export default async function DashboardPage() {
       where: { userId },
       select: { pathwayId: true },
     }),
-    prisma.bhnEvent.findMany({
-      where: { status: "published", endDate: { gte: now } },
-      orderBy: { startDate: "asc" },
-      take: 3,
-      select: { id: true, slug: true, title: true, tagline: true, startDate: true, endDate: true },
-    }),
-    // Latest training-credit application, for the callout under the hero.
+    // SCORM courses never write Enrollment.progress, so a SCORM session
+    // is what says the trainee has started one.
+    prisma.scormSession.findMany({ where: { userId }, distinct: ["packageId"], select: { packageId: true } }),
+    // Latest application to each programme, for the cards under the hero.
     prisma.creditApplication.findFirst({
       where: { userId },
       orderBy: { submittedAt: "desc" },
-      select: { status: true, submittedAt: true, reviewedAt: true, reviewerNote: true, approvedAmount: true },
+      select: { status: true, submittedAt: true, reviewedAt: true, reviewerNote: true },
     }),
+    prisma.eventFormSubmission.findFirst({
+      where: { userId, form: { slug: "talent-application" } },
+      orderBy: { createdAt: "desc" },
+      select: { reviewStatus: true, createdAt: true, reviewedAt: true, reviewerNote: true, eligibilityApprovedAt: true, leftPoolAt: true },
+    }),
+    getExperienceStanding(userId, now),
     promosPromise,
   ]);
 
-  const inProgress = enrollments.length;
+  const scormStarted = new Set(scormSessions.map((s) => s.packageId));
+  const courses: EngageCourse[] = enrollments
+    .map((e) => {
+      const pkg = e.course.scormPackage?.id;
+      const started = classifyEnrollment(e.status, e.progress) === "in_progress" || (!!pkg && scormStarted.has(pkg));
+      const href = pkg
+        ? `/player/${e.courseId}`
+        : e.course._count.modules > 0 ? `/courses/${e.courseId}/learn` : `/courses/${e.courseId}`;
+      // SCORM never writes Enrollment.progress, so it has no percentage.
+      return { courseId: e.courseId, title: e.course.title, progress: pkg ? null : e.progress, started, href };
+    })
+    // Started first (stable, so newest enrolment first within each).
+    .sort((a, b) => Number(b.started) - Number(a.started));
+  const inProgress = courses.filter((c) => c.started).length;
+
+  const credit = creditAppStatus(latestCreditApp);
+  const internship = internshipAppStatus(latestInternshipApp);
+  const showStrip = role === "trainee" || role === "evaluating";
 
   const joined = new Set(myPathwayIds.map((p) => p.pathwayId));
   const promotedPathways = openPathways.filter((p) => !joined.has(p.id)).slice(0, 3);
@@ -465,16 +473,19 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      {/* Training-credit application — right under the hero, so a new
-          trainee sees it first. The callout decides its own state: a
-          CTA when they have never applied, "under review" while pending,
-          a re-apply prompt if rejected, and hidden once approved. */}
-      {(role === "trainee" || role === "evaluating") && (
+      {/* The two programme applications, side by side: ENGAGE training
+          credits and the EXPERIENCE Industry Internship. Each card shows
+          its own status; the strip is gone once both are approved. */}
+      {showStrip && !(credit.state === "approved" && internship.state === "approved") && (
         <div className="max-w-screen-2xl mx-auto px-6 mt-6">
-          <CreditApplicationCallout latestApp={latestCreditApp} ttlDays={CREDIT_GRANT_TTL_DAYS} variant="prominent" />
+          <ApplicationStrip credit={credit} internship={internship} ttlDays={CREDIT_GRANT_TTL_DAYS} />
         </div>
       )}
-      {isRealAdmin && latestCreditApp && <CreditCalloutPreview ttlDays={CREDIT_GRANT_TTL_DAYS} className="max-w-screen-2xl mx-auto px-6 mt-6" />}
+      {/* An admin viewing as a trainee can tap ⌥ Option for the fresh
+          cards — unless the real strip is already showing them. */}
+      {isRealAdmin && !(showStrip && credit.state === "none" && internship.state === "none") && (
+        <ApplicationStripPreview ttlDays={CREDIT_GRANT_TTL_DAYS} className="max-w-screen-2xl mx-auto px-6 mt-6" />
+      )}
 
       {/* First-time prompt — only for users who haven't picked a
           preferredName yet. It asks in a DIALOG rather than as a card
@@ -500,158 +511,31 @@ export default async function DashboardPage() {
         <CommitteeBadgeStrip userId={userId} />
       </div>
 
-      {/* ── WHERE YOU STAND + WHAT'S OPEN ───────────────────────────
-            Three things the trainee home was missing: a compact read
-            of My Courses, the pathways currently accepting
-            people, and what's coming up.
-
-            Two columns on lg+, events in the right rail as asked.
-            Below lg they stack, events last — on a phone the thing you
-            came for is your own progress, not a date three weeks out. */}
+      {/* ── ENGAGE | EXPERIENCE ─────────────────────────────────────
+            One column per pillar on lg+, ENGAGE first when they stack.
+            Events live in the What's on band above, so there is no
+            events rail any more. */}
       <div className="max-w-screen-2xl mx-auto px-6 mt-8">
-        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_20rem] gap-6 items-start">
-          <div className="space-y-6 min-w-0">
-            {/* ── Mini My Courses panel ──────────────────────────── */}
-            <section className="rounded-2xl border border-line bg-card p-5">
-              <div className="flex items-center justify-between gap-4 mb-4">
-                <p className="text-[12px] uppercase tracking-[0.2em] font-bold text-subtle">
-                  Where you stand
-                </p>
-                <Link
-                  href="/progress"
-                  className="inline-flex items-center gap-1 text-xs font-semibold text-brand-700 hover:underline shrink-0"
-                >
-                  My Courses <ArrowRight size={12} />
-                </Link>
-              </div>
-
-              <div className="flex flex-wrap items-end gap-x-10 gap-y-4">
-                <div>
-                  <p className="text-[11px] uppercase tracking-[0.16em] font-semibold text-subtle">
-                    Credits remaining
-                  </p>
-                  <p className="mt-0.5 text-3xl font-bold tabular-nums text-fg leading-none">
-                    {util.balance.toLocaleString()}
-                  </p>
-                </div>
-                <MiniStat label="In progress" value={inProgress} />
-                <MiniStat label="Completed" value={completedCourseCount} />
-                <MiniStat label="Certificates" value={certsCount} />
-              </div>
-
-              {/* Same scaleX bar language as the credit statement, without
-                  its animation — this is a glance, not the main event. */}
-              <div className="mt-4">
-                <div className="h-1.5 w-full rounded-full bg-raised overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-brand-600"
-                    style={{
-                      width: `${CREDIT_AWARD_TOTAL > 0
-                        ? Math.min(100, Math.max(0, (util.used / CREDIT_AWARD_TOTAL) * 100))
-                        : 0}%`,
-                    }}
-                  />
-                </div>
-                <div className="mt-1.5 flex items-center justify-between text-[10px] font-semibold tabular-nums text-subtle">
-                  <span>{util.used.toLocaleString()} used</span>
-                  <span>{CREDIT_AWARD_TOTAL.toLocaleString()} awarded</span>
-                </div>
-              </div>
-            </section>
-
-            {/* ── Open learning pathways ────────────────────────── */}
-            {promotedPathways.length > 0 && (
-              <section className="rounded-2xl border border-line bg-card p-5">
-                <div className="flex items-center justify-between gap-4 mb-4">
-                  <p className="text-[12px] uppercase tracking-[0.2em] font-bold text-subtle">
-                    Open for enrolment
-                  </p>
-                  <Link
-                    href="/pathways"
-                    className="inline-flex items-center gap-1 text-xs font-semibold text-brand-700 hover:underline shrink-0"
-                  >
-                    All pathways <ArrowRight size={12} />
-                  </Link>
-                </div>
-                <ul className="space-y-2">
-                  {promotedPathways.map((pw) => (
-                    <li key={pw.id}>
-                      <Link
-                        href="/pathways"
-                        className="flex items-start gap-3 rounded-xl border border-line p-3 hover:border-brand-200 transition-colors"
-                      >
-                        {/* The pathway's own colour code, as on /pathways.
-                            Inline style because it is data, not a token. */}
-                        <span
-                          aria-hidden
-                          className="mt-1 w-1 h-8 rounded-full shrink-0"
-                          style={{ background: pw.accentColor ?? "var(--brand-600)" }}
-                        />
-                        <span className="min-w-0 flex-1">
-                          <span className="flex items-center gap-2">
-                            <Route size={13} className="text-subtle shrink-0" />
-                            <span className="text-sm font-semibold text-fg truncate">{pw.title}</span>
-                          </span>
-                          {pw.description && (
-                            <span className="mt-0.5 block text-xs text-muted line-clamp-2">
-                              {pw.description}
-                            </span>
-                          )}
-                          <span className="mt-1 block text-[11px] text-subtle tabular-nums">
-                            {pw._count.courses} {pw._count.courses === 1 ? "course" : "courses"}
-                          </span>
-                        </span>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            )}
-          </div>
-
-          {/* ── Upcoming events — the right rail ──────────────────── */}
-          <aside className="rounded-2xl border border-line bg-card p-5">
-            <div className="flex items-center justify-between gap-3 mb-4">
-              <p className="text-[12px] uppercase tracking-[0.2em] font-bold text-subtle">
-                Coming up
-              </p>
-              <Link
-                href="/events"
-                className="inline-flex items-center gap-1 text-xs font-semibold text-brand-700 hover:underline shrink-0"
-              >
-                All <ArrowRight size={12} />
-              </Link>
-            </div>
-            {upcomingEvents.length === 0 ? (
-              <p className="text-sm text-muted">
-                Nothing scheduled right now. Events appear here as they are announced.
-              </p>
-            ) : (
-              <ul className="space-y-3">
-                {upcomingEvents.map((ev) => (
-                  <li key={ev.id}>
-                    <Link
-                      href={`/events/${ev.slug}`}
-                      className="block rounded-xl border border-line p-3 hover:border-brand-200 transition-colors"
-                    >
-                      <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-brand-700">
-                        <CalendarDays size={12} />
-                        {formatEventDates(ev.startDate, ev.endDate)}
-                      </span>
-                      <span className="mt-1 block text-sm font-semibold text-fg leading-snug">
-                        {ev.title}
-                      </span>
-                      {ev.tagline && (
-                        <span className="mt-0.5 block text-xs text-muted line-clamp-2">
-                          {ev.tagline}
-                        </span>
-                      )}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </aside>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+          <EngageColumn
+            balance={util.balance}
+            used={util.used}
+            awardTotal={CREDIT_AWARD_TOTAL}
+            inProgress={inProgress}
+            completed={completedCourseCount}
+            certificates={certsCount}
+            courses={courses.slice(0, 3)}
+            pathways={promotedPathways.map((pw) => ({
+              id: pw.id, title: pw.title, description: pw.description,
+              accentColor: pw.accentColor, courseCount: pw._count.courses,
+            }))}
+          />
+          <ExperienceColumn
+            profileViews={experience.profileViews}
+            windowDays={experience.windowDays}
+            interviewsDone={experience.interviewsDone}
+            postings={experience.postings}
+          />
         </div>
       </div>
 
@@ -736,35 +620,3 @@ function pillToneClasses(tone: PillarItem["pillTone"]): string {
   }
 }
 
-
-
-
-
-// ─── Minimal helpers ─────────────────────────────────────────────
-
-/** One small labelled figure in the mini courses panel. */
-function MiniStat({ label, value }: { label: string; value: number }) {
-  return (
-    <div>
-      <p className="text-[11px] uppercase tracking-[0.16em] font-semibold text-subtle">{label}</p>
-      <p className="mt-0.5 text-xl font-bold tabular-nums text-fg leading-none">
-        {value.toLocaleString()}
-      </p>
-    </div>
-  );
-}
-
-/** "Nov 4" for a single day, "Nov 4 – 6" within a month, "Nov 28 – Dec 2"
- *  across one. Formatted on the server in the platform's timezone so the
- *  string cannot shift between render and hydration. */
-function formatEventDates(start: Date, end: Date): string {
-  const opts: Intl.DateTimeFormatOptions = {
-    month: "short", day: "numeric", timeZone: "America/Toronto",
-  };
-  const f = new Intl.DateTimeFormat("en-CA", opts);
-  const a = f.format(start);
-  const b = f.format(end);
-  if (a === b) return a;
-  const sameMonth = a.split(" ")[0] === b.split(" ")[0];
-  return sameMonth ? `${a} – ${b.split(" ")[1]}` : `${a} – ${b}`;
-}

@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { canComment, isCommentable } from "@/lib/talent-pool/comments";
 import { answerFields, type FormField } from "@/lib/forms/types";
 import { ApplicationCommentThread } from "@/components/talent-pool/ApplicationCommentThread";
+import { RecordProfileView } from "@/components/profile/RecordProfileView";
 
 /**
  * /talent-pool/[sid] — full applicant view + comment thread.
@@ -75,6 +76,7 @@ export default async function TalentPoolDetailPage({
 
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+      {submission.user && <RecordProfileView userId={submission.user.id} surface="talent_pool" />}
       <Link
         href="/talent-pool"
         className="text-xs text-muted hover:text-fg inline-flex items-center gap-1"
