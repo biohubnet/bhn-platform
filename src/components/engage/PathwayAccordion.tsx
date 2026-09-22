@@ -49,6 +49,13 @@ export interface PathwayProgramme {
 /** Inside this many days the deadline is called out rather than just stated. */
 const CLOSING_SOON_DAYS = 7;
 
+/** Course.delivery is free text ("In-Person", "Asynchronous", "Blended",
+ *  "Online (Synchronous)"). Only the ones you attend in person are
+ *  emphasised. */
+function isInPerson(delivery: string): boolean {
+  return /in[-\s]?person/i.test(delivery);
+}
+
 export interface PathwayEntry {
   id: string;
   title: string;
@@ -201,6 +208,20 @@ function ProgrammeRow({ p }: { p: PathwayProgramme }) {
                 : `${p.daysToEnrollBy} day${p.daysToEnrollBy === 1 ? "" : "s"} left`}
             </span>
           )}
+          {/* How it runs sits with the dates, not mid-sentence in the
+              provider line: for an in-person programme that is the thing
+              you have to plan around, and here it lines up down the list
+              next to the deadline it belongs to. */}
+          {p.delivery && (
+            <span
+              className={cn(
+                "block mt-1.5 text-[12.5px] leading-snug",
+                isInPerson(p.delivery) ? "font-semibold text-fg" : "pathway-secondary",
+              )}
+            >
+              {p.delivery}
+            </span>
+          )}
           {p.startsLabel && (
             <span className="block mt-1.5 text-[12.5px] leading-snug pathway-secondary">
               Starts {p.startsLabel}
@@ -216,7 +237,7 @@ function ProgrammeRow({ p }: { p: PathwayProgramme }) {
             {p.sessionDates ?? "Session dates to be announced"}
           </span>
           <span className="block mt-0.5 text-[13px] leading-snug pathway-secondary">
-            {p.provider ?? "Provider to be confirmed"} · {p.delivery ?? "Delivery to be confirmed"} ·{" "}
+            {p.provider ?? "Provider to be confirmed"} ·{" "}
             <b className="font-semibold text-fg tabular-nums">
               {p.creditCost > 0 ? `${p.creditCost.toLocaleString()} credits` : "No credit cost"}
             </b>
@@ -319,19 +340,30 @@ export function PathwayAccordion({ pathways }: { pathways: PathwayEntry[] }) {
                     window label beside it — six rows of near-uniform text
                     with nothing leading. Two steps up separates it from both
                     without making the collapsed list feel like headings. */}
-                <span className="flex-1 min-w-0 font-semibold text-fg text-[17px] sm:text-[19px] leading-snug">
-                  {p.title}
-                </span>
-                {/* Two different facts, so two different marks: the viewer's
-                    own enrolment state, then the pathway's intake window. */}
-                {p.myStatus && (
-                  <span className="shrink-0 rounded-full bg-brand-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-brand-700 ring-1 ring-inset ring-brand-200">
-                    {p.myStatus === "approved" ? "Enrolled" : p.myStatus}
+                {/* One wrapping group, not three siblings in the row: a
+                    long single-word name ("Biomanufacturing") cannot break
+                    at a space, so beside a shrink-0 label it used to run
+                    straight through it on a phone. Wrapping drops the marks
+                    to their own line instead. */}
+                <span className="flex-1 min-w-0 flex flex-wrap items-center gap-x-3 gap-y-1 sm:flex-nowrap sm:justify-between">
+                  <span className="min-w-0 break-words font-semibold text-fg text-[17px] sm:text-[19px] leading-snug">
+                    {p.title}
                   </span>
-                )}
-                <span className="flex items-center gap-1.5 shrink-0">
-                  <span aria-hidden="true" className={cn("h-1.5 w-1.5 rounded-full", TONE_DOT[p.windowTone])} />
-                  <span className="text-[11px] font-semibold text-muted">{p.windowLabel}</span>
+                  {/* Two different facts, so two different marks: the viewer's
+                      own enrolment state, then the pathway's intake window.
+                      They keep the right edge on sm+, where they align down
+                      the list, and wrap under the title on a phone. */}
+                  <span className="flex shrink-0 items-center gap-3">
+                    {p.myStatus && (
+                      <span className="rounded-full bg-brand-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-brand-700 ring-1 ring-inset ring-brand-200">
+                        {p.myStatus === "approved" ? "Enrolled" : p.myStatus}
+                      </span>
+                    )}
+                    <span className="flex items-center gap-1.5">
+                      <span aria-hidden="true" className={cn("h-1.5 w-1.5 rounded-full", TONE_DOT[p.windowTone])} />
+                      <span className="text-[11px] font-semibold text-muted">{p.windowLabel}</span>
+                    </span>
+                  </span>
                 </span>
                 <ChevronDown
                   size={16}

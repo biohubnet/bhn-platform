@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Learning Pathways · delivery moves next to the deadline
+  {
+    title: "How a programme runs now sits under its enrolment deadline",
+    body: "On **Learning Pathways**, **In-Person** (or Asynchronous, Blended, Online) now appears under the *Enrol by* date instead of part-way along the provider line, so the thing you have to plan around sits with the dates. In-person programmes are shown in bold. On a phone, a long pathway name no longer runs into the enrolment label beside it.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Learning Pathways · course-selection calls move to Calendly
   {
     title: "Book a course-selection call from Learning Pathways",
