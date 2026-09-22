@@ -1010,7 +1010,7 @@ export const TOUR_STEPS: TourStep[] = [
   },
   {
     id: "trainee.credits",
-    title: "Your BHN credits",
+    title: "Your training credits",
     body: "You start with 200 credits. Apply for an additional 4,800 by submitting a quick form — an admin reviews each application personally.",
     path: "/credits",
     placement: "center",
@@ -1503,16 +1503,9 @@ export const TOUR_STEPS: TourStep[] = [
     since: "2026.05.18h",
   },
   {
-    id: "dash-team-note",
-    title: "A note from the team — under the hero",
-    body: "There's a short editorial blurb from the BHN founders sitting just under the trainee hero now — italic serif body addressing you by name, with hopes for each pillar (a course that surprises, a placement that opens a door, a funding round that gets your idea moving, a few people whose company you'd keep beyond the platform). Closes with `We're rooting for you`. Designed flat and native to the DS — same section chrome as the rest of the page, with a four-petal LogoMark + uppercase tracked team attribution at the bottom.",
-    placement: "center",
-    since: "2026.05.18i",
-  },
-  {
     id: "dash-hero-editorial",
     title: "Trainee hero — bespoke editorial composition",
-    body: "Trainee dashboard's head banner is now an editorial composition — DASHBOARD masthead with mono date + four-petal mark, italic-serif `Welcome back,` line, your first name set HUGE (6xl→8xl italic serif on the theme's hero-title gradient), a short hairline, a state-aware lead sentence, white-pill + ghost-pill CTAs, and a hairline-separated right-column stats stack (In progress / Credits / Certificates) on lg+. Same theme-aware `.hero-mesh-brand` base, with two extra blurred mesh blobs + a faint constellation grid for atmospheric depth.",
+    body: "Trainee dashboard's head banner is now an editorial composition — DASHBOARD masthead with mono date + four-petal mark, italic-serif `Welcome back,` line, your first name set HUGE (6xl→8xl italic serif on the theme's hero-title gradient), and a hairline-separated right-column stats stack (In progress / Certificates) on lg+. Same theme-aware `.hero-mesh-brand` base, with two extra blurred mesh blobs + a faint constellation grid for atmospheric depth.",
     placement: "center",
     since: "2026.05.18j",
   },
@@ -1669,7 +1662,7 @@ export const TOUR_STEPS: TourStep[] = [
   {
     id: "demo-filler",
     title: "Fill with sample data",
-    body: "Long forms (talent application, posting form, employer profile, trainee profile) now have a 'Fill with sample' chip — admin-only. Click and pick from 5 curated presets so consecutive demos don't all look identical.",
+    body: "Long forms (talent application, posting form, employer profile) now have a 'Fill with sample' chip — admin-only. Click and pick from 5 curated presets so consecutive demos don't all look identical.",
     placement: "center",
     roles: ["admin", "superadmin"],
     since: "2026.05.07n",

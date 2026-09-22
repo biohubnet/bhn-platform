@@ -140,7 +140,7 @@ export default async function ForTraineesPage() {
         <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-brand-700">Free to start</p>
         <h2 className="text-3xl md:text-4xl font-bold text-fg mt-2">Ready to train for the role you want?</h2>
         <p className="mt-3 text-muted leading-relaxed max-w-xl mx-auto">
-          200 BHN credits to begin. Browse the catalog, build your skill profile, get matched to internships from real industry partners.
+          200 training credits to begin. Browse the catalog, build your skill profile, get matched to internships from real industry partners.
         </p>
         <div className="mt-7 flex justify-center gap-3 flex-wrap">
           <Link

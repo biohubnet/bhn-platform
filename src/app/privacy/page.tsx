@@ -28,7 +28,7 @@ export default function PrivacyPage() {
           <h2>What we collect</h2>
           <ul>
             <li><strong>Account data</strong> — name, email, hashed password, role, organization, job title, country, phone (if provided).</li>
-            <li><strong>Learning data</strong> — courses you enroll in, progress, assessment scores, certificates, BHN credit transactions.</li>
+            <li><strong>Learning data</strong> — courses you enroll in, progress, assessment scores, certificates, training credit transactions.</li>
             <li><strong>Application data</strong> — credit applications, role-change requests, supporting documents you upload.</li>
             <li><strong>Activity data</strong> — only with your analytics consent: page views, feature usage, theme choice, device class. Used to improve the platform; never sold.</li>
             <li><strong>Optional</strong> — newsletter subscription preference.</li>

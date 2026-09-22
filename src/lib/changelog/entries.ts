@@ -22,6 +22,21 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Home + profile · Training Credits, credit box back, lighter profile
+  {
+    title: "BHN Credits are now Training Credits, and the credit application is back on your home page",
+    body: "Credits are called **Training Credits** everywhere now. If you have not applied for your training credits yet, the application box is back at the top of your home page; it disappears once your credits are approved. The home page also drops the welcome note and the line under your name, and **My profile** is simpler: the feature switcher, the sample-profile button and the language picker are gone.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
+  {
+    title: "Admins: tap ⌥ Option on the home page to preview the credit box",
+    body: "On the home page, tap **⌥ Option** (Alt on Windows) on its own to show or hide the training-credit box exactly as a trainee sees it before applying, whatever your own application status. It works on the admin home and when you view the platform as a trainee.",
+    kind: "feature",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── Sidebar · EXPERIENCE trimmed, EQUIP retired, Networking added
   {
     title: "A shorter menu: EXPERIENCE is now Industry Internship, EQUIP is gone, and Networking is coming",

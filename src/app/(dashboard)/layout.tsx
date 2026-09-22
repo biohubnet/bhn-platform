@@ -43,10 +43,6 @@ export default async function DashboardLayout({ children }: { children: React.Re
           demoExpiresAt: true,
           email: true,
           emailVerified: true,
-          // Per-user sidebar prefs (see src/lib/preferences/registry.ts).
-          // Null until the user makes their first toggle on
-          // /profile/preferences. Resolved into a Set<string> below.
-          featurePrefs: true,
         },
       })
     : Promise.resolve(null);
@@ -127,7 +123,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
           // sidebar item their role allows — see active.ts for the
           // rationale and the centralised rule.
           realRole ?? role,
-          parsePrefs(userRow?.featurePrefs),
+          // Registry defaults for everyone: the feature switcher was
+          // removed from /profile, so saved toggles no longer apply —
+          // otherwise an item someone once hid could never come back.
+          parsePrefs(null),
         )}
         initialUnreadCount={unreadCount}
       />

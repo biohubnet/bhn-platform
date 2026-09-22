@@ -92,7 +92,6 @@ const en: Dict = {
   "common.search": "Search",
   "common.loading": "Loading…",
   "common.theme": "Theme",
-  "common.language": "Language",
 
   // Profile
   "profile.title": "My profile",
@@ -101,7 +100,6 @@ const en: Dict = {
   "profile.privacy": "Privacy & data",
   "profile.exportData": "Download my data",
   "profile.deleteAccount": "Delete my account",
-  "profile.languagePicker": "Display language",
 
   // Consent
   "consent.title": "We respect your privacy",
@@ -177,7 +175,6 @@ const es: Dict = {
   "common.search": "Buscar",
   "common.loading": "Cargando…",
   "common.theme": "Tema",
-  "common.language": "Idioma",
 
   "profile.title": "Mi perfil",
   "profile.personalInfo": "Información personal",
@@ -185,7 +182,6 @@ const es: Dict = {
   "profile.privacy": "Privacidad y datos",
   "profile.exportData": "Descargar mis datos",
   "profile.deleteAccount": "Eliminar mi cuenta",
-  "profile.languagePicker": "Idioma de la interfaz",
 
   "consent.title": "Respetamos tu privacidad",
   "consent.body": "Usamos cookies y tecnologías similares para mantener BHN Training en funcionamiento, medir su rendimiento y mejorar tu experiencia. Puedes cambiar tus preferencias en cualquier momento desde tu perfil.",
@@ -260,7 +256,6 @@ const fr: Dict = {
   "common.search": "Rechercher",
   "common.loading": "Chargement…",
   "common.theme": "Thème",
-  "common.language": "Langue",
 
   "profile.title": "Mon profil",
   "profile.personalInfo": "Informations personnelles",
@@ -268,7 +263,6 @@ const fr: Dict = {
   "profile.privacy": "Confidentialité et données",
   "profile.exportData": "Télécharger mes données",
   "profile.deleteAccount": "Supprimer mon compte",
-  "profile.languagePicker": "Langue d'affichage",
 
   "consent.title": "Nous respectons votre vie privée",
   "consent.body": "Nous utilisons des cookies et technologies similaires pour faire fonctionner BHN Training, mesurer ses performances et améliorer votre expérience. Vous pouvez modifier vos choix à tout moment depuis votre profil.",
@@ -343,7 +337,6 @@ const zh: Dict = {
   "common.search": "搜索",
   "common.loading": "加载中…",
   "common.theme": "主题",
-  "common.language": "语言",
 
   "profile.title": "我的资料",
   "profile.personalInfo": "个人信息",
@@ -351,7 +344,6 @@ const zh: Dict = {
   "profile.privacy": "隐私与数据",
   "profile.exportData": "下载我的数据",
   "profile.deleteAccount": "注销账户",
-  "profile.languagePicker": "界面语言",
 
   "consent.title": "我们尊重您的隐私",
   "consent.body": "我们使用 Cookie 等技术来保持 BHN 培训平台正常运作、衡量其性能并改善您的体验。您可以随时在个人资料中更改您的选择。",
@@ -426,7 +418,6 @@ const hi: Dict = {
   "common.search": "खोजें",
   "common.loading": "लोड हो रहा है…",
   "common.theme": "थीम",
-  "common.language": "भाषा",
 
   "profile.title": "मेरी प्रोफ़ाइल",
   "profile.personalInfo": "व्यक्तिगत जानकारी",
@@ -434,7 +425,6 @@ const hi: Dict = {
   "profile.privacy": "गोपनीयता और डेटा",
   "profile.exportData": "मेरा डेटा डाउनलोड करें",
   "profile.deleteAccount": "मेरा खाता हटाएँ",
-  "profile.languagePicker": "प्रदर्शन भाषा",
 
   "consent.title": "हम आपकी गोपनीयता का सम्मान करते हैं",
   "consent.body": "हम BHN ट्रेनिंग को संचालित रखने, उसकी कार्यप्रदर्शन मापने और आपके अनुभव को सुधारने के लिए कुकीज़ और इसी तरह की तकनीकों का उपयोग करते हैं। आप किसी भी समय अपनी प्रोफ़ाइल से अपनी पसंद बदल सकते हैं।",
@@ -507,7 +497,6 @@ const ko: Dict = {
   "common.search": "검색",
   "common.loading": "로드 중…",
   "common.theme": "테마",
-  "common.language": "언어",
 
   "profile.title": "내 프로필",
   "profile.personalInfo": "개인 정보",
@@ -515,7 +504,6 @@ const ko: Dict = {
   "profile.privacy": "개인정보 및 데이터",
   "profile.exportData": "내 데이터 다운로드",
   "profile.deleteAccount": "내 계정 삭제",
-  "profile.languagePicker": "표시 언어",
 
   "consent.title": "귀하의 개인정보를 존중합니다",
   "consent.body": "BHN Training의 정상 작동, 성능 측정, 사용자 경험 향상을 위해 쿠키 및 유사 기술을 사용합니다. 프로필에서 언제든지 선택을 변경할 수 있습니다.",
@@ -588,7 +576,6 @@ const pa: Dict = {
   "common.search": "ਖੋਜੋ",
   "common.loading": "ਲੋਡ ਹੋ ਰਿਹਾ ਹੈ…",
   "common.theme": "ਥੀਮ",
-  "common.language": "ਭਾਸ਼ਾ",
 
   "profile.title": "ਮੇਰੀ ਪ੍ਰੋਫਾਈਲ",
   "profile.personalInfo": "ਨਿੱਜੀ ਜਾਣਕਾਰੀ",
@@ -596,7 +583,6 @@ const pa: Dict = {
   "profile.privacy": "ਨਿੱਜਤਾ ਅਤੇ ਡਾਟਾ",
   "profile.exportData": "ਮੇਰਾ ਡਾਟਾ ਡਾਊਨਲੋਡ ਕਰੋ",
   "profile.deleteAccount": "ਮੇਰਾ ਖਾਤਾ ਮਿਟਾਓ",
-  "profile.languagePicker": "ਡਿਸਪਲੇ ਭਾਸ਼ਾ",
 
   "consent.title": "ਅਸੀਂ ਤੁਹਾਡੀ ਨਿੱਜਤਾ ਦਾ ਸਨਮਾਨ ਕਰਦੇ ਹਾਂ",
   "consent.body": "ਅਸੀਂ BHN ਟਰੇਨਿੰਗ ਨੂੰ ਚਾਲੂ ਰੱਖਣ, ਇਸਦੀ ਕਾਰਗੁਜ਼ਾਰੀ ਮਾਪਣ ਅਤੇ ਤੁਹਾਡੇ ਅਨੁਭਵ ਨੂੰ ਬਿਹਤਰ ਬਣਾਉਣ ਲਈ ਕੂਕੀਜ਼ ਅਤੇ ਸਮਾਨ ਤਕਨੀਕਾਂ ਦੀ ਵਰਤੋਂ ਕਰਦੇ ਹਾਂ। ਤੁਸੀਂ ਆਪਣੀ ਪ੍ਰੋਫਾਈਲ ਤੋਂ ਕਿਸੇ ਵੀ ਸਮੇਂ ਆਪਣੀਆਂ ਚੋਣਾਂ ਬਦਲ ਸਕਦੇ ਹੋ।",
@@ -669,7 +655,6 @@ const ar: Dict = {
   "common.search": "بحث",
   "common.loading": "جارٍ التحميل…",
   "common.theme": "المظهر",
-  "common.language": "اللغة",
 
   "profile.title": "ملفي الشخصي",
   "profile.personalInfo": "المعلومات الشخصية",
@@ -677,7 +662,6 @@ const ar: Dict = {
   "profile.privacy": "الخصوصية والبيانات",
   "profile.exportData": "تنزيل بياناتي",
   "profile.deleteAccount": "حذف حسابي",
-  "profile.languagePicker": "لغة العرض",
 
   "consent.title": "نحن نحترم خصوصيتك",
   "consent.body": "نستخدم ملفات تعريف الارتباط والتقنيات المماثلة لإبقاء BHN Training يعمل، وقياس أدائه، وتحسين تجربتك. يمكنك تغيير اختياراتك في أي وقت من ملفك الشخصي.",

@@ -2,16 +2,13 @@
 import { useState } from "react";
 import { useSignOut } from "@/lib/auth/authProvider";
 import { useRouter } from "next/navigation";
-import { User as UserIcon, Lock, ShieldQuestion, Save, Check, AlertCircle, Clock, X, Shield, Download, Languages, Trash2 } from "lucide-react";
+import { User as UserIcon, Lock, ShieldQuestion, Save, Check, AlertCircle, Clock, X, Shield, Download, Trash2 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Field, Input, Textarea, Select } from "@/components/ui/Field";
 import { Badge } from "@/components/ui/Badge";
 import { useI18n } from "@/lib/i18n/I18nProvider";
-import { LOCALES, type LocaleId } from "@/lib/i18n/dictionaries";
 import { useConsent } from "@/components/consent/ConsentProvider";
-import { DemoFiller } from "@/components/demo/DemoFiller";
-import { TRAINEE_PROFILE_PRESETS } from "@/lib/demo/presets";
 
 interface UserShape {
   id: string;
@@ -182,21 +179,6 @@ export function ProfileClient({ user, latestRoleRequest }: {
             <UserIcon size={18} className="text-brand-600" />
             <h3 className="font-semibold text-fg">Personal info</h3>
           </div>
-          <DemoFiller
-            visible={true}
-            presets={TRAINEE_PROFILE_PRESETS}
-            onFill={(preset) => {
-              setInfo((cur) => ({
-                ...cur,
-                ...(preset.name !== undefined         ? { name: preset.name } : {}),
-                ...(preset.bio !== undefined          ? { bio: preset.bio } : {}),
-                ...(preset.organization !== undefined ? { organization: preset.organization } : {}),
-                ...(preset.jobTitle !== undefined     ? { jobTitle: preset.jobTitle } : {}),
-                ...(preset.country !== undefined      ? { country: preset.country } : {}),
-              }));
-            }}
-            hint="trainee profile sample"
-          />
         </div>
         <form onSubmit={saveInfo} className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
@@ -272,8 +254,6 @@ export function ProfileClient({ user, latestRoleRequest }: {
         </form>
       </Card>
 
-      {/* Language */}
-      <LanguageSection />
 
       {/* Privacy & data — GDPR/CCPA controls */}
       <PrivacySection />
@@ -377,25 +357,6 @@ function Alert({ children, tone }: { children: React.ReactNode; tone: "success" 
       {tone === "success" ? <Check size={14} className="mt-0.5" /> : <AlertCircle size={14} className="mt-0.5" />}
       <span>{children}</span>
     </div>
-  );
-}
-
-function LanguageSection() {
-  const { locale, setLocale, t } = useI18n();
-  return (
-    <Card className="p-6">
-      <div className="flex items-center gap-2 mb-4">
-        <Languages size={18} className="text-brand-600" />
-        <h3 className="font-semibold text-fg">{t("profile.languagePicker")}</h3>
-      </div>
-      <Field label={t("common.language")}>
-        <Select value={locale} onChange={(e) => setLocale(e.target.value as LocaleId)}>
-          {LOCALES.map((l) => (
-            <option key={l.id} value={l.id}>{l.nativeName} ({l.name})</option>
-          ))}
-        </Select>
-      </Field>
-    </Card>
   );
 }
 

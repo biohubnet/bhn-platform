@@ -1,4 +1,4 @@
-import { getSession } from "@/lib/auth";
+import { getSession, ROLE_RANK } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import Link from "next/link";
@@ -8,7 +8,9 @@ import { InstructorDashboard } from "@/components/dashboards/InstructorDashboard
 import { AdminDashboard } from "@/components/dashboards/AdminDashboard";
 import { type ReviewQuestion } from "@/components/adaptive/TodaysReviewsCard";
 import { CommitteeBadgeStrip } from "@/components/lms/CommitteeBadgeStrip";
-import { LogoMark } from "@/components/ui/Logo";
+import { CreditApplicationCallout } from "@/components/dashboards/CreditApplicationCallout";
+import { CreditCalloutPreview } from "@/components/dashboards/CreditCalloutPreview";
+import { CREDIT_GRANT_TTL_DAYS } from "@/lib/credits/expiry";
 import { getDisplayName } from "@/lib/user/display-name";
 import { PreferredNameEditor } from "@/components/profile/PreferredNameEditor";
 
@@ -66,7 +68,13 @@ export default async function DashboardPage() {
       <AdminDashboard
         user={{ id: userId, name: session!.user?.name ?? null }}
         role={role}
-        committeeBadge={<CommitteeBadgeStrip userId={userId} />}
+        committeeBadge={
+          <>
+            {/* Tap ⌥ Option to preview the new-trainee credit box. */}
+            <CreditCalloutPreview ttlDays={CREDIT_GRANT_TTL_DAYS} />
+            <CommitteeBadgeStrip userId={userId} />
+          </>
+        }
       />
     );
   }
@@ -92,8 +100,8 @@ export default async function DashboardPage() {
   //   • user credits (for the explore-links footer)
   //   • pathway-enrolment count (for the line under the next card)
   //   • one suggested course (fallback when no in-progress course)
-  // Only the active enrollment survives — the hero's "N courses in
-  // flight" line is the last thing that reads it. Upstream also pulled
+  // Only the active enrollment survives (the hero's In progress stat
+  // reads it). Upstream also pulled
   // recent activity, user credits, pathway enrolments and a suggested
   // course for cards the trainee view no longer renders.
   // ONE wave. This page was deliberately stripped back for latency, and
@@ -109,6 +117,7 @@ export default async function DashboardPage() {
     openPathways,
     myPathwayIds,
     upcomingEvents,
+    latestCreditApp,
   ] = await Promise.all([
     prisma.enrollment.findMany({
       where: { userId, status: "active" },
@@ -140,6 +149,12 @@ export default async function DashboardPage() {
       take: 3,
       select: { id: true, slug: true, title: true, tagline: true, startDate: true, endDate: true },
     }),
+    // Latest training-credit application, for the callout under the hero.
+    prisma.creditApplication.findFirst({
+      where: { userId },
+      orderBy: { submittedAt: "desc" },
+      select: { status: true, submittedAt: true, reviewedAt: true, reviewerNote: true, approvedAmount: true },
+    }),
   ]);
 
   const inProgress = enrollments.length;
@@ -157,17 +172,12 @@ export default async function DashboardPage() {
   //  board, the PERSONAL STATUS strip and the REMINDERS band. None of
   //  those render in the trainee view any more.)
 
-  // ─── HERO COPY VARIANTS ────────────────────────────────────────
-  // Slightly different state-aware lead lines so a returning
-  // trainee, a brand-new trainee, and a finished-some trainee each
-  // get a fitted sentence under their name instead of one generic
-  // line trying to cover every state.
-  const heroLead =
-    inProgress > 0
-      ? `${inProgress} course${inProgress === 1 ? "" : "s"} in flight. Today's the day to make a stitch.`
-      : completedCourseCount > 0
-        ? `${completedCourseCount} course${completedCourseCount === 1 ? "" : "s"} done. The path keeps unfolding.`
-        : "The path lives here. Pick one up.";
+
+  // An admin previewing the trainee view (acting as trainee) can still
+  // tap ⌥ Option to see the new-trainee credit box — unless their own
+  // state already shows it (they never applied).
+  const realRole = (session!.user as { realRole?: string }).realRole ?? role;
+  const isRealAdmin = (ROLE_RANK[realRole] ?? 0) >= ROLE_RANK.admin;
 
   return (
     <div>
@@ -409,13 +419,6 @@ export default async function DashboardPage() {
                 </span>
               </h1>
 
-              {/* Mid-rule + lead sentence — tightened spacing */}
-              <div className="mt-5 max-w-xl">
-                <span aria-hidden className="block h-px w-12 bg-white/30 mb-3" />
-                <p className="text-sm sm:text-base text-white/85 leading-relaxed">
-                  {heroLead}
-                </p>
-              </div>
             </div>
 
             {/* Right-column stats stack — only on lg+. White mono
@@ -435,24 +438,16 @@ export default async function DashboardPage() {
         </div>
       </section>
 
-      {/* ── ENGAGE training credits — prominent dashboard callout ──
-          Sits directly under the hero so a trainee who's never
-          applied for the 5,000-credit grant can't miss it. The
-          callout's render state is internal: a big brand CTA when
-          they've never applied; an amber "under review" chip while
-          pending; a rose re-apply prompt if rejected; and entirely
-          HIDDEN once they've been approved (since the credits are
-          already in their balance — no point repeating the pitch).
-          Also renders for users in the `evaluating` role, who can
-          apply but aren't full trainees yet. */}
-      {/* The training-credit application is hidden from trainees.
-          Upstream renders CreditApplicationCallout here for trainee /
-          evaluating roles only — a prominent "apply for up to N
-          credits" CTA linking to /credits/apply. Since its audience
-          was exactly the roles now being restricted, hiding it means
-          removing the block outright rather than gating it further.
-          The /credits/apply page and the admin review queue are
-          untouched; only this entry point is gone. */}
+      {/* Training-credit application — right under the hero, so a new
+          trainee sees it first. The callout decides its own state: a
+          CTA when they have never applied, "under review" while pending,
+          a re-apply prompt if rejected, and hidden once approved. */}
+      {(role === "trainee" || role === "evaluating") && (
+        <div className="max-w-screen-2xl mx-auto px-6 mt-6">
+          <CreditApplicationCallout latestApp={latestCreditApp} ttlDays={CREDIT_GRANT_TTL_DAYS} variant="prominent" />
+        </div>
+      )}
+      {isRealAdmin && latestCreditApp && <CreditCalloutPreview ttlDays={CREDIT_GRANT_TTL_DAYS} className="max-w-screen-2xl mx-auto px-6 mt-6" />}
 
       {/* First-time prompt — only for users who haven't picked a
           preferredName yet. It asks in a DIALOG rather than as a card
@@ -467,53 +462,11 @@ export default async function DashboardPage() {
         dismissKey={userId}
       />
 
-      {/* ── A NOTE FROM THE TEAM ────────────────────────────────────
-            Hand-set editorial blurb from the BHN founders to the
-            trainee, sitting just under the hero. Italic serif body
-            on a faint brand-tone wash, signed off with the four-
-            petal LogoMark + uppercase team attribution. Standard
-            section padding so it pairs with the rest of the page;
-            `max-w-2xl mr-auto` caps the line length for comfortable
-            reading WHILE anchoring the whole block to the left edge
-            of the section. */}
-      <section
-        className="border-t border-line py-5 sm:py-7 px-5 sm:px-8 relative overflow-hidden"
-        style={{
-          backgroundImage:
-            "linear-gradient(120deg, rgba(56,189,248,0.045) 0%, rgba(99,102,241,0.03) 55%, rgba(244,114,182,0.045) 100%)",
-        }}
-      >
-        {/* Left-aligned treatment — eyebrow + body + signature
-            stack on the left edge of the section. `mr-auto` (NOT
-            `mx-auto`) pushes the 2xl column against the left edge
-            so the block ITSELF is left-aligned on the page; the
-            max-w-5xl cap still keeps the measure readable — widened
-            from 2xl on request, now that this note is the only thing
-            below the hero. */}
-        <div className="relative max-w-5xl mr-auto">
-          <SectionEyebrow tone="brand">A note from the team</SectionEyebrow>
-          <p className="mt-3 font-serif italic text-base sm:text-lg text-fg leading-relaxed">
-            Welcome, <span className="not-italic font-bold">{firstName}</span>. We hope
-            BHN does what we built it for — keeps the next move within reach. We hope a
-            course re-frames something you thought you knew, a placement that opens a
-            door, a funding round that gets your idea moving, and a few people whose
-            company you&apos;d keep beyond the platform.{" "}
-            <span className="not-italic font-bold">We&apos;re rooting for you.</span>
-          </p>
-          <div className="mt-4 flex items-center gap-2.5">
-            <LogoMark size={20} className="shrink-0" />
-            <span className="text-[10px] uppercase tracking-[0.28em] font-bold text-fg-muted">
-              — The BioHubNet team
-            </span>
-          </div>
-        </div>
-      </section>
-
       {/* Committee badge — recognition surface. Auto-hides for
           non-members. Wrapped in the standard dashboard width +
           padding container so the "Also member of" pill has its
           own visual space and doesn't crowd the credit-application
-          callout above it or the editorial blurb below. The mt-4
+          callout above it. The mt-4
           gives a clear breath between the callout's bottom border
           and the first committee badge / chip row. */}
       <div className="max-w-screen-2xl mx-auto px-6 mt-4">
@@ -710,43 +663,6 @@ function HeroStat({ label, value }: { label: string; value: string }) {
   );
 }
 
-type EyebrowTone = "brand" | "amber" | "emerald" | "sky" | "violet";
-
-/** Section eyebrow — small uppercase tracked label with a tone-tinted
- *  gradient hairline leading into the title. Used to mark each
- *  hairline-divided section. Tone vocabulary mirrors the sidebar
- *  pillar tones (engage=emerald, experience=amber, equip=sky,
- *  events=violet) so visual association carries across the
- *  platform. */
-function SectionEyebrow({
-  children,
-  tone = "brand",
-}: {
-  children: React.ReactNode;
-  tone?: EyebrowTone;
-}) {
-  // The tone used to pick a gradient for a hairline dash rendered
-  // before the label. The dash is gone — at eyebrow size it read as a
-  // stray mark rather than an accent. The tone now colours the LABEL
-  // itself, so the four-pillar board keeps its per-pillar identity
-  // with one less piece of chrome. Classes are static strings so
-  // Tailwind's scanner picks them up.
-  const toneClass =
-    tone === "amber"
-      ? "text-amber-700"
-      : tone === "emerald"
-        ? "text-emerald-700"
-        : tone === "sky"
-          ? "text-sky-700"
-          : tone === "violet"
-            ? "text-violet-700"
-            : "text-brand-700";
-  return (
-    <p className={`text-[12px] uppercase tracking-[0.2em] font-bold ${toneClass}`}>
-      {children}
-    </p>
-  );
-}
 
 // ─── DEADLINE-DRIVEN BOARD ────────────────────────────────────────
 // Native to the platform design system: a standard flat section

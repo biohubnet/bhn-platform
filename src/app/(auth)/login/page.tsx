@@ -315,7 +315,7 @@ function LoginPageInner() {
             <p className="mt-4 text-sm text-slate-300 leading-relaxed">
               Free to start.{" "}
               <span className="inline-flex items-center gap-1 text-white font-semibold">
-                <Coins size={11} aria-hidden className="text-amber-300" /> 200 BHN credits
+                <Coins size={11} aria-hidden className="text-amber-300" /> 200 training credits
               </span>{" "}
               on the house — most courses cost 50–200, with 4,800 more available
               after admin review.

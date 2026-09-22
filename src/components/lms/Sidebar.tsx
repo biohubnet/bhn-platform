@@ -133,9 +133,8 @@ const engageItems: (NavItem & { labelKey: string })[] = [
 // MY PROFILE section retired from the sidebar — it carried a single
 // link to /profile that duplicated the avatar at the bottom-left of
 // the sidebar (which already opens the same page). One affordance
-// per surface keeps the nav scannable. The /profile route + the
-// Feature switcher board it contains are unaffected; reach them via
-// the avatar.
+// per surface keeps the nav scannable. The /profile route is
+// unaffected; reach it via the avatar.
 
 // EXPERIENCE — applications and connections to industry placements.
 // Renamed (8 May 2026) from "My Application" / "My Applications" to
@@ -1646,7 +1645,7 @@ export function Sidebar({
         {/* MY PROFILE retired — the avatar at the bottom-left of
             the sidebar already routes to /profile, so this section
             was duplicated affordance. The /profile route still
-            works (Feature switcher board lives there). */}
+            works. */}
 
         {isAdmin && (
           <SectionGroup
@@ -1777,7 +1776,7 @@ export function Sidebar({
           <div className="flex items-center gap-1.5 bg-amber-50 rounded-md px-2 py-1">
             <Coins size={11} className="text-amber-500 shrink-0" />
             <p className="text-[11px] text-amber-700 font-semibold leading-none">
-              {credits.toLocaleString()} BHN Credits
+              {credits.toLocaleString()} Training Credits
             </p>
           </div>
         </div>

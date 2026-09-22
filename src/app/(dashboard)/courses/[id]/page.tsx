@@ -192,7 +192,7 @@ export default async function CourseDetailPage({
                   !isStaff && userCredits < course.creditCost ? "text-red-500" : "text-amber-600"
                 )}>
                   <Coins size={14} />
-                  {course.creditCost.toLocaleString()} BHN Credits
+                  {course.creditCost.toLocaleString()} Training Credits
                   {!isStaff && userCredits < course.creditCost && " (insufficient)"}
                 </span>
               )}

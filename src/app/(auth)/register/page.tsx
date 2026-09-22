@@ -228,7 +228,7 @@ export default function RegisterPage() {
           <div className="mb-6">
             <h1 className="text-2xl font-bold text-fg">Welcome to BHN — let&apos;s get you set up.</h1>
             <p className="text-muted text-sm mt-1.5 leading-relaxed">
-              Free to start. <span className="inline-flex items-center gap-1 text-fg font-medium"><Coins size={11} className="text-amber-500" /> 200 BHN credits</span> on the house — most courses cost 50–200 — with another 4,800 available after admin review.
+              Free to start. <span className="inline-flex items-center gap-1 text-fg font-medium"><Coins size={11} className="text-amber-500" /> 200 training credits</span> on the house — most courses cost 50–200 — with another 4,800 available after admin review.
             </p>
           </div>
 

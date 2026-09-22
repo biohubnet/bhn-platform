@@ -198,7 +198,7 @@ export function CourseEditButton({ course }: { course: CourseShape }) {
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Credit cost (BHN)">
+            <Field label="Credit cost (Training Credits)">
               <Input type="number" min="0" value={creditCost} onChange={(e) => setCreditCost(e.target.value)} />
             </Field>
             <Field label="Thumbnail URL">

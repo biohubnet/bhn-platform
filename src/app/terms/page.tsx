@@ -71,9 +71,9 @@ export default function TermsPage() {
             have been compromised, or that we&apos;re required by law to act on.
           </p>
 
-          <h2>4. BHN Credits</h2>
+          <h2>4. Training Credits</h2>
           <p>
-            BHN Credits are a virtual currency used inside the platform to enrol in courses and
+            Training Credits are a virtual currency used inside the platform to enrol in courses and
             pathways.
           </p>
           <ul>

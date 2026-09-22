@@ -243,8 +243,8 @@ export async function notifyExpiringGrants(): Promise<{
             to: row.user.email,
             subject:
               days >= 30
-                ? `Your BHN training credits expire in ${days} days`
-                : `Last call — your BHN training credits expire in ${days} days`,
+                ? `Your training credits expire in ${days} days`
+                : `Last call — your training credits expire in ${days} days`,
             text,
           });
           sent++;

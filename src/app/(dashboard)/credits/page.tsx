@@ -92,7 +92,7 @@ export default async function CreditsPage() {
     <div>
       <PageHero
         eyebrow={<><Coins size={12} /> ENGAGE</>}
-        title="My BHN Credits"
+        title="My Training Credits"
         description={
           <>
             Credits are used to enroll in paid courses. Per the BioHubNet ENGAGE program, awarded credits expire <strong className="text-fg">{CREDIT_GRANT_TTL_DAYS} days</strong> from their grant date. We&apos;ll email you 90, 30, and 7 days before any expiry so you have time to enroll in courses you want to take.
