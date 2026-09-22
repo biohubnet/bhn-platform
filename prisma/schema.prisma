@@ -2125,6 +2125,38 @@ model Announcement {
   createdAt DateTime @default(now())
 }
 
+/// A card in the "What's on" band at the top of /dashboard, under the
+/// hero: an event, a workshop or an announcement. Managed at
+/// /admin/dashboard-promos. Free-standing on purpose — a card links
+/// wherever it likes (an /events page, Luma, a course) rather than
+/// requiring a BhnEvent or Workshop row behind it.
+///
+/// Dates are calendar days (`@db.Date`, no time or timezone). A dated
+/// card leaves the band after its last day; `showUntil` hides any card
+/// after that day.
+model DashboardPromo {
+  id           String    @id @default(cuid())
+  kind         String // event | workshop | announcement
+  title        String
+  /// Plain text, a sentence or two. Not markdown.
+  summary      String
+  startDate    DateTime? @db.Date
+  endDate      DateTime? @db.Date
+  location     String?
+  ctaLabel     String?
+  /// "/path" on this site or an https:// URL. Validated by Zod.
+  ctaHref      String?
+  showUntil    DateTime? @db.Date
+  status       String    @default("draft") // draft | published
+  /// Lower numbers first within a kind.
+  displayOrder Int       @default(0)
+  createdById  String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([status, kind, displayOrder])
+}
+
 model AuditLog {
   id         String   @id @default(cuid())
   actorId    String

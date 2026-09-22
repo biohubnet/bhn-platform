@@ -13,6 +13,8 @@ import { CreditCalloutPreview } from "@/components/dashboards/CreditCalloutPrevi
 import { CREDIT_GRANT_TTL_DAYS } from "@/lib/credits/expiry";
 import { getDisplayName } from "@/lib/user/display-name";
 import { PreferredNameEditor } from "@/components/profile/PreferredNameEditor";
+import { DashboardPromos } from "@/components/dashboards/DashboardPromos";
+import { getLivePromos } from "@/lib/dashboard-promos/queries";
 
 interface EnrollmentWithCourse {
   id: string;
@@ -37,6 +39,14 @@ export default async function DashboardPage() {
   const session = await getSession();
   const userId = (session!.user as { id?: string }).id!;
   const role = (session!.user as { role?: string }).role ?? "trainee";
+  // The acting-as role decides the view (and what can be managed from
+  // it); the real role only decides what an admin can still preview.
+  const realRole = (session!.user as { realRole?: string }).realRole ?? role;
+  const isRealAdmin = (ROLE_RANK[realRole] ?? 0) >= ROLE_RANK.admin;
+
+  // The "What's on" band sits under every dashboard's hero. Start its
+  // read now so it overlaps the greeting lookup below.
+  const promosPromise = getLivePromos();
 
   // Fetch the user's preferredName for the greeting. Falls back to
   // `name`, then email local-part, then "Learner". See
@@ -64,12 +74,14 @@ export default async function DashboardPage() {
     redirect("/employer");
   }
   if (role === "admin" || role === "superadmin") {
+    const promos = await promosPromise;
     return (
       <AdminDashboard
         user={{ id: userId, name: session!.user?.name ?? null }}
         role={role}
         committeeBadge={
           <>
+            <DashboardPromos groups={promos} canManage />
             {/* Tap ⌥ Option to preview the new-trainee credit box. */}
             <CreditCalloutPreview ttlDays={CREDIT_GRANT_TTL_DAYS} />
             <CommitteeBadgeStrip userId={userId} />
@@ -79,10 +91,16 @@ export default async function DashboardPage() {
     );
   }
   if (role === "instructor") {
+    const promos = await promosPromise;
     return (
       <InstructorDashboard
         user={{ id: userId, name: session!.user?.name ?? null }}
-        committeeBadge={<CommitteeBadgeStrip userId={userId} />}
+        committeeBadge={
+          <>
+            <DashboardPromos groups={promos} canManage={false} />
+            <CommitteeBadgeStrip userId={userId} />
+          </>
+        }
       />
     );
   }
@@ -118,6 +136,7 @@ export default async function DashboardPage() {
     myPathwayIds,
     upcomingEvents,
     latestCreditApp,
+    promos,
   ] = await Promise.all([
     prisma.enrollment.findMany({
       where: { userId, status: "active" },
@@ -155,6 +174,7 @@ export default async function DashboardPage() {
       orderBy: { submittedAt: "desc" },
       select: { status: true, submittedAt: true, reviewedAt: true, reviewerNote: true, approvedAmount: true },
     }),
+    promosPromise,
   ]);
 
   const inProgress = enrollments.length;
@@ -175,9 +195,8 @@ export default async function DashboardPage() {
 
   // An admin previewing the trainee view (acting as trainee) can still
   // tap ⌥ Option to see the new-trainee credit box — unless their own
-  // state already shows it (they never applied).
-  const realRole = (session!.user as { realRole?: string }).realRole ?? role;
-  const isRealAdmin = (ROLE_RANK[realRole] ?? 0) >= ROLE_RANK.admin;
+  // state already shows it (they never applied). isRealAdmin is set at
+  // the top of the page.
 
   return (
     <div>
@@ -437,6 +456,14 @@ export default async function DashboardPage() {
           </div>
         </div>
       </section>
+
+      {/* What's on — events, workshops, announcements. First thing under
+          the hero; nothing goes above the hero. */}
+      {promos.length > 0 && (
+        <div className="max-w-screen-2xl mx-auto px-6 mt-6">
+          <DashboardPromos groups={promos} canManage={false} />
+        </div>
+      )}
 
       {/* Training-credit application — right under the hero, so a new
           trainee sees it first. The callout decides its own state: a

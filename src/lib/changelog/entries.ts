@@ -22,6 +22,21 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Home · "What's on" band + its admin tab
+  {
+    title: "Your home page now shows what's on: events, workshops and announcements",
+    body: "A **What's on** band now sits right under the banner on your home page, with upcoming BioHubNet events, Training Week workshops and tours, and the latest announcements. Dated cards drop off once they're over. On a phone, swipe sideways through each row.",
+    kind: "feature",
+    visibleTo: ["trainee", "evaluating", "instructor", "admin", "superadmin"],
+    daysAgo: 0,
+  },
+  {
+    title: "Admins: manage the home page's What's on band in Dashboard promos",
+    body: "**Administration → Platform → Dashboard promos** lists every card in the band. Add, edit, publish, unpublish or delete events, workshops and announcements, with dates, a location, a button link and an optional last day to show. Up to three cards of each kind appear at once, lowest order number first, and each card is marked Showing, Queued, Ended or Draft. It starts with Training Week and the Symposium, three Training Week sessions and two announcements.",
+    kind: "feature",
+    visibleTo: ADMINS,
+    daysAgo: 0,
+  },
   // ── Home + profile · Training Credits, credit box back, lighter profile
   {
     title: "BHN Credits are now Training Credits, and the credit application is back on your home page",

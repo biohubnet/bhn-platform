@@ -30,9 +30,30 @@ export interface TourStep {
 
 /** Bump this whenever a new step is added below — used to re-trigger
  *  the tour for returning users with a friendlier "what's new" hint. */
-export const TOUR_VERSION = "2026.09.15a";
+export const TOUR_VERSION = "2026.09.22a";
 
 export const TOUR_STEPS: TourStep[] = [
+  // ─── "What's on" band under the dashboard hero (Sep 2026)
+  {
+    id: "dashboard.whats-on",
+    title: "See what's on at BioHubNet",
+    body: "Upcoming events, Training Week workshops and the latest announcements now sit right under the banner on your home page. Dated cards drop off once they're over.",
+    path: "/dashboard",
+    placement: "center",
+    roles: ["trainee", "evaluating", "instructor", "admin", "superadmin"],
+    cta: { label: "Open my home page", href: "/dashboard" },
+    since: "2026.09.22a",
+  },
+  {
+    id: "admin.dashboard-promos",
+    title: "Run the What's on band from Dashboard promos",
+    body: "Add, edit, publish and order the events, workshops and announcements on everyone's home page under Administration → Platform → Dashboard promos.",
+    path: "/admin/dashboard-promos",
+    placement: "center",
+    roles: ["admin", "superadmin"],
+    cta: { label: "Open Dashboard promos", href: "/admin/dashboard-promos" },
+    since: "2026.09.22a",
+  },
   // ─── ENGAGE · Catalogue renamed + grouped by topic — Sep 2026
   {
     id: "engage.on-demand-courses-by-topic",
