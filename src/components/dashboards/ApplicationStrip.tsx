@@ -145,12 +145,12 @@ export function ApplicationStrip({
             : "An admin is finishing a last check before host companies can see your profile."
         }
         qualifies={[
-          "Master's and PhD students",
+          "Master's students",
+          "PhD students",
           "Postdoctoral fellows",
-          "Research associates and lab technicians",
-          "New or soon-to-be graduates",
+          "Master's / PhD / postdoctoral fellows within 1 year of thesis submission, course completion or contract end date",
         ]}
-        finePrint="Have your program details and your research supervisor's contact ready. A signed graduate-office verification and a supervisor support letter strengthen your application."
+        finePrint="Accepting applications until January 2027. Have your program details and your research supervisor's contact ready."
         applyHref="/forms/talent-application"
         statusHref="/forms/talent-application"
         secondary={{ label: "Browse opportunities", href: "/internships" }}

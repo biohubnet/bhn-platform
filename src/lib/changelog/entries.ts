@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Learning Pathways · course-selection calls move to Calendly
+  {
+    title: "Book a course-selection call from Learning Pathways",
+    body: "**Need help choosing?** on **Learning Pathways** now books a course-selection call with BioHubNet in Calendly, instead of the old slot picker. Pick any time that suits you; the booking opens in a new tab.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Trainee home · ENGAGE + EXPERIENCE side by side
   {
     title: "Your home page now puts ENGAGE and EXPERIENCE side by side",

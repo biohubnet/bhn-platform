@@ -1,6 +1,6 @@
 import { getSession, isStaff as checkIsStaff } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { Layers } from "lucide-react";
+import { CalendarClock, ExternalLink, Layers } from "lucide-react";
 import { PageHero } from "@/components/ui/PageHero";
 import { EditableText } from "@/components/cms/EditableText";
 import { getCopy } from "@/lib/copy";
@@ -10,11 +10,9 @@ import {
   PathwayAccordion,
   type PathwayEntry,
 } from "@/components/engage/PathwayAccordion";
-import {
-  AdvisorBooking,
-  type AdvisorSlot,
-  type AdvisorBookingState,
-} from "@/components/engage/AdvisorBooking";
+
+/** Course-selection calls are booked in Calendly, not on the platform. */
+const COURSE_SELECTION_CALENDLY = "https://calendly.com/epshita-islam-utoronto/biohubnet-course-selection";
 
 interface PathwayRow {
   id: string;
@@ -68,8 +66,7 @@ export default async function PathwaysPage() {
   // dependency. The database executes this whole page in ~2.6ms; the
   // cost was always the waiting, not the querying.
   const [
-    pathways, approvedRows, myEnrollments, courses,
-    pathwaysSubtitle, advisorRows, myAdvisorBooking,
+    pathways, approvedRows, myEnrollments, courses, pathwaysSubtitle,
   ] = await Promise.all([
       prisma.pathway.findMany({
         where: isStaff ? {} : { status: "published" },
@@ -111,31 +108,6 @@ export default async function PathwaysPage() {
           })
         : Promise.resolve([]),
       getCopy("pathways.subtitle", pathwaysSubtitleDefault),
-      // Advisor slots: open, not yet started, with room left.
-      prisma.advisorSession.findMany({
-        where: { status: "open", startsAt: { gt: new Date() } },
-        orderBy: { startsAt: "asc" },
-        take: 24,
-        select: {
-          id: true,
-          advisorName: true,
-          startsAt: true,
-          endsAt: true,
-          capacity: true,
-          location: true,
-          _count: { select: { bookings: { where: { status: "booked" } } } },
-        },
-      }),
-      prisma.advisorBooking.findFirst({
-        where: { userId, status: "booked", session: { startsAt: { gt: new Date() } } },
-        orderBy: { session: { startsAt: "asc" } },
-        select: {
-          id: true,
-          session: {
-            select: { startsAt: true, advisorName: true, location: true },
-          },
-        },
-      }),
     ]);
 
   const approvedByPathway = new Map(
@@ -143,36 +115,6 @@ export default async function PathwaysPage() {
   );
   const nowForWindows = new Date();
   const enrollmentMap = new Map(myEnrollments.map((e) => [e.pathwayId, e.status]));
-
-  const advisorDay = new Intl.DateTimeFormat("en-CA", {
-    weekday: "short", month: "short", day: "numeric", timeZone: "America/Toronto",
-  });
-  const advisorTime = new Intl.DateTimeFormat("en-CA", {
-    hour: "numeric", minute: "2-digit", timeZone: "America/Toronto",
-  });
-
-  const advisorSlots: AdvisorSlot[] = advisorRows
-    .filter((r) => r._count.bookings < r.capacity)
-    .map((r) => ({
-      id: r.id,
-      advisorName: r.advisorName,
-      startsAtISO: r.startsAt.toISOString(),
-      dayLabel: advisorDay.format(r.startsAt),
-      timeLabel: advisorTime.format(r.startsAt),
-      minutes: Math.max(1, Math.round((r.endsAt.getTime() - r.startsAt.getTime()) / 60000)),
-      location: r.location,
-      seatsLeft: r.capacity - r._count.bookings,
-    }));
-
-  const advisorBookingState: AdvisorBookingState | null = myAdvisorBooking
-    ? {
-        bookingId: myAdvisorBooking.id,
-        dayLabel: advisorDay.format(myAdvisorBooking.session.startsAt),
-        timeLabel: advisorTime.format(myAdvisorBooking.session.startsAt),
-        advisorName: myAdvisorBooking.session.advisorName,
-        location: myAdvisorBooking.session.location,
-      }
-    : null;
 
   // Formatted server-side so a date cannot render differently after
   // hydration in another timezone.
@@ -247,11 +189,24 @@ export default async function PathwaysPage() {
         <div className="grid grid-cols-1 gap-5">
           <PathwayAccordion pathways={pathwayEntries} />
         </div>
-        <AdvisorBooking
-          slots={advisorSlots}
-          existing={advisorBookingState}
-          className="mt-5 lg:mt-0 lg:sticky lg:top-6"
-        />
+        <aside className="mt-5 rounded-2xl border border-line bg-card p-5 lg:mt-0 lg:sticky lg:top-6">
+          <p className="text-[12px] uppercase tracking-[0.2em] font-bold text-subtle">Need help choosing?</p>
+          <p className="mt-2 text-sm text-muted leading-relaxed">
+            Book a course-selection call with BioHubNet. Pick a time that suits you and we&apos;ll help
+            you match a pathway to where you want your career to go.
+          </p>
+          <a
+            href={COURSE_SELECTION_CALENDLY}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-4 inline-flex items-center gap-2 rounded-xl bg-brand-600 px-4 py-2 text-sm font-bold text-white shadow-md shadow-brand-600/25 transition-all hover:-translate-y-0.5 hover:bg-brand-700"
+          >
+            <CalendarClock size={15} aria-hidden />
+            Book a call
+            <ExternalLink size={14} aria-hidden />
+          </a>
+          <p className="mt-2 text-[11.5px] text-subtle">Opens Calendly in a new tab.</p>
+        </aside>
         </div>
       )}
     </div>
