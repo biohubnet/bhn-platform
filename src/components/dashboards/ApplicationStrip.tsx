@@ -148,9 +148,9 @@ export function ApplicationStrip({
           "Master's students",
           "PhD students",
           "Postdoctoral fellows",
-          "Master's / PhD / postdoctoral fellows within 1 year of thesis submission, course completion or contract end date",
+          "Master's / PhD / PostDoc within 1 year of thesis submission, course completion or contract end date",
         ]}
-        finePrint="Accepting applications until January 2027. Have your program details and your research supervisor's contact ready."
+        finePrint="If you are in a degree program, a supervisor support letter (template provided) is required."
         applyHref="/forms/talent-application"
         statusHref="/forms/talent-application"
         secondary={{ label: "Browse opportunities", href: "/internships" }}

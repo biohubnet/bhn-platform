@@ -20,7 +20,7 @@ import { torontoToday } from "@/lib/dashboard-promos";
 
 const Body = z.object({
   userId: z.string().min(1).max(64),
-  surface: z.enum(["talent_pool", "applicant", "resume"]),
+  surface: z.enum(["talent_pool", "applicant", "resume", "resume_file", "video_intro"]),
 });
 
 export async function POST(req: NextRequest) {

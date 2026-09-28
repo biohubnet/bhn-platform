@@ -531,7 +531,8 @@ export default async function DashboardPage() {
             }))}
           />
           <ExperienceColumn
-            profileViews={experience.profileViews}
+            resumeViews={experience.resumeViews}
+            sampleViews={experience.sampleViews}
             windowDays={experience.windowDays}
             interviewsDone={experience.interviewsDone}
             postings={experience.postings}

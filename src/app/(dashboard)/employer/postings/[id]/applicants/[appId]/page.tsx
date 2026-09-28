@@ -12,6 +12,7 @@ import { ApplicantActions } from "@/components/hiring/ApplicantActions";
 import { scoreFitForTrainee } from "@/lib/matching/fit";
 import { FitExplain } from "@/components/matching/FitExplain";
 import { RecordProfileView } from "@/components/profile/RecordProfileView";
+import { TrackedMaterialLink } from "@/components/profile/TrackedMaterialLink";
 
 /**
  * /employer/postings/[id]/applicants/[appId] — per-applicant ATS view.
@@ -249,24 +250,24 @@ export default async function ApplicantDetailPage({
         )}
         <div className="flex flex-wrap gap-2 pt-1">
           {app.applicant.resumeUrl && (
-            <a
+            <TrackedMaterialLink
               href={app.applicant.resumeUrl}
-              target="_blank"
-              rel="noopener noreferrer"
+              userId={app.applicantId}
+              surface="resume_file"
               className="inline-flex items-center gap-1.5 text-xs font-semibold rounded-lg border border-line bg-card text-fg hover:bg-elevated px-3 py-1.5"
             >
               <FileText size={11} /> Resume
-            </a>
+            </TrackedMaterialLink>
           )}
           {app.applicant.videoIntroUrl && (
-            <a
+            <TrackedMaterialLink
               href={app.applicant.videoIntroUrl}
-              target="_blank"
-              rel="noopener noreferrer"
+              userId={app.applicantId}
+              surface="video_intro"
               className="inline-flex items-center gap-1.5 text-xs font-semibold rounded-lg border border-line bg-card text-fg hover:bg-elevated px-3 py-1.5"
             >
               📹 Video intro
-            </a>
+            </TrackedMaterialLink>
           )}
           {talentAppSubmission && (
             <Link

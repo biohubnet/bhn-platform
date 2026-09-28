@@ -43,6 +43,7 @@ import {
 import { cn } from "@/lib/utils";
 import { InterviewSchedulerDialog } from "./InterviewSchedulerDialog";
 import { FitExplain } from "@/components/matching/FitExplain";
+import { TrackedMaterialLink } from "@/components/profile/TrackedMaterialLink";
 import type { FitResult } from "@/lib/matching/fit";
 
 // ── Types ────────────────────────────────────────────────────────
@@ -1087,9 +1088,14 @@ function Drawer({
           <p className="text-[10px] uppercase tracking-[0.22em] text-subtle font-semibold mb-1.5">Materials</p>
           <div className="flex flex-wrap gap-2 text-xs">
             {a.resumeUrl && (
-              <a href={a.resumeUrl} target="_blank" rel="noreferrer noopener" className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-brand-50 text-brand-800 ring-1 ring-brand-200 hover:bg-brand-100">
+              <TrackedMaterialLink
+                href={a.resumeUrl}
+                userId={a.applicantId}
+                surface="resume_file"
+                className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-brand-50 text-brand-800 ring-1 ring-brand-200 hover:bg-brand-100"
+              >
                 <FileText size={11} /> Resume PDF <ExternalLink size={9} />
-              </a>
+              </TrackedMaterialLink>
             )}
             {/* Structured-resume view — open inline, leave comments
                 anchored to specific bullets. Read-only for employers;
@@ -1104,9 +1110,14 @@ function Drawer({
               <FileText size={11} /> Resume + comments <ExternalLink size={9} />
             </a>
             {a.videoUrl && (
-              <a href={a.videoUrl} target="_blank" rel="noreferrer noopener" className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-violet-50 text-violet-800 ring-1 ring-violet-200 hover:bg-violet-100">
+              <TrackedMaterialLink
+                href={a.videoUrl}
+                userId={a.applicantId}
+                surface="video_intro"
+                className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-violet-50 text-violet-800 ring-1 ring-violet-200 hover:bg-violet-100"
+              >
                 <Video size={11} /> 1-min video <ExternalLink size={9} />
-              </a>
+              </TrackedMaterialLink>
             )}
             <a href={`mailto:${a.email}`} className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-elevated text-fg ring-1 ring-line hover:bg-card">
               <Mail size={11} /> Email

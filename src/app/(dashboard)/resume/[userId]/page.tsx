@@ -23,6 +23,7 @@ import { canViewResume, canCommentOnResume } from "@/lib/resume/permissions";
 import type { ResumeContent } from "@/lib/resume/types";
 import { ResumeViewer } from "@/components/resume/ResumeViewer";
 import { RecordProfileView } from "@/components/profile/RecordProfileView";
+import { TrackedMaterialLink } from "@/components/profile/TrackedMaterialLink";
 
 export const dynamic = "force-dynamic";
 
@@ -120,14 +121,14 @@ export default async function MentorResumePage({ params }: PageProps) {
             <ShieldCheck size={12} /> Viewing as {viewerRole}
           </span>
           {owner.resumeUrl && (
-            <a
+            <TrackedMaterialLink
               href={owner.resumeUrl}
-              target="_blank"
-              rel="noopener noreferrer"
+              userId={ownerId}
+              surface="resume_file"
               className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-brand-50 ring-1 ring-inset ring-brand-200 text-brand-900 font-medium hover:bg-brand-100 transition-colors"
             >
               <FileText size={12} /> Open uploaded file
-            </a>
+            </TrackedMaterialLink>
           )}
         </div>
 

@@ -150,9 +150,10 @@ export function EngageColumn({
 }
 
 export function ExperienceColumn({
-  profileViews, windowDays, interviewsDone, postings,
+  resumeViews, sampleViews, windowDays, interviewsDone, postings,
 }: {
-  profileViews: number;
+  resumeViews: number;
+  sampleViews: number;
   windowDays: number;
   interviewsDone: number;
   postings: OpenPosting[];
@@ -161,13 +162,15 @@ export function ExperienceColumn({
     <div className="space-y-4 min-w-0" data-pillar-column="experience">
       <PillarHeading pillar="experience" />
 
-      <Panel title="Where you stand" link={{ label: "My applications", href: "/profile/applications" }} pillar="experience">
-        <div className="grid grid-cols-2 gap-4">
-          <BigStat label="Profile views" value={profileViews} caption={`in the past ${windowDays} days`} />
-          <BigStat label="Interviews done" value={interviewsDone} caption="so far" />
+      <Panel title="Profile views" link={{ label: "My applications", href: "/profile/applications" }} pillar="experience">
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+          <BigStat label="Resume views" value={resumeViews} caption={`past ${windowDays} days`} />
+          <BigStat label="Interview sample views" value={sampleViews} caption={`past ${windowDays} days`} />
+          <BigStat label="Interviews completed" value={interviewsDone} caption="so far" />
         </div>
         <p className="mt-4 text-xs text-muted leading-relaxed">
-          Views count employers who opened your talent-pool profile, an application or your resume.{" "}
+          Counted when an employer opens your resume or your one-minute video introduction — once per
+          employer a day.{" "}
           <Link href="/interviews" className="font-semibold text-amber-800 hover:underline">My interviews</Link>
         </p>
       </Panel>

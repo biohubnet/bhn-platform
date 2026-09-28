@@ -2169,15 +2169,17 @@ model ProfileView {
   /// The trainee whose profile was viewed.
   userId    String
   viewerId  String
-  surface   String // talent_pool | applicant | resume
+  surface   String // talent_pool | applicant | resume | resume_file | video_intro
   day       DateTime @db.Date
   createdAt DateTime @default(now())
 
   user   User @relation("ProfileViewTarget", fields: [userId], references: [id], onDelete: Cascade)
   viewer User @relation("ProfileViewViewer", fields: [viewerId], references: [id], onDelete: Cascade)
 
+  /// One row per viewer, trainee, surface and day — surface is in the key
+  /// so opening a resume and a video on the same day counts as both.
   /// Also serves "this trainee's views since X": userId leads.
-  @@unique([userId, viewerId, day])
+  @@unique([userId, viewerId, surface, day])
 }
 
 model AuditLog {
