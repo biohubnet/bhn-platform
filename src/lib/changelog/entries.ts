@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Home · What's on shrinks to four lines
+  {
+    title: "What's on is now four lines, not a wall of cards",
+    body: "The **What's on** band under the banner is much shorter: four full-width lines, one per item, instead of three columns of cards. It takes one item at a time from each kind — an event, a workshop, an announcement, then the next event — so all three still show. Each line carries the date, the title and, on a wider screen, the summary and where to go.",
+    kind: "improvement",
+    visibleTo: ["trainee", "evaluating", "instructor", "admin", "superadmin"],
+    daysAgo: 0,
+  },
   // ── Learning Pathways · delivery moves next to the deadline
   {
     title: "How a programme runs now sits under its enrolment deadline",
@@ -56,7 +64,7 @@ export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   // ── Home · "What's on" band + its admin tab
   {
     title: "Your home page now shows what's on: events, workshops and announcements",
-    body: "A **What's on** band now sits right under the banner on your home page, with upcoming BioHubNet events, Training Week workshops and tours, and the latest announcements. Dated cards drop off once they're over. On a phone, swipe sideways through each row.",
+    body: "A **What's on** band now sits right under the banner on your home page, with upcoming BioHubNet events, Training Week workshops and tours, and the latest announcements. Dated cards drop off once they're over.",
     kind: "feature",
     visibleTo: ["trainee", "evaluating", "instructor", "admin", "superadmin"],
     daysAgo: 0,

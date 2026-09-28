@@ -10,7 +10,7 @@ import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { DashboardPromosAdmin, type AdminPromo } from "@/components/admin/DashboardPromosAdmin";
-import { dayString, groupPromos, isPromoCurrent, torontoToday } from "@/lib/dashboard-promos";
+import { dayString, isPromoCurrent, pickPromos, torontoToday } from "@/lib/dashboard-promos";
 
 export const dynamic = "force-dynamic";
 
@@ -24,7 +24,7 @@ export default async function DashboardPromosAdminPage() {
   const today = torontoToday();
   // The same selection the home page makes, so "Showing" is exact.
   const showing = new Set(
-    groupPromos(rows.filter((r) => r.status === "published"), today).flatMap((g) => g.items.map((i) => i.id)),
+    pickPromos(rows.filter((r) => r.status === "published"), today).map((p) => p.id),
   );
 
   const promos: AdminPromo[] = rows.map((r) => ({
@@ -51,7 +51,7 @@ export default async function DashboardPromosAdminPage() {
     <div className="space-y-5">
       <PageHeader
         title="Dashboard promos"
-        description="The events, workshops and announcements in the “What's on” band, right under the banner on everyone's home page. Up to three of each kind show at once, lowest order number first. Dated cards drop off after their last day."
+        description="The events, workshops and announcements in the “What's on” band, right under the banner on everyone's home page. It shows four lines, one per card, taken a kind at a time (event, workshop, announcement, event…) and lowest order number first. Dated cards drop off after their last day."
         actions={
           <Link
             href="/dashboard"

@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { NextRequest } from "next/server";
 import {
-  formatPromoDates, groupPromos, isPromoCurrent, isSafePromoHref, PromoInput, toPromoData, torontoToday,
+  formatPromoDates, isPromoCurrent, pickPromos, isSafePromoHref, PromoInput, toPromoData, torontoToday,
 } from "../../src/lib/dashboard-promos";
 import { POST as createPromo } from "../../src/app/api/admin/dashboard-promos/route";
 import { DELETE as deletePromo, PATCH as updatePromo } from "../../src/app/api/admin/dashboard-promos/[id]/route";
@@ -48,15 +48,22 @@ test("a card stays up through its last day and its show-until day", () => {
   expect(torontoToday(new Date("2026-10-29T03:30:00Z")).toISOString()).toBe("2026-10-28T00:00:00.000Z");
 });
 
-test("the band keeps kind order, drops past cards and shows three per kind", () => {
+test("the band takes four lines, one kind at a time, and drops past cards", () => {
   const row = (id: string, kind: string, startDate: Date | null = null) =>
     ({ id, kind, startDate, endDate: null, showUntil: null });
-  const groups = groupPromos([
-    row("a1", "announcement"), row("w1", "workshop"), row("w2", "workshop"), row("w3", "workshop"),
-    row("w4", "workshop"), row("old", "event", day("2026-01-01")),
-  ], day("2026-10-01"));
-  expect(groups.map((g) => g.kind)).toEqual(["workshop", "announcement"]);
-  expect(groups[0].items.map((i) => i.id)).toEqual(["w1", "w2", "w3"]);
+  const today = day("2026-10-01");
+  // One of each first, then round two — not four events.
+  expect(pickPromos([
+    row("e1", "event"), row("e2", "event"), row("e3", "event"),
+    row("w1", "workshop"), row("a1", "announcement"),
+  ], today).map((p) => p.id)).toEqual(["e1", "w1", "a1", "e2"]);
+  // Fewer kinds still fill the four lines, and a past card never counts.
+  expect(pickPromos([
+    row("w1", "workshop"), row("w2", "workshop"), row("w3", "workshop"), row("w4", "workshop"),
+    row("w5", "workshop"), row("old", "event", day("2026-01-01")),
+  ], today).map((p) => p.id)).toEqual(["w1", "w2", "w3", "w4"]);
+  // Nothing current → nothing shown, and the loop still ends.
+  expect(pickPromos([row("old", "event", day("2026-01-01"))], today)).toEqual([]);
 });
 
 test("promo dates read like the rest of the dashboard", () => {

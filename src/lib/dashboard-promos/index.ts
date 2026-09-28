@@ -19,8 +19,9 @@ export const PROMO_KIND_LABELS: Record<PromoKind, string> = {
   announcement: "Announcements",
 };
 
-/** How many cards of one kind the band shows at once. */
-export const PROMOS_PER_KIND = 3;
+/** How many lines the band shows at once. One line each, so this is also
+ *  the band's height in rows. */
+export const PROMOS_SHOWN = 4;
 
 /** A path on this site ("/events/x", never "//host") or an https:// URL.
  *  No whitespace or control characters anywhere: browsers strip tabs and
@@ -115,16 +116,26 @@ export function isPromoCurrent(p: PromoWindow, today: Date): boolean {
 }
 
 /**
- * Published rows (already in display order) → the band's groups: current
- * cards only, at most PROMOS_PER_KIND each, kinds in a fixed order, empty
- * kinds dropped.
+ * Published rows (already in display order) → the lines the band shows:
+ * current ones only, at most PROMOS_SHOWN, taken a kind at a time
+ * (event, workshop, announcement, event…) so four lines still cover the
+ * three kinds instead of four events crowding the others out.
  */
-export function groupPromos<T extends PromoWindow & { kind: string }>(rows: T[], today: Date) {
-  const current = rows.filter((r) => isPromoCurrent(r, today));
-  return PROMO_KINDS.map((kind) => ({
-    kind,
-    items: current.filter((r) => r.kind === kind).slice(0, PROMOS_PER_KIND),
-  })).filter((g) => g.items.length > 0);
+export function pickPromos<T extends PromoWindow & { kind: string }>(rows: T[], today: Date): T[] {
+  const byKind = PROMO_KINDS.map((kind) =>
+    rows.filter((r) => r.kind === kind && isPromoCurrent(r, today)),
+  );
+  const picked: T[] = [];
+  for (let round = 0; picked.length < PROMOS_SHOWN; round++) {
+    const before = picked.length;
+    for (const queue of byKind) {
+      if (picked.length >= PROMOS_SHOWN) break;
+      const next = queue[round];
+      if (next) picked.push(next);
+    }
+    if (picked.length === before) break; // every kind is exhausted
+  }
+  return picked;
 }
 
 /** "Thu, Oct 29" for one day, "Oct 26 – 28" within a month, "Oct 30 – Nov 2" across one. */

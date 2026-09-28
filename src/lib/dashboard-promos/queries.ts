@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { groupPromos, torontoToday } from "@/lib/dashboard-promos";
+import { pickPromos, torontoToday } from "@/lib/dashboard-promos";
 
 const LIVE_SELECT = {
   id: true, kind: true, title: true, summary: true, startDate: true, endDate: true,
@@ -7,7 +7,7 @@ const LIVE_SELECT = {
 } as const;
 
 /**
- * The band's cards for today. Filters dates in memory so the rule lives
+ * The band's lines for today. Filters dates in memory so the rule lives
  * in one tested place (isPromoCurrent). A broken read hides the band
  * rather than the whole home page.
  */
@@ -21,7 +21,7 @@ export async function getLivePromos(now = new Date()) {
       select: LIVE_SELECT,
     })
     .catch(() => []);
-  return groupPromos(rows, torontoToday(now));
+  return pickPromos(rows, torontoToday(now));
 }
 
-export type PromoGroups = Awaited<ReturnType<typeof getLivePromos>>;
+export type LivePromos = Awaited<ReturnType<typeof getLivePromos>>;

@@ -63,7 +63,7 @@ export default async function DashboardPage() {
         role={role}
         committeeBadge={
           <>
-            <DashboardPromos groups={promos} canManage />
+            <DashboardPromos promos={promos} canManage />
             {/* Tap ⌥ Option to preview a new trainee's application cards. */}
             <ApplicationStripPreview ttlDays={CREDIT_GRANT_TTL_DAYS} />
             <CommitteeBadgeStrip userId={userId} />
@@ -79,7 +79,7 @@ export default async function DashboardPage() {
         user={{ id: userId, name: session!.user?.name ?? null }}
         committeeBadge={
           <>
-            <DashboardPromos groups={promos} canManage={false} />
+            <DashboardPromos promos={promos} canManage={false} />
             <CommitteeBadgeStrip userId={userId} />
           </>
         }
@@ -469,7 +469,7 @@ export default async function DashboardPage() {
           the hero; nothing goes above the hero. */}
       {promos.length > 0 && (
         <div className="max-w-screen-2xl mx-auto px-6 mt-6">
-          <DashboardPromos groups={promos} canManage={false} />
+          <DashboardPromos promos={promos} canManage={false} />
         </div>
       )}
 

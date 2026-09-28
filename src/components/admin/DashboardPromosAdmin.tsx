@@ -15,7 +15,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Modal } from "@/components/ui/Modal";
 import { Field, Input, Select, Textarea } from "@/components/ui/Field";
 import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
-import { PROMO_KINDS, PROMO_KIND_LABELS, PROMOS_PER_KIND, type PromoKind } from "@/lib/dashboard-promos";
+import { PROMO_KINDS, PROMO_KIND_LABELS, PROMOS_SHOWN, type PromoKind } from "@/lib/dashboard-promos";
 
 export interface AdminPromo {
   id: string;
@@ -53,7 +53,7 @@ const STATE_BADGE: Record<AdminPromo["state"], { label: string; tone: "success" 
 
 const STATE_HELP: Record<AdminPromo["state"], string> = {
   showing: "On the home page now.",
-  queued: `Published, but ${PROMOS_PER_KIND} cards of this kind with lower order numbers are showing.`,
+  queued: `Published, but the ${PROMOS_SHOWN} lines the band shows are taken by cards with lower order numbers.`,
   ended: "Published, but its last day or “show until” day has passed.",
   draft: "Not shown until you publish it.",
 };
