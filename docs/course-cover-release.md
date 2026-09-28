@@ -30,3 +30,14 @@ boundary. This file is the release note instead.
 
 Source base: `7b658a89abaa62ba783bd6cd1eb81bc89f0bf66e`.
 Previous production deployment: `dpl_A1pB8zFTMf1Jf7PBKoiT81a8HFDB`.
+
+## Topic-color correction — 2026-09-28
+
+Replaces only four WebP assets: PW-BIO-02 and PW-BIO-04 now match the blue
+biomanufacturing group; PW-RD-01 matches the magenta-purple USP/DSP group;
+PW-MA-01 matches the coral Clinical Trials group. Illustrations, course grouping,
+all other artwork and application code remain unchanged. Original masters and
+revised PNGs are retained in the separate course-graphics preview directory.
+
+Use the same migration-free deployment procedure above. Rollback target for
+this correction: `dpl_DRcMCEborZAZoAVxpCTUQBe7SNuj`.
