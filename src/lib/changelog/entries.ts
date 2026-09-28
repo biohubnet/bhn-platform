@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Learning Pathways · the booking calendar is now in the page
+  {
+    title: "Pick a time for a course-selection call without leaving Learning Pathways",
+    body: "**Need help choosing?** has moved from the right-hand side to the full width under the pathway list, and **Show available times** now opens BioHubNet's booking calendar right there in the page. It only loads when you open it, so nothing from Calendly is fetched otherwise. You can still open it in a new tab.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Home · What's on shrinks to four lines
   {
     title: "What's on is now four lines, not a wall of cards",

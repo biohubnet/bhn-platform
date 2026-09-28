@@ -185,28 +185,51 @@ export default async function PathwaysPage() {
           </p>
         </div>
       ) : (
-        <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-6 lg:items-start">
-        <div className="grid grid-cols-1 gap-5">
-          <PathwayAccordion pathways={pathwayEntries} />
-        </div>
-        <aside className="mt-5 rounded-2xl border border-line bg-card p-5 lg:mt-0 lg:sticky lg:top-6">
-          <p className="text-[12px] uppercase tracking-[0.2em] font-bold text-subtle">Need help choosing?</p>
-          <p className="mt-2 text-sm text-muted leading-relaxed">
-            Book a course-selection call with BioHubNet. Pick a time that suits you and we&apos;ll help
-            you match a pathway to where you want your career to go.
-          </p>
-          <a
-            href={COURSE_SELECTION_CALENDLY}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-4 inline-flex items-center gap-2 rounded-xl bg-brand-600 px-4 py-2 text-sm font-bold text-white shadow-md shadow-brand-600/25 transition-all hover:-translate-y-0.5 hover:bg-brand-700"
-          >
-            <CalendarClock size={15} aria-hidden />
-            Book a call
-            <ExternalLink size={14} aria-hidden />
-          </a>
-          <p className="mt-2 text-[11.5px] text-subtle">Opens Calendly in a new tab.</p>
-        </aside>
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 gap-5">
+            <PathwayAccordion pathways={pathwayEntries} />
+          </div>
+
+          {/* Booking sits under the list, full width: Calendly needs 320px
+              and the old 320px rail left only 280px inside its padding.
+              The calendar loads only when someone opens it — a lazy iframe
+              in a closed <details> is never fetched, so nobody who isn't
+              booking gets Calendly's third-party cookies. No script, no
+              client component: the page stays a server component. */}
+          <section id="book-a-call" className="rounded-2xl border border-line bg-card p-5">
+            <p className="text-[12px] uppercase tracking-[0.2em] font-bold text-subtle">Need help choosing?</p>
+            <p className="mt-2 max-w-prose text-sm text-muted leading-relaxed">
+              Book a course-selection call with BioHubNet. Pick a time that suits you and we&apos;ll help
+              you match a pathway to where you want your career to go.
+            </p>
+
+            <details className="group mt-4">
+              <summary className="inline-flex cursor-pointer list-none items-center gap-2 rounded-xl bg-brand-600 px-4 py-2 text-sm font-bold text-white shadow-md shadow-brand-600/25 transition-all hover:-translate-y-0.5 hover:bg-brand-700 [&::-webkit-details-marker]:hidden">
+                <CalendarClock size={15} aria-hidden />
+                <span className="group-open:hidden">Show available times</span>
+                <span className="hidden group-open:inline">Hide the calendar</span>
+              </summary>
+
+              <iframe
+                src={`${COURSE_SELECTION_CALENDLY}?hide_event_type_details=1&hide_gdpr_banner=0&embed_type=Inline`}
+                title="Book a course-selection call with BioHubNet"
+                loading="lazy"
+                className="mt-4 h-[44rem] w-full min-w-[320px] rounded-xl border border-line bg-card"
+              />
+            </details>
+
+            <p className="mt-3 text-[11.5px] text-subtle">
+              The calendar is Calendly&apos;s and sets its own cookies once you open it.{" "}
+              <a
+                href={COURSE_SELECTION_CALENDLY}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 font-semibold text-brand-700 hover:underline"
+              >
+                Open it in a new tab <ExternalLink size={11} aria-hidden />
+              </a>
+            </p>
+          </section>
         </div>
       )}
     </div>
