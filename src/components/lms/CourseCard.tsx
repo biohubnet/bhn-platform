@@ -37,7 +37,8 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { ArrowRight, BookOpen, Heart } from "lucide-react";
+import { ArrowRight, Heart } from "lucide-react";
+import { CourseCover } from "@/components/lms/CourseCover";
 import { cn } from "@/lib/utils";
 import { parseOverlay, overlayStyle } from "@/lib/courses/thumbnail-overlay";
 import { displayCourseDescription } from "@/lib/courses/displayDescription";
@@ -202,21 +203,14 @@ export function CourseCard({ course }: CourseCardProps) {
             : "bg-gradient-to-br from-brand-500 to-indigo-600",
         )}
       >
-        {course.thumbnail ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={course.thumbnail}
-            alt=""
-            className={cn(
-              "absolute inset-0 w-full h-full object-cover",
-              isArchived && "grayscale",
-            )}
-          />
-        ) : (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <BookOpen size={26} strokeWidth={1.5} className="text-white/55" />
-          </div>
-        )}
+        <CourseCover
+          thumbnail={course.thumbnail}
+          code={course.code}
+          className={cn(
+            "absolute inset-0 w-full h-full object-cover",
+            isArchived && "grayscale",
+          )}
+        />
         {overlay && (
           <div className="absolute inset-0" style={overlayStyle(overlay)} />
         )}

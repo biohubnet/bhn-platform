@@ -6,6 +6,7 @@ import {
 import { prisma } from "@/lib/prisma";
 import { GreetingTagline } from "@/components/lms/GreetingTagline";
 import { PageHero } from "@/components/ui/PageHero";
+import { CourseCover } from "@/components/lms/CourseCover";
 
 /**
  * Instructor dashboard — what someone authoring courses actually wants
@@ -29,7 +30,7 @@ export async function InstructorDashboard({
       prisma.course.findMany({
         where: { instructorId: user.id },
         select: {
-          id: true, title: true, status: true, thumbnail: true,
+          id: true, code: true, title: true, status: true, thumbnail: true,
           createdAt: true,
           _count: { select: { enrollments: true, modules: true, assessments: true } },
         },
@@ -182,14 +183,11 @@ export async function InstructorDashboard({
             {myCourses.map((c) => (
               <li key={c.id} className="flex items-center gap-4 px-5 py-3 hover:bg-elevated/40">
                 <div className="w-12 h-12 rounded-lg overflow-hidden border border-line bg-elevated shrink-0">
-                  {c.thumbnail ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={c.thumbnail} alt="" className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-subtle">
-                      <BookOpen size={18} />
-                    </div>
-                  )}
+                  <CourseCover
+                    thumbnail={c.thumbnail}
+                    code={c.code}
+                    className="w-full h-full object-cover"
+                  />
                 </div>
                 <div className="flex-1 min-w-0">
                   <Link href={`/courses/${c.id}`} className="font-medium text-fg leading-tight hover:text-brand-700 transition-colors">

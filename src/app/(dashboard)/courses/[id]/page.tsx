@@ -8,6 +8,7 @@ import { ScormUploadButton } from "@/components/lms/ScormUploadButton";
 import { PublishToggle } from "@/components/lms/PublishToggle";
 import { CourseEditButton } from "@/components/lms/CourseEditButton";
 import { ThumbnailGenerator } from "@/components/lms/ThumbnailGenerator";
+import { CourseCover } from "@/components/lms/CourseCover";
 import { CourseAISummary } from "@/components/lms/CourseAISummary";
 import { CourseTutorWidget } from "@/components/lms/CourseTutorWidget";
 import { MasteryHeatmap } from "@/components/adaptive/MasteryHeatmap";
@@ -125,24 +126,24 @@ export default async function CourseDetailPage({
         </div>
       )}
 
-      {/* Thumbnail hero — only when present, or when staff for the generator */}
-      {(course.thumbnail || isStaff) && (
-        <div className="relative aspect-[16/6] w-full rounded-[var(--radius-xl)] overflow-hidden bg-gradient-to-br from-brand-500 via-brand-600 to-brand-800 group">
-          {course.thumbnail && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={course.thumbnail} alt="" className="w-full h-full object-cover" />
-          )}
-          {isStaff && (
-            <div className="absolute top-3 right-3 opacity-90 hover:opacity-100">
-              <ThumbnailGenerator
-                endpoint={`/api/courses/${id}/thumbnail`}
-                currentUrl={course.thumbnail}
-                compact
-              />
-            </div>
-          )}
-        </div>
-      )}
+      {/* Artwork is presentation-only; editing tools retain the stored thumbnail. */}
+      <div className="relative aspect-[16/6] w-full rounded-[var(--radius-xl)] overflow-hidden bg-gradient-to-br from-brand-500 via-brand-600 to-brand-800 group">
+        <CourseCover
+          thumbnail={course.thumbnail}
+          code={course.code}
+          loading="eager"
+          className="w-full h-full object-cover"
+        />
+        {isStaff && (
+          <div className="absolute top-3 right-3 opacity-90 hover:opacity-100">
+            <ThumbnailGenerator
+              endpoint={`/api/courses/${id}/thumbnail`}
+              currentUrl={course.thumbnail}
+              compact
+            />
+          </div>
+        )}
+      </div>
 
       {/* Header */}
       <div className="bg-card backdrop-blur-md rounded-[var(--radius-lg)] border border-line p-6">
