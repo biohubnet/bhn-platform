@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Courses · cover art for the pathway programmes
+  {
+    title: "Every course in the catalogue has cover art",
+    body: "The eleven pathway programmes on **Courses** — from Aseptic techniques and cell culture basics to Bioprocess Scale-up — showed a blank banner. Each now has its own cover, in the same style as the rest of the catalogue.",
+    kind: "fix",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Home · EXPERIENCE copy
   {
     title: "Recent graduates can apply for the Industry Internship program",
