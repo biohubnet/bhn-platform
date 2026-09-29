@@ -27,7 +27,8 @@
  * current page picks up the new value immediately.
  */
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, useTransition } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { Modal } from "@/components/ui/Modal";
 import { Pencil, Check, X, Sparkles } from "lucide-react";
@@ -55,6 +56,8 @@ export function PreferredNameEditor({ mode, fullName, initial, dismissKey }: Pro
   const [error, setError] = useState<string | null>(null);
   const [dismissed, setDismissed] = useState(false);
   const popoverRef = useRef<HTMLDivElement | null>(null);
+  const buttonRef = useRef<HTMLButtonElement | null>(null);
+  const fieldRef = useRef<HTMLInputElement | null>(null);
 
   // Read the local-storage dismissal once on mount. Both the card and
   // the modal are dismissible, and a modal that reappears on every
@@ -71,12 +74,45 @@ export function PreferredNameEditor({ mode, fullName, initial, dismissKey }: Pro
   useEffect(() => {
     if (mode !== "pencil" || !open) return;
     function onDown(e: MouseEvent) {
-      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
+      const t = e.target as Node;
+      if (popoverRef.current?.contains(t) || buttonRef.current?.contains(t)) return;
+      setOpen(false);
     }
+    function onKey(e: KeyboardEvent) { if (e.key === "Escape") setOpen(false); }
     document.addEventListener("mousedown", onDown);
-    return () => document.removeEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [mode, open]);
+
+  // The panel is a fixed layer next to the pencil, not a child of the
+  // hero: the hero clips its overflow, so an in-flow popover was cut off
+  // and focusing the field scrolled the whole page. Measured after paint,
+  // and it flips to the left / above when it would leave the viewport.
+  useLayoutEffect(() => {
+    if (mode !== "pencil" || !open) return;
+    // Written straight onto the node rather than held in state: this runs
+    // on every scroll and resize, and a setState there would re-render the
+    // whole panel each frame.
+    const place = () => {
+      const panel = popoverRef.current;
+      const b = buttonRef.current?.getBoundingClientRect();
+      if (!panel || !b) return;
+      const gap = 8;
+      const { offsetWidth: w, offsetHeight: h } = panel;
+      panel.style.left = `${Math.max(gap, Math.min(b.right + gap, window.innerWidth - w - gap))}px`;
+      panel.style.top = `${b.bottom + gap + h > window.innerHeight ? Math.max(gap, b.top - h - gap) : b.bottom + gap}px`;
+    };
+    place();
+    fieldRef.current?.focus({ preventScroll: true });
+    window.addEventListener("resize", place);
+    window.addEventListener("scroll", place, true);
+    return () => {
+      window.removeEventListener("resize", place);
+      window.removeEventListener("scroll", place, true);
+    };
   }, [mode, open]);
 
   const suggestions = suggestDisplayNames(fullName);
@@ -115,7 +151,7 @@ export function PreferredNameEditor({ mode, fullName, initial, dismissKey }: Pro
   if (mode === "modal") {
     return (
       <Modal open onClose={dismiss} title="How should we address you?">
-        <p className="text-[13px] text-fg-muted">
+        <p className="text-[13px] text-muted">
           We&apos;ll use this in greetings across the platform — your records and
           certificates still use{" "}
           <span className="font-semibold text-fg">{fullName ?? "your full name"}</span>.
@@ -148,7 +184,7 @@ export function PreferredNameEditor({ mode, fullName, initial, dismissKey }: Pro
             type="button"
             onClick={dismiss}
             disabled={busy}
-            className="text-[12.5px] text-fg-muted hover:text-fg px-2 py-1.5 rounded-md"
+            className="text-[12.5px] text-muted hover:text-fg px-2 py-1.5 rounded-md"
           >
             Skip for now
           </button>
@@ -166,7 +202,7 @@ export function PreferredNameEditor({ mode, fullName, initial, dismissKey }: Pro
         </div>
         <div className="flex-1 min-w-[14rem]">
           <p className="text-[13.5px] font-semibold text-fg">How should we address you?</p>
-          <p className="text-[11.5px] text-fg-muted mt-0.5">
+          <p className="text-[11.5px] text-muted mt-0.5">
             We&apos;ll use this in greetings across the platform — your records and certificates still use <span className="font-semibold">{fullName ?? "your full name"}</span>.
           </p>
           <ChipRow
@@ -183,7 +219,7 @@ export function PreferredNameEditor({ mode, fullName, initial, dismissKey }: Pro
               placeholder="Or type your own…"
               maxLength={80}
               disabled={busy}
-              className="text-[12px] px-2 py-1 rounded-md border border-line bg-white focus:outline-none focus:ring-2 focus:ring-brand-400 min-w-[10rem]"
+              className="text-[12px] px-2 py-1 rounded-md border border-line bg-card-solid text-fg focus:outline-none focus:ring-2 focus:ring-brand-400 min-w-[10rem]"
             />
             <button
               type="button"
@@ -197,7 +233,7 @@ export function PreferredNameEditor({ mode, fullName, initial, dismissKey }: Pro
               type="button"
               onClick={dismiss}
               disabled={busy}
-              className="text-[11.5px] text-fg-muted hover:text-fg px-2 py-1 rounded-md"
+              className="text-[11.5px] text-muted hover:text-fg px-2 py-1 rounded-md"
             >
               Skip for now
             </button>
@@ -214,20 +250,27 @@ export function PreferredNameEditor({ mode, fullName, initial, dismissKey }: Pro
   return (
     <span className="relative inline-flex items-center">
       <button
+        ref={buttonRef}
         type="button"
         onClick={() => { setValue(initial?.trim() ?? ""); setOpen((v) => !v); }}
         title="Change how you're addressed"
         aria-label="Edit preferred name"
-        className="ml-1 inline-flex items-center justify-center w-6 h-6 rounded-md text-fg-subtle hover:text-fg hover:bg-elevated"
+        aria-expanded={open}
+        className="ml-1 inline-flex items-center justify-center w-6 h-6 rounded-md text-white/70 hover:text-white hover:bg-white/15"
       >
         <Pencil size={11} />
       </button>
-      {open && (
+      {open && createPortal(
         <div
           ref={popoverRef}
-          className="absolute top-full left-0 mt-1 z-30 w-[22rem] rounded-xl border border-line bg-card-solid shadow-elevated p-3 popover"
+          role="dialog"
+          aria-label="How should we address you?"
+          style={{ top: -9999, left: -9999 }}
+          /* Reset the type it would otherwise inherit from the hero's
+             italic, letter-spaced, gradient-filled name. */
+          className="fixed z-50 w-[22rem] max-w-[calc(100vw-1rem)] rounded-xl border border-line bg-card-solid p-3 font-sans not-italic normal-case tracking-normal text-fg shadow-elevated [-webkit-text-fill-color:currentColor]"
         >
-          <p className="text-[11px] uppercase tracking-[0.16em] font-bold text-fg-muted mb-2">
+          <p className="text-[11px] uppercase tracking-[0.16em] font-bold text-muted mb-2">
             How should we address you?
           </p>
           <ChipRow
@@ -244,8 +287,8 @@ export function PreferredNameEditor({ mode, fullName, initial, dismissKey }: Pro
               placeholder="Or type your own…"
               maxLength={80}
               disabled={busy}
-              autoFocus
-              className="flex-1 text-[12px] px-2 py-1 rounded-md border border-line bg-white focus:outline-none focus:ring-2 focus:ring-brand-400"
+              ref={fieldRef}
+              className="flex-1 text-[12px] px-2 py-1 rounded-md border border-line bg-card-solid text-fg focus:outline-none focus:ring-2 focus:ring-brand-400"
             />
             <button
               type="button"
@@ -258,7 +301,7 @@ export function PreferredNameEditor({ mode, fullName, initial, dismissKey }: Pro
             <button
               type="button"
               onClick={() => setOpen(false)}
-              className="inline-flex items-center justify-center w-7 h-7 rounded-md text-fg-subtle hover:text-fg hover:bg-elevated"
+              className="inline-flex items-center justify-center w-7 h-7 rounded-md text-subtle hover:text-fg hover:bg-elevated"
               aria-label="Cancel"
             >
               <X size={12} />
@@ -269,7 +312,7 @@ export function PreferredNameEditor({ mode, fullName, initial, dismissKey }: Pro
               type="button"
               onClick={() => save(null)}
               disabled={busy}
-              className="mt-2 text-[11px] text-fg-muted hover:text-fg underline disabled:opacity-50"
+              className="mt-2 text-[11px] text-muted hover:text-fg underline disabled:opacity-50"
             >
               Reset (use my full name)
             </button>
@@ -277,7 +320,8 @@ export function PreferredNameEditor({ mode, fullName, initial, dismissKey }: Pro
           {error && (
             <p className="mt-2 text-[11.5px] text-rose-700">{error}</p>
           )}
-        </div>
+        </div>,
+        document.body,
       )}
     </span>
   );

@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Home · the name editor next to your greeting
+  {
+    title: "The pencil beside your name opens a panel that stays put",
+    body: "Editing how you're addressed used to open a panel that took the banner's styling — pale text, wide letter spacing — and pushed the page up as it opened. It now appears beside the pencil as its own panel, in the normal page type, readable on every theme, and nothing else on the page moves. Press Escape or click away to close it.",
+    kind: "fix",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Home · EXPERIENCE metrics split in three
   {
     title: "Your visibility: resume views, interview sample views and interviews completed",
