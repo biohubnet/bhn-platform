@@ -138,7 +138,7 @@ export function ApplicationStrip({
           rejected: "Your internship application wasn't approved",
           approved: "You're in the Industry Internship talent pool",
         }}
-        intro="Join BioHubNet's talent pool. Once you're approved, life-sciences host companies can find your profile and invite you to interview for internships."
+        intro="Join BioHubNet's talent pool. Once you're approved, companies can find your profile and invite you to interview for internships."
         approvedText={
           internship.visibleToEmployers
             ? "Host companies can now find your profile and invite you to interview."
@@ -148,7 +148,7 @@ export function ApplicationStrip({
           "Master's students",
           "PhD students",
           "Postdoctoral fellows",
-          "Master's / PhD / PostDoc within 1 year of thesis submission, course completion or contract end date",
+          "Recent graduates (1 year of thesis submission, course completion or contract end date) - until 2027 Jan",
         ]}
         finePrint="If you are in a degree program, a supervisor support letter (template provided) is required."
         applyHref="/forms/talent-application"
@@ -207,7 +207,7 @@ function PillarCard({
               <p className="mt-1.5 text-pretty text-sm text-muted leading-relaxed">{noOrphan(intro)}</p>
               <div className="mt-3 rounded-xl bg-card/85 backdrop-blur border border-line px-3 py-2.5 text-xs">
                 <p className="font-bold text-fg mb-1 text-[11px] uppercase tracking-[0.18em]">Who qualifies</p>
-                <ul className="list-disc list-inside text-pretty leading-snug space-y-0.5 text-muted">
+                <ul className="list-disc pl-4 text-pretty leading-snug space-y-0.5 text-muted">
                   {qualifies.map((q) => <li key={q}>{noOrphan(q)}</li>)}
                 </ul>
               </div>

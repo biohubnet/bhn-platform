@@ -295,7 +295,7 @@ function ApplicationStatusCard({
         <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-muted">
           <div className="rounded-xl bg-card border border-line p-3">
             <p className="font-bold text-fg mb-1">Who qualifies</p>
-            <ul className="list-disc list-inside leading-relaxed space-y-0.5">
+            <ul className="list-disc pl-4 leading-relaxed space-y-0.5">
               <li>Graduate students (Master's / PhD, 2+ semesters)</li>
               <li>Postdoctoral fellows</li>
               <li>Research associates</li>
@@ -304,7 +304,7 @@ function ApplicationStatusCard({
           </div>
           <div className="rounded-xl bg-card border border-line p-3">
             <p className="font-bold text-fg mb-1">What you'll need</p>
-            <ul className="list-disc list-inside leading-relaxed space-y-0.5">
+            <ul className="list-disc pl-4 leading-relaxed space-y-0.5">
               <li>Grad students: unofficial transcript + grad-office signed verification</li>
               <li>Other roles: letter confirming employment / appointment</li>
             </ul>

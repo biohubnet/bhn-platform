@@ -4,7 +4,7 @@
  * completed, and open postings.
  *
  * "Resume" counts both the structured resume page and the uploaded file;
- * "video" is the one-minute video introduction, the only recording an
+ * "video" is the one-minute interview sample, the only recording an
  * employer can watch today.
  */
 import { prisma } from "@/lib/prisma";

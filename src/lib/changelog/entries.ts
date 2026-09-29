@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Home · EXPERIENCE copy
+  {
+    title: "Recent graduates can apply for the Industry Internship program",
+    body: "The **EXPERIENCE** card on your home page now lists **recent graduates** (within 1 year of thesis submission, course completion or contract end date) as eligible until January 2027. Your video is now called your **one-minute interview sample** throughout.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Home · application cards copy
   {
     title: "Clearer training-credit terms on your home page",

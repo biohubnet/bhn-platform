@@ -168,8 +168,8 @@ export function ExperienceColumn({
           <BigStat label="Interviews completed" value={interviewsDone} caption="so far" />
         </div>
         <p className="mt-4 text-pretty text-xs text-muted leading-relaxed">
-          {noOrphan("Counted when an employer opens your resume or your one-minute video introduction — once per employer a day.")}{" "}
-          <Link href="/interviews" className="font-semibold text-amber-800 hover:underline">My interviews</Link>
+          {/* Non-breaking hyphen: the line used to break as "one- / minute". */}
+          {noOrphan("Counted when an employer opens your resume or your one\u2011minute interview sample.")}
         </p>
       </Panel>
 

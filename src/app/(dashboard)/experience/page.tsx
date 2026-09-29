@@ -50,7 +50,7 @@ export default function ExperienceGuidePage() {
             <p className="text-sm text-fg leading-relaxed">
               Open <NavHighlight href="/profile/application">Application Builder</NavHighlight>{" "}
               and put together your reusable kit: a resume PDF, a
-              one-minute video introduction, and a written elevator
+              one-minute interview sample, and a written elevator
               pitch. You do this once. Every other application form on
               the platform pre-fills with these assets and lets you
               tweak per opportunity — no more re-uploading the same
