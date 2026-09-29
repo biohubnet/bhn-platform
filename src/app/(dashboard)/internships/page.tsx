@@ -28,6 +28,7 @@ import { InternshipFilters } from "@/components/lms/InternshipFilters";
 import { PostingSaveButton } from "@/components/lms/PostingSaveButton";
 import { DemoSeedAndClearTray } from "@/components/admin/DemoSeedAndClearTray";
 import { InternshipAdminTable, type AdminPostingRow } from "@/components/internships/InternshipAdminTable";
+import { SheetSyncButton } from "@/components/internships/SheetSyncButton";
 
 export const dynamic = "force-dynamic";
 
@@ -114,12 +115,15 @@ export default async function InternshipsPage({
         tone="brand"
         actions={
           isStaff ? (
-            <Link
-              href="/admin/internships/new"
-              className="inline-flex items-center gap-2 bg-white text-brand-700 hover:bg-brand-50 font-semibold text-sm px-5 py-2.5 rounded-lg shadow-md transition-colors"
-            >
-              <Plus size={14} /> New posting
-            </Link>
+            <div className="flex flex-wrap items-start gap-3">
+              {isAdmin && <SheetSyncButton />}
+              <Link
+                href="/admin/internships/new"
+                className="inline-flex items-center gap-2 bg-white text-brand-700 hover:bg-brand-50 font-semibold text-sm px-5 py-2.5 rounded-lg shadow-md transition-colors"
+              >
+                <Plus size={14} /> New posting
+              </Link>
+            </div>
           ) : null
         }
       />

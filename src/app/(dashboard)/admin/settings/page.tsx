@@ -13,6 +13,7 @@ const DEFAULT_SETTINGS: Record<string, { label: string; description: string; def
   traineeCourseLimit: { label: "Concurrent Course Limit (trainees)", description: "How many active courses a trainee can hold at once. Admins and superadmins bypass this cap (a warning popup reminds them the cap still applies to learners).", default: "3", type: "number" },
   supportEmail: { label: "Support Email", description: "Shown to learners for help requests", default: "", type: "email" },
   maintenanceMode: { label: "Maintenance Mode", description: "Show maintenance message to all users", default: "false", type: "boolean" },
+  postingsSheetUrl: { label: "Internship Postings Sheet", description: "Link to the Google Sheet host companies' posting form writes to. Postings sync from it daily and from Sync from sheet on /internships; only posting fields are copied, and rows marked active appear on the internship boards, including the public /jobs board. Safest: publish to the web a tab holding only the posting columns and paste that link; an edit link works too but needs the whole sheet shared by link.", default: "", type: "url" },
   translationEnabled: { label: "Page Translation", description: "Show the floating translation dock that lets users translate any page into 8 languages. Disable to hide it platform-wide (user-level toggle is overridden).", default: "true", type: "boolean" },
 };
 

@@ -12,6 +12,8 @@
  *   • runDailyMaintenance()   — expires credit grants past their
  *                                365-day TTL + sends 90/30/7-day
  *                                notification emails
+ *   • syncPostingsFromSheet() — copies internship postings from the
+ *                                host-company Google Sheet
  *
  * Both sub-sweepers are idempotent — second run inside the same
  * window does nothing. The individual endpoints
@@ -34,6 +36,7 @@ import { reconcileDeadlineStatuses } from "@/lib/equip/sync-deadlines";
 import { requireRole } from "@/lib/auth";
 import { sweepExpiredPhantoms } from "@/lib/phantom";
 import { runDailyMaintenance } from "@/lib/credits/expiry";
+import { syncPostingsFromSheet, type SheetSyncResult } from "@/lib/internships/sheet-sync";
 
 export const runtime = "nodejs";
 
@@ -59,7 +62,8 @@ async function handle(req: NextRequest) {
       error?: string;
     };
     equipDeadlines: { opened?: number; scheduled?: number; closed?: number; error?: string };
-  } = { phantoms: {}, credits: {}, equipDeadlines: {} };
+    postingsSheet: SheetSyncResult | Record<string, never>;
+  } = { phantoms: {}, credits: {}, equipDeadlines: {}, postingsSheet: {} };
 
   try {
     const r = await sweepExpiredPhantoms();
@@ -85,6 +89,12 @@ async function handle(req: NextRequest) {
     results.equipDeadlines = await reconcileDeadlineStatuses();
   } catch (err) {
     results.equipDeadlines = { error: (err as Error).message };
+  }
+
+  try {
+    results.postingsSheet = await syncPostingsFromSheet();
+  } catch (err) {
+    results.postingsSheet = { error: (err as Error).message };
   }
 
   return NextResponse.json({

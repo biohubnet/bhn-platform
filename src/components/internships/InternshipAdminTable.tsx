@@ -214,6 +214,14 @@ export function InternshipAdminTable({ postings }: Props) {
                           {p.title}
                         </Link>
                         <p className="text-xs text-fg-muted truncate">
+                          {p.id.startsWith("sheet-") && (
+                            <span
+                              title="From the host-company Google Sheet. Edit it there: changes made here are overwritten by the next sync."
+                              className="mr-1.5 rounded bg-raised px-1 py-px text-[10px] font-semibold uppercase tracking-wider text-fg"
+                            >
+                              Sheet
+                            </span>
+                          )}
                           {p.companyName}
                           {p.location && <> · <span className="text-fg-subtle">{p.location}</span></>}
                         </p>
@@ -260,6 +268,7 @@ export function InternshipAdminTable({ postings }: Props) {
         <span>
           <ChevronUp size={11} className="inline -mt-0.5" /> Toolbar appears once anything is selected.
           Delete is permanent — every other action is reversible (just batch-re-set the status).
+          Rows marked Sheet follow the Google Sheet: change them there.
         </span>
         <span className="font-mono uppercase tracking-[0.18em]">Admin · audit-logged</span>
       </div>

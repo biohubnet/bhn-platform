@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Internships · postings from the host-company sheet
+  {
+    title: "Internship postings come from the host-company form",
+    body: "Postings that host companies submit through the BioHubNet posting form now appear on **Internships** and under **Upcoming opportunities** on your home page — once BioHubNet marks them active, and until their deadline passes. They update daily.",
+    kind: "feature",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Your visibility · totals, and "Video views"
   {
     title: "Your visibility shows totals, and \"Video views\"",

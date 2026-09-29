@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { guardRole } from "@/lib/api/guard";
 
 import { prisma } from "@/lib/prisma";
+import { POSTINGS_SHEET_SETTING } from "@/lib/internships/sheet-sync";
 
 export async function GET() {
   const _guard = await guardRole("admin");
@@ -9,6 +10,9 @@ export async function GET() {
   const settings = await prisma.platformSetting.findMany();
   const map: Record<string, string> = {};
   for (const s of settings) map[s.key] = s.value;
+  // The postings sheet link opens every column of that sheet, contacts
+  // included; admins below superadmin don't need it.
+  delete map[POSTINGS_SHEET_SETTING];
   return NextResponse.json(map);
 }
 
@@ -32,7 +36,12 @@ export async function POST(req: NextRequest) {
     data: {
       actorId,
       action: "settings.update",
-      detail: JSON.stringify(updates),
+      // Every admin can read the audit log; the sheet link stays out of it.
+      detail: JSON.stringify(
+        POSTINGS_SHEET_SETTING in updates
+          ? { ...updates, [POSTINGS_SHEET_SETTING]: updates[POSTINGS_SHEET_SETTING] ? "[set]" : "[cleared]" }
+          : updates,
+      ),
     },
   });
 
