@@ -298,19 +298,22 @@ export function PathwayAccordion({ pathways }: { pathways: PathwayEntry[] }) {
                 meant to introduce; in a left column it sits alongside them and
                 the row reads as one unit.
 
-                `self-stretch` lets the panel match whatever height the copy
-                needs. The art is a round pathway badge, so object-contain
-                keeps the whole circle in view instead of cropping it. */}
+                The badge is an in-flow square the width of the column, so
+                every pathway's badge is the same size: a short description
+                makes its row grow to the badge rather than shrink it (the
+                badge used to fill the row's height, and Research and
+                Development, the shortest, came out smallest). Taller rows
+                centre it. object-contain keeps the whole circle in view. */}
             <div className="flex items-stretch">
               <div
                 className={cn(
-                  "relative shrink-0 overflow-hidden border-r border-line",
+                  "flex shrink-0 items-center overflow-hidden border-r border-line",
                   MEDIA_COL,
                 )}
               >
                 {p.thumbnail && (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={p.thumbnail} alt="" className="absolute inset-0 w-full h-full object-contain p-2" />
+                  <img src={p.thumbnail} alt="" className="aspect-square w-full object-contain p-2" />
                 )}
               </div>
 

@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Learning Pathways · badges the same size
+  {
+    title: "Every pathway badge is the same size",
+    body: "On **Learning Pathways**, a pathway with a short description used to get a smaller badge — Research and Development most of all. All six badges are now the same size, whatever the length of the text beside them.",
+    kind: "fix",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Learning Pathways · booking calendar back on the right
   {
     title: "The booking calendar is back on the right of Learning Pathways",
