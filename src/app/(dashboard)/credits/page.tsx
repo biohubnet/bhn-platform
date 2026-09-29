@@ -299,7 +299,7 @@ function ApplicationStatusCard({
               <li>Graduate students (Master's / PhD, 2+ semesters)</li>
               <li>Postdoctoral fellows</li>
               <li>Research associates</li>
-              <li>Lab technicians in STEM programs</li>
+              <li>Lab technicians</li>
             </ul>
           </div>
           <div className="rounded-xl bg-card border border-line p-3">

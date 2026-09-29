@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Home · application cards copy
+  {
+    title: "Clearer training-credit terms on your home page",
+    body: "The **ENGAGE** credit card now states the expiry rule plainly: credits expire 365 days from approval, and if you have used fewer than 2,500 at 6 months after approval, any remaining credit expires immediately. Lab technicians qualify whatever their program, and the cards drop their secondary links.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Internships · postings from the host-company sheet
   {
     title: "Internship postings come from the host-company form",

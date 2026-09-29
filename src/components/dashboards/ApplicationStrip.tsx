@@ -112,12 +112,13 @@ export function ApplicationStrip({
           "Grad students (MSc / PhD, 2+ semesters)",
           "Postdoctoral fellows",
           "Research associates",
-          "Lab technicians in STEM programs",
+          "Lab technicians",
         ]}
         finePrint={
           <>
-            Credits expire <strong className="text-muted">{ttlDays} days</strong> from approval, and the
-            remainder expires if fewer than 2,500 are used in the first 6 months. Full eligibility at{" "}
+            Credits expire <strong className="text-muted">{ttlDays} days</strong> from approval. If Credit
+            utilization at 6 months post approval is less than 2500, any remaining Credit will expire
+            immediately. Full eligibility at{" "}
             <a href="https://biohubnet.ca/engage/" target="_blank" rel="noopener noreferrer" className="font-semibold text-brand-700 hover:underline">
               biohubnet.ca/engage
             </a>.
@@ -125,7 +126,6 @@ export function ApplicationStrip({
         }
         applyHref="/credits/apply"
         statusHref="/credits"
-        secondary={{ label: "View my balance", href: "/credits" }}
       />
       <PillarCard
         tone="experience"
@@ -153,7 +153,6 @@ export function ApplicationStrip({
         finePrint="If you are in a degree program, a supervisor support letter (template provided) is required."
         applyHref="/forms/talent-application"
         statusHref="/forms/talent-application"
-        secondary={{ label: "Browse opportunities", href: "/internships" }}
       />
     </div>
   );
@@ -165,7 +164,7 @@ function Accent({ tone, children }: { tone: Tone; children: ReactNode }) {
 
 function PillarCard({
   tone, icon: Icon, eyebrow, status, heading, intro, approvedText, qualifies, finePrint,
-  applyHref, statusHref, secondary,
+  applyHref, statusHref,
 }: {
   tone: Tone;
   icon: ElementType;
@@ -178,7 +177,6 @@ function PillarCard({
   finePrint: ReactNode;
   applyHref: string;
   statusHref: string;
-  secondary: { label: string; href: string };
 }) {
   const t = TONES[tone];
   const badge = BADGES[status.state];
@@ -220,9 +218,6 @@ function PillarCard({
                 <Link href={applyHref} className={button}>
                   <FileText size={15} aria-hidden /> Start application <ArrowRight size={15} aria-hidden />
                 </Link>
-                <Link href={secondary.href} className={quiet}>
-                  {secondary.label} <ArrowRight size={14} aria-hidden />
-                </Link>
               </div>
             </>
           )}
@@ -259,9 +254,6 @@ function PillarCard({
           {status.state === "approved" && (
             <>
               <p className="mt-1.5 text-pretty text-sm text-muted leading-relaxed">{noOrphan(approvedText)}</p>
-              <Link href={secondary.href} className={cn(quiet, "mt-auto pt-3")}>
-                {secondary.label} <ArrowRight size={14} aria-hidden />
-              </Link>
             </>
           )}
         </div>
