@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Learning Pathways · booking calendar back on the right
+  {
+    title: "The booking calendar is back on the right of Learning Pathways",
+    body: "**Need help choosing?** is on the right-hand side again, and now shows BioHubNet's booking calendar straight away — pick a day and a time without leaving the page. On smaller screens it sits below the pathways. You can still open it in a new tab.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Home · the name editor next to your greeting
   {
     title: "The pencil beside your name opens a panel that stays put",
