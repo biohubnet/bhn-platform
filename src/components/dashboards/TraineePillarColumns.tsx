@@ -59,7 +59,7 @@ export function EngageColumn({
 }) {
   const pct = awardTotal > 0 ? Math.min(100, Math.max(0, (used / awardTotal) * 100)) : 0;
   return (
-    <div className="space-y-4 min-w-0" data-pillar-column="engage">
+    <div className="space-y-4 min-w-0 lg:grid lg:row-span-4 lg:grid-rows-subgrid lg:gap-4 lg:space-y-0" data-pillar-column="engage">
       <PillarHeading pillar="engage" />
 
       <Panel title="Credit tracker" link={{ label: "My credits", href: "/credits" }} pillar="engage">
@@ -159,11 +159,11 @@ export function ExperienceColumn({
   postings: OpenPosting[];
 }) {
   return (
-    <div className="space-y-4 min-w-0" data-pillar-column="experience">
+    <div className="space-y-4 min-w-0 lg:grid lg:row-span-4 lg:grid-rows-subgrid lg:gap-4 lg:space-y-0" data-pillar-column="experience">
       <PillarHeading pillar="experience" />
 
       <Panel title="Your visibility" link={{ label: "My applications", href: "/profile/applications" }} pillar="experience">
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+        <div className="grid grid-cols-2 grid-rows-[auto_auto_auto] gap-x-4 gap-y-0 sm:grid-cols-3">
           <BigStat label="Resume views" value={resumeViews} caption={`past ${windowDays} days`} />
           <BigStat label="Interview sample views" value={sampleViews} caption={`past ${windowDays} days`} />
           <BigStat label="Interviews completed" value={interviewsDone} caption="so far" />
@@ -238,7 +238,7 @@ function Panel({
   children: ReactNode;
 }) {
   return (
-    <section className="rounded-2xl border border-line bg-card p-5" aria-label={title}>
+    <section className="h-full rounded-2xl border border-line bg-card p-5" aria-label={title}>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
         <p className="text-balance text-[12px] uppercase tracking-[0.2em] font-bold text-subtle">{title}</p>
         <Link
@@ -255,7 +255,7 @@ function Panel({
 
 function BigStat({ label, value, caption }: { label: string; value: number; caption?: string }) {
   return (
-    <div>
+    <div className="grid row-span-3 grid-rows-subgrid">
       <p className="text-balance text-[11px] uppercase tracking-[0.16em] font-semibold text-subtle">{label}</p>
       <p className="mt-0.5 text-3xl font-bold tabular-nums text-fg leading-none">{value.toLocaleString()}</p>
       {caption && <p className="mt-1 text-[11px] text-subtle">{caption}</p>}

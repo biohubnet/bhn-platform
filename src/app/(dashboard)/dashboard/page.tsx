@@ -516,7 +516,12 @@ export default async function DashboardPage() {
             Events live in the What's on band above, so there is no
             events rail any more. */}
       <div className="max-w-screen-2xl mx-auto px-6 mt-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+        {/* Four rows on lg+ — pillar heading, first panel, second panel,
+            and the pathways panel ENGAGE alone has. Each column is a
+            subgrid of these rows, so "Credit tracker" lines up with "Your
+            visibility" and "Your courses" with "Upcoming opportunities",
+            each pair the same height. Below lg the columns just stack. */}
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:grid-rows-[auto_auto_auto_auto]">
           <EngageColumn
             balance={util.balance}
             used={util.used}
