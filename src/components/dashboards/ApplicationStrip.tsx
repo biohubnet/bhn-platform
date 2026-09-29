@@ -101,7 +101,7 @@ export function ApplicationStrip({
         eyebrow="ENGAGE · Training credits"
         status={credit}
         heading={{
-          none: <>Apply for up to <Accent tone="engage">5,000 free training credits</Accent></>,
+          none: <>Apply for up to <Accent tone="engage">5,000 training credits</Accent></>,
           pending: "Your training-credit application is under review",
           rejected: "Your training-credit application wasn't approved",
           approved: "You're approved for training credits",
@@ -193,11 +193,11 @@ function PillarCard({
       aria-label={eyebrow}
       className={cn("h-full rounded-2xl border-2 bg-gradient-to-br shadow-elevated p-5 sm:p-6", t.frame)}
     >
-      <div className="flex items-start gap-3 sm:gap-4">
+      <div className="flex h-full items-start gap-3 sm:gap-4">
         <div className={cn("w-10 h-10 sm:w-11 sm:h-11 rounded-xl text-white flex items-center justify-center shrink-0", t.icon)}>
           <Icon size={22} aria-hidden />
         </div>
-        <div className="flex-1 min-w-0">
+        <div className="flex h-full flex-1 min-w-0 flex-col">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
             <p className={cn("text-balance uppercase tracking-[0.22em] text-[10.5px] font-bold", t.accent)}>{eyebrow}</p>
             <Badge tone={badge.tone}>{badge.label}</Badge>
@@ -216,7 +216,7 @@ function PillarCard({
               <p className="mt-2.5 text-pretty text-[11.5px] text-subtle leading-relaxed">
             {typeof finePrint === "string" ? noOrphan(finePrint) : finePrint}
           </p>
-              <div className="mt-3 flex flex-wrap items-center gap-3">
+              <div className="mt-auto flex flex-wrap items-center gap-3 pt-3">
                 <Link href={applyHref} className={button}>
                   <FileText size={15} aria-hidden /> Start application <ArrowRight size={15} aria-hidden />
                 </Link>
@@ -233,7 +233,7 @@ function PillarCard({
                 Submitted {day(status.submittedAt) ?? "recently"}. An admin reviews each application personally,
                 typically within a few business days. We&apos;ll let you know when it&apos;s decided.
               </p>
-              <Link href={statusHref} className={cn(quiet, "mt-3")}>
+              <Link href={statusHref} className={cn(quiet, "mt-auto pt-3")}>
                 View application status <ArrowRight size={14} aria-hidden />
               </Link>
             </>
@@ -250,7 +250,7 @@ function PillarCard({
                   {status.reviewerNote}
                 </p>
               )}
-              <Link href={applyHref} className={cn(button, "mt-3")}>
+              <Link href={applyHref} className={cn(button, "mt-auto self-start")}>
                 <FileText size={15} aria-hidden /> Submit a new application <ArrowRight size={15} aria-hidden />
               </Link>
             </>
@@ -259,7 +259,7 @@ function PillarCard({
           {status.state === "approved" && (
             <>
               <p className="mt-1.5 text-pretty text-sm text-muted leading-relaxed">{noOrphan(approvedText)}</p>
-              <Link href={secondary.href} className={cn(quiet, "mt-3")}>
+              <Link href={secondary.href} className={cn(quiet, "mt-auto pt-3")}>
                 {secondary.label} <ArrowRight size={14} aria-hidden />
               </Link>
             </>

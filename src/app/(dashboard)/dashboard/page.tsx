@@ -431,7 +431,7 @@ export default async function DashboardPage() {
                   color: "#ffffff",
                 }}
               >
-                <span>{firstName}.</span>
+                <span>{firstName}</span>
                 {/* Pencil-only edit affordance — the popover panels
                     cancel the text gradient with their own backgrounds,
                     so the button reads clearly against the midnight

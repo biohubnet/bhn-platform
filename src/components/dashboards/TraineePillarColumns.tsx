@@ -87,7 +87,7 @@ export function EngageColumn({
             <Link href="/courses" className="font-semibold text-brand-700 hover:underline">Browse courses</Link>
           </p>
         ) : (
-          <ul className="space-y-2">
+          <ul className="flex flex-1 flex-col justify-between gap-2">
             {courses.map((c) => (
               <li key={c.courseId} className="flex items-center gap-3 rounded-xl border border-line p-3">
                 <div className="min-w-0 flex-1">
@@ -180,14 +180,14 @@ export function ExperienceColumn({
             No open postings right now. New roles appear here as host companies post them.
           </p>
         ) : (
-          <ul className="space-y-2">
+          <ul className="flex flex-1 flex-col justify-between gap-2">
             {postings.map((p) => (
               <li key={p.id}>
                 <Link
                   href={`/internships/${p.id}`}
-                  className="flex items-start gap-3 rounded-xl border border-line p-3 hover:border-amber-300 transition-colors"
+                  className="flex items-center gap-3 rounded-xl border border-line p-3 hover:border-amber-300 transition-colors"
                 >
-                  <Briefcase size={14} className="mt-0.5 text-amber-800 shrink-0" aria-hidden />
+                  <Briefcase size={14} className="shrink-0 text-amber-800" aria-hidden />
                   <span className="min-w-0 flex-1">
                     <span className="block text-sm font-semibold text-fg truncate">{p.title}</span>
                     <span className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted">
@@ -204,6 +204,7 @@ export function ExperienceColumn({
                       )}
                     </span>
                   </span>
+                  <ArrowRight size={14} className="shrink-0 text-amber-800" aria-hidden />
                 </Link>
               </li>
             ))}
@@ -238,7 +239,7 @@ function Panel({
   children: ReactNode;
 }) {
   return (
-    <section className="h-full rounded-2xl border border-line bg-card p-5" aria-label={title}>
+    <section className="flex h-full flex-col rounded-2xl border border-line bg-card p-5" aria-label={title}>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
         <p className="text-balance text-[12px] uppercase tracking-[0.2em] font-bold text-subtle">{title}</p>
         <Link
@@ -248,7 +249,7 @@ function Panel({
           {link.label} <ArrowRight size={12} aria-hidden />
         </Link>
       </div>
-      {children}
+      <div className="flex flex-1 flex-col">{children}</div>
     </section>
   );
 }
