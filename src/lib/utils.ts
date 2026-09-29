@@ -53,3 +53,18 @@ export function paginate<T>(items: T[], page: number, perPage = 20) {
   const offset = (page - 1) * perPage;
   return { items: items.slice(offset, offset + perPage), total, pages };
 }
+
+/**
+ * Tie the last two words together with a non-breaking space, so a
+ * sentence can never end on a line of its own ("…at no / cost.").
+ * `text-wrap: pretty` helps but does not guarantee it, and it has no
+ * effect at all in browsers that don't support it yet.
+ *
+ * Left alone when there are fewer than three words: a two-word label
+ * that has to wrap should still be allowed to.
+ */
+export function noOrphan(text: string): string {
+  const i = text.trimEnd().lastIndexOf(" ");
+  if (i < 0 || text.trim().split(/\s+/).length < 3) return text;
+  return `${text.slice(0, i)} ${text.slice(i + 1)}`;
+}

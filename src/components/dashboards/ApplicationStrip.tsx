@@ -14,7 +14,7 @@ import type { ElementType, ReactNode } from "react";
 import Link from "next/link";
 import { ArrowRight, Briefcase, Coins, FileText } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
-import { cn } from "@/lib/utils";
+import { cn, noOrphan } from "@/lib/utils";
 
 export type AppState = "none" | "pending" | "rejected" | "approved";
 
@@ -199,21 +199,23 @@ function PillarCard({
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            <p className={cn("uppercase tracking-[0.22em] text-[10.5px] font-bold", t.accent)}>{eyebrow}</p>
+            <p className={cn("text-balance uppercase tracking-[0.22em] text-[10.5px] font-bold", t.accent)}>{eyebrow}</p>
             <Badge tone={badge.tone}>{badge.label}</Badge>
           </div>
-          <p className="mt-1 text-lg sm:text-xl font-bold text-fg leading-tight tracking-tight">{heading[status.state]}</p>
+          <p className="mt-1 text-balance text-lg sm:text-xl font-bold text-fg leading-tight tracking-tight">{heading[status.state]}</p>
 
           {status.state === "none" && (
             <>
-              <p className="mt-1.5 text-sm text-muted leading-relaxed">{intro}</p>
+              <p className="mt-1.5 text-pretty text-sm text-muted leading-relaxed">{noOrphan(intro)}</p>
               <div className="mt-3 rounded-xl bg-card/85 backdrop-blur border border-line px-3 py-2.5 text-xs">
                 <p className="font-bold text-fg mb-1 text-[11px] uppercase tracking-[0.18em]">Who qualifies</p>
-                <ul className="list-disc list-inside leading-snug space-y-0.5 text-muted">
-                  {qualifies.map((q) => <li key={q}>{q}</li>)}
+                <ul className="list-disc list-inside text-pretty leading-snug space-y-0.5 text-muted">
+                  {qualifies.map((q) => <li key={q}>{noOrphan(q)}</li>)}
                 </ul>
               </div>
-              <p className="mt-2.5 text-[11.5px] text-subtle leading-relaxed">{finePrint}</p>
+              <p className="mt-2.5 text-pretty text-[11.5px] text-subtle leading-relaxed">
+            {typeof finePrint === "string" ? noOrphan(finePrint) : finePrint}
+          </p>
               <div className="mt-3 flex flex-wrap items-center gap-3">
                 <Link href={applyHref} className={button}>
                   <FileText size={15} aria-hidden /> Start application <ArrowRight size={15} aria-hidden />
@@ -227,7 +229,7 @@ function PillarCard({
 
           {status.state === "pending" && (
             <>
-              <p className="mt-1.5 text-sm text-muted leading-relaxed">
+              <p className="mt-1.5 text-pretty text-sm text-muted leading-relaxed">
                 Submitted {day(status.submittedAt) ?? "recently"}. An admin reviews each application personally,
                 typically within a few business days. We&apos;ll let you know when it&apos;s decided.
               </p>
@@ -239,11 +241,11 @@ function PillarCard({
 
           {status.state === "rejected" && (
             <>
-              <p className="mt-1.5 text-sm text-muted leading-relaxed">
+              <p className="mt-1.5 text-pretty text-sm text-muted leading-relaxed">
                 {status.reviewedAt ? `Reviewed ${day(status.reviewedAt)}. ` : ""}You can submit a new application anytime.
               </p>
               {status.reviewerNote && (
-                <p className="mt-2 rounded-lg border border-line bg-card px-3 py-2 text-sm text-fg leading-relaxed">
+                <p className="mt-2 rounded-lg border border-line bg-card px-3 py-2 text-pretty text-sm text-fg leading-relaxed">
                   <span className="block text-[11px] font-bold uppercase tracking-[0.18em] text-subtle mb-0.5">Reviewer note</span>
                   {status.reviewerNote}
                 </p>
@@ -256,7 +258,7 @@ function PillarCard({
 
           {status.state === "approved" && (
             <>
-              <p className="mt-1.5 text-sm text-muted leading-relaxed">{approvedText}</p>
+              <p className="mt-1.5 text-pretty text-sm text-muted leading-relaxed">{noOrphan(approvedText)}</p>
               <Link href={secondary.href} className={cn(quiet, "mt-3")}>
                 {secondary.label} <ArrowRight size={14} aria-hidden />
               </Link>

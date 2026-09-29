@@ -11,7 +11,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { ArrowRight, Briefcase, CalendarClock, MapPin, Play, Route } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, noOrphan } from "@/lib/utils";
 
 export interface EngageCourse {
   courseId: string;
@@ -82,7 +82,7 @@ export function EngageColumn({
 
       <Panel title="Your courses" link={{ label: "My Courses", href: "/progress" }} pillar="engage">
         {courses.length === 0 ? (
-          <p className="text-sm text-muted">
+          <p className="text-pretty text-sm text-muted">
             You aren&apos;t enrolled in a course yet.{" "}
             <Link href="/courses" className="font-semibold text-brand-700 hover:underline">Browse courses</Link>
           </p>
@@ -168,16 +168,15 @@ export function ExperienceColumn({
           <BigStat label="Interview sample views" value={sampleViews} caption={`past ${windowDays} days`} />
           <BigStat label="Interviews completed" value={interviewsDone} caption="so far" />
         </div>
-        <p className="mt-4 text-xs text-muted leading-relaxed">
-          Counted when an employer opens your resume or your one-minute video introduction — once per
-          employer a day.{" "}
+        <p className="mt-4 text-pretty text-xs text-muted leading-relaxed">
+          {noOrphan("Counted when an employer opens your resume or your one-minute video introduction — once per employer a day.")}{" "}
           <Link href="/interviews" className="font-semibold text-amber-800 hover:underline">My interviews</Link>
         </p>
       </Panel>
 
       <Panel title="Upcoming opportunities" link={{ label: "All postings", href: "/internships" }} pillar="experience">
         {postings.length === 0 ? (
-          <p className="text-sm text-muted">
+          <p className="text-pretty text-sm text-muted">
             No open postings right now. New roles appear here as host companies post them.
           </p>
         ) : (
@@ -240,8 +239,8 @@ function Panel({
 }) {
   return (
     <section className="rounded-2xl border border-line bg-card p-5" aria-label={title}>
-      <div className="flex items-center justify-between gap-4 mb-4">
-        <p className="text-[12px] uppercase tracking-[0.2em] font-bold text-subtle">{title}</p>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
+        <p className="text-balance text-[12px] uppercase tracking-[0.2em] font-bold text-subtle">{title}</p>
         <Link
           href={link.href}
           className={cn("inline-flex items-center gap-1 text-xs font-semibold hover:underline shrink-0", PILLARS[pillar].link)}
@@ -257,7 +256,7 @@ function Panel({
 function BigStat({ label, value, caption }: { label: string; value: number; caption?: string }) {
   return (
     <div>
-      <p className="text-[11px] uppercase tracking-[0.16em] font-semibold text-subtle">{label}</p>
+      <p className="text-balance text-[11px] uppercase tracking-[0.16em] font-semibold text-subtle">{label}</p>
       <p className="mt-0.5 text-3xl font-bold tabular-nums text-fg leading-none">{value.toLocaleString()}</p>
       {caption && <p className="mt-1 text-[11px] text-subtle">{caption}</p>}
     </div>
@@ -267,7 +266,7 @@ function BigStat({ label, value, caption }: { label: string; value: number; capt
 function MiniStat({ label, value }: { label: string; value: number }) {
   return (
     <div>
-      <p className="text-[11px] uppercase tracking-[0.16em] font-semibold text-subtle">{label}</p>
+      <p className="text-balance text-[11px] uppercase tracking-[0.16em] font-semibold text-subtle">{label}</p>
       <p className="mt-0.5 text-xl font-bold tabular-nums text-fg leading-none">{value.toLocaleString()}</p>
     </div>
   );
