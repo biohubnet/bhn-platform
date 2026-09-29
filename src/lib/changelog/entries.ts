@@ -24,8 +24,8 @@ export interface ChangelogEntry {
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   // ── Home · EXPERIENCE metrics split in three
   {
-    title: "Profile views now counts resume views, interview sample views and interviews completed",
-    body: "The EXPERIENCE panel on your home page is now called **Profile views** and shows three figures: **resume views** (your structured resume or your uploaded file), **interview sample views** (your one-minute video introduction) and **interviews completed**. Views are counted once per employer a day, per item, so opening your resume and your video on the same day counts as both. The Industry Internship card also names the supervisor support letter degree-program applicants need.",
+    title: "Your visibility: resume views, interview sample views and interviews completed",
+    body: "The EXPERIENCE panel on your home page is now called **Your visibility** and shows three figures: **resume views** (your structured resume or your uploaded file), **interview sample views** (your one-minute video introduction) and **interviews completed**. Views are counted once per employer a day, per item, so opening your resume and your video on the same day counts as both. The Industry Internship card also names the supervisor support letter degree-program applicants need.",
     kind: "improvement",
     visibleTo: ["trainee", "evaluating"],
     daysAgo: 0,

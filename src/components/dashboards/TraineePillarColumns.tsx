@@ -162,7 +162,7 @@ export function ExperienceColumn({
     <div className="space-y-4 min-w-0" data-pillar-column="experience">
       <PillarHeading pillar="experience" />
 
-      <Panel title="Profile views" link={{ label: "My applications", href: "/profile/applications" }} pillar="experience">
+      <Panel title="Your visibility" link={{ label: "My applications", href: "/profile/applications" }} pillar="experience">
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
           <BigStat label="Resume views" value={resumeViews} caption={`past ${windowDays} days`} />
           <BigStat label="Interview sample views" value={sampleViews} caption={`past ${windowDays} days`} />
