@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Your visibility · totals, and "Video views"
+  {
+    title: "Your visibility shows totals, and \"Video views\"",
+    body: "On your home page, **Your visibility** now counts every view so far instead of the past 30 days, so the numbers only go up. **Interview sample views** is renamed **Video views**: it is how often employers have watched your one-minute video introduction.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Learning Pathways · badges the same size
   {
     title: "Every pathway badge is the same size",

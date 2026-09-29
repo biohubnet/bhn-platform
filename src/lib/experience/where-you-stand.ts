@@ -1,28 +1,24 @@
 /**
  * The EXPERIENCE column's numbers for one trainee: how often employers
- * opened their resume and their interview sample over a rolling window,
- * interviews completed, and open postings.
+ * have opened their resume and their video, in total, interviews
+ * completed, and open postings.
  *
  * "Resume" counts both the structured resume page and the uploaded file;
- * "interview sample" is the one-minute video introduction, the only
- * recording an employer can watch today.
+ * "video" is the one-minute video introduction, the only recording an
+ * employer can watch today.
  */
 import { prisma } from "@/lib/prisma";
 import { torontoToday } from "@/lib/dashboard-promos";
 
-export const PROFILE_VIEW_WINDOW_DAYS = 30;
-
 export async function getExperienceStanding(userId: string, now = new Date()) {
-  // ProfileView.day and InternshipPosting.deadline are calendar days
-  // (UTC midnight). The views window includes today, and a posting stays
-  // listed through its deadline day.
+  // InternshipPosting.deadline is a calendar day (UTC midnight); a
+  // posting stays listed through its deadline day.
   const today = torontoToday(now);
-  const since = new Date(today.getTime() - (PROFILE_VIEW_WINDOW_DAYS - 1) * 86_400_000);
-  const [resumeViews, sampleViews, interviewsDone, postings] = await Promise.all([
+  const [resumeViews, videoViews, interviewsDone, postings] = await Promise.all([
     prisma.profileView.count({
-      where: { userId, day: { gte: since }, surface: { in: ["resume", "resume_file", "talent_pool", "applicant"] } },
+      where: { userId, surface: { in: ["resume", "resume_file", "talent_pool", "applicant"] } },
     }),
-    prisma.profileView.count({ where: { userId, day: { gte: since }, surface: "video_intro" } }),
+    prisma.profileView.count({ where: { userId, surface: "video_intro" } }),
     // `completed` is only set when the employer scores the interview, so
     // an accepted slot that is already in the past counts as done too.
     prisma.interview.count({
@@ -37,5 +33,5 @@ export async function getExperienceStanding(userId: string, now = new Date()) {
       select: { id: true, title: true, companyName: true, location: true, deadline: true },
     }),
   ]);
-  return { resumeViews, sampleViews, interviewsDone, postings, windowDays: PROFILE_VIEW_WINDOW_DAYS };
+  return { resumeViews, videoViews, interviewsDone, postings };
 }

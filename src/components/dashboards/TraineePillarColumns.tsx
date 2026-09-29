@@ -2,8 +2,8 @@
  * The trainee home's two pillar columns, side by side on lg+:
  *   ENGAGE (left)      — credit tracker, courses to resume or start,
  *                        pathways open for enrolment
- *   EXPERIENCE (right) — where you stand with employers (profile views,
- *                        interviews done) and open internship postings
+ *   EXPERIENCE (right) — where you stand with employers (resume and
+ *                        video views, interviews done) and open postings
  *
  * Server components; the page fetches everything in its one
  * Promise.all and passes plain data in.
@@ -150,11 +150,10 @@ export function EngageColumn({
 }
 
 export function ExperienceColumn({
-  resumeViews, sampleViews, windowDays, interviewsDone, postings,
+  resumeViews, videoViews, interviewsDone, postings,
 }: {
   resumeViews: number;
-  sampleViews: number;
-  windowDays: number;
+  videoViews: number;
   interviewsDone: number;
   postings: OpenPosting[];
 }) {
@@ -164,8 +163,8 @@ export function ExperienceColumn({
 
       <Panel title="Your visibility" link={{ label: "My applications", href: "/profile/applications" }} pillar="experience">
         <div className="grid grid-cols-2 grid-rows-[auto_auto_auto] gap-x-4 gap-y-0 sm:grid-cols-3">
-          <BigStat label="Resume views" value={resumeViews} caption={`past ${windowDays} days`} />
-          <BigStat label="Interview sample views" value={sampleViews} caption={`past ${windowDays} days`} />
+          <BigStat label="Resume views" value={resumeViews} caption="so far" />
+          <BigStat label="Video views" value={videoViews} caption="so far" />
           <BigStat label="Interviews completed" value={interviewsDone} caption="so far" />
         </div>
         <p className="mt-4 text-pretty text-xs text-muted leading-relaxed">
