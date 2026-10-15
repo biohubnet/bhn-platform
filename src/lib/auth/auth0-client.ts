@@ -8,6 +8,7 @@
  * door in auth0.ts.
  */
 import { Auth0Client } from "@auth0/nextjs-auth0/server";
+import { PASSWORDLESS_SIGN_IN } from "@/lib/auth/mode";
 
 /**
  * Every var required before Auth0 can serve a login. Listed rather than
@@ -27,9 +28,10 @@ export function missingAuth0Env(): string[] {
   return REQUIRED_ENV.filter((k) => !process.env[k]);
 }
 
-/** True only when Auth0 is fully configured. Never partially true. */
+/** True only when Auth0 is fully configured and email-only sign-in is
+ *  off. Never partially true. */
 export function isAuth0Enabled(): boolean {
-  return missingAuth0Env().length === 0;
+  return !PASSWORDLESS_SIGN_IN && missingAuth0Env().length === 0;
 }
 
 let cached: Auth0Client | null = null;

@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── Sign-in · email only
+  {
+    title: "Sign in with just your email",
+    body: "Signing in no longer needs a password or the Auth0 page: enter the email on your account and continue. Password resets aren't needed any more.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Courses · cover art for the pathway programmes
   {
     title: "Every course in the catalogue has cover art",

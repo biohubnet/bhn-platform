@@ -1,5 +1,6 @@
 import { NextAuthOptions, getServerSession, type Session } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
+import { PASSWORDLESS_SIGN_IN } from "@/lib/auth/mode";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import bcrypt from "bcryptjs";
 import { cookies } from "next/headers";
@@ -40,6 +41,25 @@ export const authOptions: NextAuthOptions = {
         remember: { label: "Remember me", type: "text" },
       },
       async authorize(credentials) {
+        // Email-only sign-in (lib/auth/mode): the account is whoever owns
+        // the address. No password, lockout or MFA; deactivated accounts
+        // still stay out, and every entry is audit-logged.
+        if (PASSWORDLESS_SIGN_IN) {
+          const email = credentials?.email?.trim();
+          if (!email) return null;
+          const user = await prisma.user.findFirst({
+            where: { email: { equals: email, mode: "insensitive" } },
+            select: { id: true, email: true, name: true, role: true, isActive: true },
+          });
+          if (!user || !user.isActive) return null;
+          await prisma.auditLog.create({
+            data: { actorId: user.id, action: "auth.login_email_only", targetType: "user", targetId: user.id },
+          }).catch(() => undefined);
+          return {
+            id: user.id, email: user.email, name: user.name, role: user.role,
+            remember: credentials?.remember !== "false",
+          } as unknown as { id: string; email: string; name: string | null; role: string };
+        }
         if (!credentials?.email || !credentials?.password) return null;
         const user = await prisma.user.findUnique({
           where: { email: credentials.email },

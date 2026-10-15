@@ -3,6 +3,7 @@ import { useState, useEffect, Suspense, useId, cloneElement, isValidElement } fr
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { PASSWORDLESS_SIGN_IN } from "@/lib/auth/mode";
 import {
   ArrowRight, Check, CheckCircle2, Coins, GraduationCap, Layers, Briefcase,
   FlaskConical, Rocket,
@@ -123,7 +124,7 @@ function LoginPageInner() {
 
     // First sign-in attempt without TOTP. Probe MFA status BEFORE
     // submitting so the UX expands cleanly when MFA is on.
-    if (!mfaRequired) {
+    if (!mfaRequired && !PASSWORDLESS_SIGN_IN) {
       try {
         const probe = await fetch("/api/auth/mfa/check", {
           method: "POST",
@@ -148,7 +149,11 @@ function LoginPageInner() {
     });
     setLoading(false);
     if (res?.error) {
-      setError(mfaRequired ? "Code didn't match — check your authenticator." : "Invalid email or password");
+      setError(
+        PASSWORDLESS_SIGN_IN ? "No active account uses that email."
+        : mfaRequired ? "Code didn't match — check your authenticator."
+        : "Invalid email or password",
+      );
     } else {
       router.push("/dashboard");
     }
@@ -397,7 +402,9 @@ function LoginPageInner() {
               <div role="status" className="mt-4 border-l-2 border-emerald-400 pl-4 py-1 text-sm text-emerald-200 inline-flex items-start gap-2 w-full">
                 <CheckCircle2 size={14} aria-hidden className="mt-0.5 shrink-0 text-emerald-300" />
                 <span>
-                  Your account is ready. We pre-filled your email — just enter the password you chose.
+                  {PASSWORDLESS_SIGN_IN
+                    ? "Your account is ready. We pre-filled your email — just continue."
+                    : "Your account is ready. We pre-filled your email — just enter the password you chose."}
                 </span>
               </div>
             )}
@@ -423,6 +430,7 @@ function LoginPageInner() {
                 />
               </LineField>
 
+              {!PASSWORDLESS_SIGN_IN && (
               <LineField
                 label="Password"
                 aside={
@@ -443,6 +451,7 @@ function LoginPageInner() {
                   placeholder="••••••••"
                 />
               </LineField>
+              )}
 
               {mfaRequired && (
                 <LineField label="Authenticator code" hint="From your authenticator app (Google Authenticator, 1Password, Authy …).">
