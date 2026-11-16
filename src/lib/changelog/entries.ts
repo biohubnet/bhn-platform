@@ -22,6 +22,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
+  // ── My Credits · no "Already granted" card
+  {
+    title: "My Credits is shorter once your credits are granted",
+    body: "If you already hold your ENGAGE training credits, **My Credits** no longer repeats the eligibility card underneath. The Training Credits card at the top already shows your balance, the 2,500 threshold and the dates to use them by.",
+    kind: "improvement",
+    visibleTo: ALL,
+    daysAgo: 0,
+  },
   // ── Sign-in · email only
   {
     title: "Sign in with just your email",

@@ -252,42 +252,23 @@ function ApplicationStatusCard({
   hasTrainingAward: boolean;
 }) {
   if (!latestApp) {
-    // Someone who already holds the award still gets the eligibility copy
-    // — it is where the expiry rules and the 2,500-in-6-months policy are
-    // written — but it is stood down: no brand fill, no live button, and
-    // a line at the top saying why. Hiding it outright would take the
-    // policy off the page for exactly the people it now governs.
-    const spent = hasTrainingAward;
+    // Someone who already holds the award gets no card here: the utilisation
+    // card above already shows the award, its expiry and the 2,500-in-6-months
+    // rule (owner decision, 2026-11-16).
+    if (hasTrainingAward) return null;
     return (
-      <div className={cn(
-        "rounded-2xl p-6",
-        spent
-          ? "border border-line bg-elevated opacity-75"
-          : "bg-gradient-to-br from-brand-50 to-brand-100/40 border-2 border-brand-200",
-      )}>
+      <div className="rounded-2xl p-6 bg-gradient-to-br from-brand-50 to-brand-100/40 border-2 border-brand-200">
         <div className="flex items-start gap-4">
-          <div className={cn(
-            "w-10 h-10 rounded-xl flex items-center justify-center shrink-0",
-            spent ? "bg-raised text-muted" : "bg-brand-600 text-white",
-          )}>
-            {spent ? <CheckCircle2 size={18} /> : <FileText size={18} />}
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-brand-600 text-white">
+            <FileText size={18} />
           </div>
           <div className="flex-1 min-w-0">
-            {spent && (
-              <p className="text-[11px] uppercase tracking-[0.14em] font-bold text-muted mb-1">
-                Already granted
-              </p>
-            )}
-            <p className={cn("font-semibold", spent ? "text-muted" : "text-fg")}>
-              {spent
-                ? "You have received your ENGAGE training credits"
-                : "Apply for ENGAGE training credits"}
-            </p>
+            <p className="font-semibold text-fg">Apply for ENGAGE training credits</p>
             <p className="text-sm text-muted mt-1 leading-relaxed">
               Eligible Highly Qualified Personnel (HQP) at one of the 14 partner
               Ontario institutions can receive up to{" "}
-              <strong className={spent ? "text-muted" : "text-fg"}>5,000 training credits</strong>{" "}
-              at no cost.{spent && " Your award is on this page above."}
+              <strong className="text-fg">5,000 training credits</strong>{" "}
+              at no cost.
             </p>
           </div>
         </div>
@@ -321,22 +302,12 @@ function ApplicationStatusCard({
           </a>.
         </p>
 
-        {spent ? (
-          // Not a disabled <button>: there is no action to re-enable, so a
-          // dead control would just be furniture. A sentence says the same
-          // thing and cannot be clicked at.
-          <p className="mt-4 text-xs text-muted">
-            Nothing to apply for — these credits are already yours. Contact BioHubNet if
-            you think your award is wrong.
-          </p>
-        ) : (
-          <Link
-            href="/credits/apply"
-            className="mt-4 w-full inline-flex items-center justify-center gap-2 bg-brand-600 hover:bg-brand-700 text-white font-semibold py-2.5 px-4 rounded-xl shadow-md shadow-brand-600/25 transition-all hover:-translate-y-0.5"
-          >
-            Start application <ArrowRight size={16} />
-          </Link>
-        )}
+        <Link
+          href="/credits/apply"
+          className="mt-4 w-full inline-flex items-center justify-center gap-2 bg-brand-600 hover:bg-brand-700 text-white font-semibold py-2.5 px-4 rounded-xl shadow-md shadow-brand-600/25 transition-all hover:-translate-y-0.5"
+        >
+          Start application <ArrowRight size={16} />
+        </Link>
       </div>
     );
   }
