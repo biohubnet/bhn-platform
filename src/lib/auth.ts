@@ -3,7 +3,6 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import { PASSWORDLESS_SIGN_IN } from "@/lib/auth/mode";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import bcrypt from "bcryptjs";
-import { cookies } from "next/headers";
 import { prisma } from "./prisma";
 import { verifyTotp } from "./security/mfa";
 import { auth0Session, isAuth0Enabled } from "./auth/auth0";
@@ -271,30 +270,18 @@ export const getRawSession = async (): Promise<Session | null> => {
 };
 
 /**
- * getSession(). If the caller is a superadmin and has an active
- * `bhn-act-as` cookie, the returned session.user.role reflects the
- * impersonated role while session.user.realRole keeps the true role
- * and session.user.actingAs flags that we're in view-as mode.
- *
- * This means requireRole("admin") will (correctly) fail when a
- * superadmin is viewing as a trainee — so the experience is faithful.
+ * getSession(). Everyone is signed in as a trainee, whatever their stored
+ * role: the platform shows only the trainee experience, as staging does
+ * (17 Nov 2026). role and realRole are both "trainee", so every role gate
+ * (admin pages and APIs, staff-only nav, the old view-as switcher) treats
+ * the user as one. The stored role is untouched in the database; to bring
+ * staff roles back, return the raw session unchanged.
  */
 export async function getSession() {
   const session = await getRawSession();
   if (!session) return null;
-  const realRole = (session.user as { role?: string }).role;
-  (session.user as { realRole?: string }).realRole = realRole;
-  if (realRole === "superadmin") {
-    try {
-      const actAs = (await cookies()).get(ACT_AS_COOKIE)?.value;
-      if (actAs && actAs !== "superadmin" && ROLE_RANK[actAs] !== undefined) {
-        (session.user as { role?: string }).role = actAs;
-        (session.user as { actingAs?: string }).actingAs = actAs;
-      }
-    } catch {
-      // cookies() can throw outside a request scope — ignore.
-    }
-  }
+  (session.user as { role?: string; realRole?: string }).role = "trainee";
+  (session.user as { role?: string; realRole?: string }).realRole = "trainee";
   return session;
 }
 

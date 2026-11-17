@@ -74,12 +74,8 @@ export default async function EventsLayout({ children }: { children: React.React
     return (
       <div className="flex h-screen bg-page">
         <Sidebar
-          role={role}
-          realRole={realRole}
-          actingAs={actingAs ?? null}
           user={session.user ?? {}}
           credits={userRow?.credits ?? undefined}
-          allowPlatformContent={userRow?.allowPlatformContent ?? false}
         />
         <main className="flex-1 overflow-y-auto relative">
           {actingAs && <ImpersonationBanner actingAs={actingAs} />}

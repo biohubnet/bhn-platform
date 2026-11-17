@@ -4,69 +4,25 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSignOut } from "@/lib/auth/authProvider";
 import { cn } from "@/lib/utils";
-import { isTraineeOnlyView } from "@/lib/trainee-view";
 import { ThemePicker } from "@/components/ui/ThemePicker";
-import { RoleSwitcher } from "@/components/admin/RoleSwitcher";
 import { useT } from "@/lib/i18n/I18nProvider";
-import { COMMITTEES, type CommitteeSidebarItem } from "@/lib/committees/registry";
 import {
   LayoutDashboard,
   BookOpen,
-  GraduationCap,
   Award,
-  BarChart3,
-  FileBarChart,
   Users,
-  Settings,
   LogOut,
   ChevronDown,
   Coins,
-  FileText,
-  Megaphone,
-  ShieldCheck,
-  ClipboardList,
-  UsersRound,
-  Link2,
   Layers,
-  Sparkles,
-  Pipette,
-  LineChart,
-  Coins as CoinsIcon,
-  UserCog,
-  HeartHandshake,
-  Handshake,
   Briefcase,
-  Users2,
-  Building2,
-  FilePlus,
-  ListChecks,
   Activity,
   HelpCircle,
-  Mail,
-  Inbox,
-  Calendar,
-  GitBranch,
-  Bell,
-  Lightbulb,
-  FlaskConical,
   Menu,
   X,
-  Compass,
-  Gift,
-  Rocket,
-  Palette,
-  Ghost,
-  MessageSquare,
-  Gauge,
-  Sliders,
-  Eye,
-  Drama,
-  Theater,
-  Clapperboard,
-  BookUser,
-  CalendarClock, MessageSquareText, PanelsTopLeft, Network} from "lucide-react";
+  Network,
+} from "lucide-react";
 import { NotificationBell } from "@/components/ui/NotificationInbox";
-import { AdminGlobalSearch } from "@/components/admin/AdminGlobalSearch";
 
 /** A learner-menu entry. `href: null` = no destination yet: it renders as
  *  a "Soon" row instead of a link. Give it an href to make it a link. */
@@ -106,26 +62,27 @@ const dashboardItem: NavItem & { labelKey: string } = {
   description: "Home base. What's in progress, your credit balance, and quick links into the catalog and pathways.",
 };
 
-// ENGAGE — the learning loop: catalog → pathway → progress → credits → rewards.
+// ENGAGE, in staging's order (decided at the 3 Nov 2026 meeting): Learning
+// Pathways first, then Program Details, with My Credits right under it.
 const engageItems: (NavItem & { labelKey: string })[] = [
-  { label: "Program Details & FAQ", labelKey: "nav.engageGuide", href: "/engage", icon: HelpCircle,
-    featureId: "engage-faq",
-    description: "How training, credits and enrolment work: access, on-demand courses, pathways, the credit-expiry policy, applying for more credits, and leaving the programme." },
-  { label: "On-Demand Courses",  labelKey: "nav.catalog",     href: "/courses", icon: BookOpen,
-    featureId: "learn-courses",
-    description: "Every published course, grouped by topic. Natural-language search ranks results by what each course actually covers, not just keyword matches." },
   { label: "Learning Pathways",  labelKey: "nav.pathways",    href: "/pathways", icon: Layers,
     featureId: "learn-pathways",
     description: "Multi-course learning journeys with a single certificate at the end. Some are open; gated ones need admin approval." },
+  { label: "Program Details & FAQ", labelKey: "nav.engageGuide", href: "/engage", icon: HelpCircle,
+    featureId: "engage-faq",
+    description: "How training, credits and enrolment work: access, on-demand courses, pathways, the credit-expiry policy, applying for more credits, and leaving the programme." },
+  { label: "My Credits",         labelKey: "nav.credits",     href: "/credits", icon: Coins,
+    featureId: "learn-credits",
+    description: "Balance plus a log of every grant and spend. Apply for additional credits here." },
+  { label: "On-Demand Courses",  labelKey: "nav.catalog",     href: "/courses", icon: BookOpen,
+    featureId: "learn-courses",
+    description: "Every published course, grouped by topic. Natural-language search ranks results by what each course actually covers, not just keyword matches." },
   { label: "My Courses",         labelKey: "nav.myCourses",       href: "/progress", icon: Activity,
     featureId: "learn-progress",
     description: "Every course you're enrolled in — resume where you left off — the pathways you're on, what you've completed, and the courses you saved. Completed courses export as a PDF." },
   { label: "Certificates",       labelKey: "nav.certificates",href: "/certificates", icon: Award,
     featureId: "learn-certificates",
     description: "Every credential you've earned. Each has a public verify link to share with employers." },
-  { label: "My Credits",         labelKey: "nav.credits",     href: "/credits", icon: Coins,
-    featureId: "learn-credits",
-    description: "Balance plus a log of every grant and spend. Apply for additional credits here." },
 ];
 
 
@@ -157,363 +114,10 @@ const experienceItems: LearnerItem[] = [
   { label: "Industry Internship", labelKey: "nav.industryInternship", href: null, icon: Briefcase },
 ];
 
-// Other top-level items rendered after the groups.
-//
-// Note: "Theme feedback" (/themes) deliberately does NOT live here.
-// It's discovered from inside the ThemePicker dropdown in the footer
-// — the place users actually engage with themes — rather than as a
-// sidebar item most trainees would scroll past.
-const miscItems: (NavItem & { labelKey: string })[] = [
-  // Both of these are staff-only in the nav. They are not deleted:
-  // /buddy and /changelog still work, and staff still need the
-  // changelog because they are the ones who write it. A trainee just
-  // does not carry two more items down their sidebar for features
-  // that are not part of their loop.
-  { label: "Learning Buddies",   labelKey: "nav.buddy",       href: "/buddy", icon: HeartHandshake,
-    featureId: "experience-buddy", minRole: "instructor",
-    description: "Pair up with someone for accountability — share a course or pathway, see each other's progress, leave async notes.",
-    badgeKey: "buddy-invites" },
-  { label: "Changelog",          labelKey: "nav.changelog",   href: "/changelog", icon: Bell,
-    featureId: "engage-changelog", minRole: "instructor",
-    description: "What's shipped recently — features, fixes, and improvements." },
-  // Roadmap moved to the admin Platform group on user request.
-];
-
-// EMPLOYER PORTAL — visible only when role === "employer".
-//
-// Overview is the brand-stage home (/employer) — wavy aurora cover
-// banner, identity row, KPI tiles, action queue, hiring shopfront
-// preview. My Postings is the working surface (/employer/postings)
-// — postings + applicants + inline pipelines + the create-posting
-// composer. They're complementary: Overview is the brand-facing
-// landing; My Postings is where the hiring work happens.
-//
-// The workspace's DSPageHeader visual treatment is archived at
-// /design-archive/employer-postings-workspace.html as a design
-// reference; the working page itself is live and used here.
-const employerItems: (NavItem & { labelKey: string })[] = [
-  { label: "Overview",          labelKey: "nav.employerHome",       href: "/employer",            icon: Building2, exact: true,
-    description: "Your company brand stage — profile (with one-URL AI auto-fill), live action queue, and the hiring shopfront trainees see on every posting. The pencil top-right opens the edit modal." },
-  { label: "Hiring guide",       labelKey: "nav.employerGuide",      href: "/employer/how-it-works", icon: Compass,
-    description: "End-to-end explainer for the hiring program — flow chart + step-by-step. Hover any highlighted item to find the matching control in your sidebar." },
-  { label: "My Postings",       labelKey: "nav.employerPostings",   href: "/employer/postings",   icon: FilePlus,
-    description: "Postings + applicants in one place. Expand any posting row to see its pipeline; the action queue at the top surfaces new applications, stale stages, and offers still awaiting response. Create new postings from this surface." },
-  // The separate "Applicants" sidebar entry was removed — it
-  // pointed at /employer/applicants, which is a redirect to this
-  // same My-Postings workspace. The workspace already hosts the
-  // applicant pipeline inline (via row-expand), so the dupe entry
-  // was confusing without offering a different view. The
-  // /employer/applicants URL still redirects here for old
-  // bookmarks.
-  { label: "Team",              labelKey: "nav.employerTeam",       href: "/employer/team",       icon: Users2,
-    description: "Manage your company workspace — invite teammates, approve join requests, and set role permissions. Owner can change roles; manager+ can send invites.",
-    badgeKey: "employer-join-requests" },
-  { label: "Templates",         labelKey: "nav.employerTemplates",  href: "/employer/templates",  icon: Mail,
-    description: "Email templates for rejections, interview invites, offers, and follow-ups. Supports merge variables like {{candidateFirstName}} and {{postingTitle}}." },
-  { label: "Analytics",         labelKey: "nav.employerAnalytics",  href: "/employer/analytics",  icon: BarChart3,
-    description: "Pipeline conversion rates, stage velocity, offer acceptance, and CSV export across all your postings." },
-  { label: "Reports",           labelKey: "nav.employerReports",    href: "/employer/reports",    icon: FileBarChart,
-    description: "Board-ready talent reports — executive KPI + OKR summary with RAG status, hiring funnel, time-to-fill, offer analytics, and more. Period-filtered, with targets you set and CSV / print export." },
-  { label: "Calendar",          labelKey: "nav.employerCalendar",   href: "/employer/calendar",   icon: Calendar,
-    description: "Week-view calendar of all upcoming interviews across your postings — navigate weeks, see pending vs. confirmed slots." },
-  { label: "Talent pool",       labelKey: "nav.talentPool",         href: "/talent-pool",         icon: Users,
-    description: "Browse approved talent-application members. View full applications and leave comments (visible to admins + employers, never to the applicant). Commenting unlocks only after admin approves the applicant's eligibility." },
-];
-
-// Admin menu, mirrored after the user-facing ENGAGE / EXPERIENCE
-// vocabulary so the mental model stays consistent across roles.
-//   Overview     — single link at the top of the section.
-//   Engage       — learning-content + people management.
-//   Experience   — employer side: invites, applicant flows, demos.
-//   Platform     — analytics, audit, system, superadmin settings.
-const adminOverview: NavItem = {
-  label: "Overview", href: "/admin", icon: LayoutDashboard, exact: true, minRole: "admin",
-  description: "Administration home — quick stats and shortcuts into every admin queue.",
-};
-
-// WORKSPACE — internal team tooling, its own top-level section. First item:
-// Marketing → Video Production (plan promo videos + draft their scripts).
-const workspaceVideoItem: NavItem = {
-  label: "Video Production",
-  href: "/admin/workspace/marketing/video",
-  icon: Clapperboard,
-  minRole: "admin",
-  description:
-    "Plan promo videos and draft their scripts. Scripts get shareable links for collaborative editing — contributors don't need an account.",
-};
-
-// WORKSPACE → Marketing → 26 Symposium Comms Plan. Opens the 2026 Annual
-// Symposium & Training Week communications plan straight into the editable
-// HTML editor (Gantt timeline, pre/during/post promotion, sponsorship,
-// sample report, task breakdown) — a dedicated tab, not buried in Video
-// Production.
-const workspaceSymposiumItem: NavItem = {
-  label: "26 Symposium Comms Plan",
-  href: "/admin/workspace/marketing/symposium",
-  icon: CalendarClock,
-  minRole: "admin",
-  description:
-    "The full communications & marketing playbook for the 2026 Annual Symposium and Training Week — editable Gantt timeline, pre/during/post promotion, sponsorship, sample report, and task breakdown. Shareable for collaborative editing.",
-};
-
-// WORKSPACE → Marketing → Sponsorship Package. The commercial half of the
-// symposium, kept beside the Comms Plan: an editable offer doc with share
-// links, so prospects get a URL rather than a PDF attachment.
-const workspaceSponsorshipItem: NavItem = {
-  label: "Sponsorship Package",
-  href: "/admin/workspace/marketing/sponsorship",
-  icon: Handshake,
-  minRole: "admin",
-  description:
-    "The sponsorship offer for the Annual Symposium — why sponsor, event details, tier grid, and how to confirm. Editable in place, with shareable links for prospective sponsors.",
-};
-
-// WORKSPACE → Marketing → Newsletter. Colleagues drop their section's
-// update into ENGAGE / EXPERIENCE / EQUIP / EVENTS; the AI lays the issue
-// out into the Mailchimp template and the editor copies the HTML across.
-const workspaceNewsletterItem: NavItem = {
-  label: "Newsletter",
-  href: "/admin/workspace/marketing/newsletter",
-  icon: Mail,
-  minRole: "instructor",
-  description:
-    "Collect newsletter contributions from the team by section, then let the AI lay the issue out into the Mailchimp template — paste-ready HTML, no formatting rules for contributors.",
-};
-
-// WORKSPACE → Website Review. Its own subgroup, not under Marketing: the
-// subject is the public website, not a campaign. Colleagues comment on a
-// live page, threads resolve, and the open ones export as a brief for an
-// AI coding agent.
-const workspaceWebsiteReviewItem: NavItem = {
-  label: "Website Review",
-  href: "/admin/workspace/website-review",
-  icon: MessageSquareText,
-  minRole: "instructor",
-  description:
-    "Comment on any page of biohubnet.ca, reply to each other, resolve as fixes land — then export the open threads as a revision brief for Claude Code or Codex, anchored to the exact text on the page.",
-};
-
-// WORKSPACE → Outreach. Sibling of Marketing and File Sharing. Two views:
-// Contacts (the directory + lists) and Campaigns (tracked cross-promotion
-// pushes), shown as sub-items under the Outreach subgroup.
-const workspaceOutreachContactsItem: NavItem = {
-  label: "Contacts",
-  href: "/admin/workspace/outreach/contacts",
-  icon: BookUser,
-  minRole: "admin",
-  description:
-    "Partner contacts for cross-promoting BHN programs. One directory, many lists; editable columns; every contact records who added it.",
-};
-const workspaceOutreachCampaignsItem: NavItem = {
-  label: "Campaigns",
-  href: "/admin/workspace/outreach/campaigns",
-  icon: Megaphone,
-  minRole: "admin",
-  description:
-    "Run a tracked cross-promotion push: pick a target list and an email template, then work down a personalised roster, copying or opening each email and marking contacts reached.",
-};
-
-
-// ENGAGE — running the learning loop: enrolments, groups, course
-// content, certificates, credits. Labels prefixed with "Manage" so
-// admins can tell them apart from the equivalent trainee-facing
-// items at a glance — both in the sidebar and in nav-history.
-const adminEngageItems: NavItem[] = [
-  { label: "Manage enrollments",        href: "/admin/enrollments",         icon: ClipboardList, minRole: "admin",
-    description: "Overview of course + pathway enrollment health. Per-course and per-pathway stats, top items by enrollment, pending pathway requests. Sub-pages: course-enrollments list, new-enrollment workflow, pathway-enrollment queue." },
-  { label: "Groups",                    href: "/admin/groups",              icon: UsersRound,   minRole: "admin",
-    description: "User groups for batch-assigning courses or pathways. Useful for cohorts and corporate clients." },
-  { label: "Credit applications",       href: "/admin/credit-applications", icon: CoinsIcon,    minRole: "admin",
-    description: "Trainees applying for additional starter credits beyond the 200 default. Review and approve.",
-    badgeKey: "credit-applications" },
-  { label: "Manage pathway enrollments", href: "/admin/pathway-enrollments", icon: Layers,       minRole: "admin",
-    description: "Enrollments into multi-course pathways. Approve gated pathways here.",
-    badgeKey: "pathway-enrollments" },
-  { label: "Course filters",            href: "/admin/course-filters",      icon: ListChecks,   minRole: "admin",
-    description: "Topic and skill taxonomy that powers the catalog filter panel. Add, rename, retire." },
-  { label: "Manage certificates",       href: "/admin/certificates",        icon: Award,        minRole: "admin",
-    description: "Every issued certificate. Revoke a credential or look it up by SHA hash." },
-  { label: "Cover art",                 href: "/admin/cover-art",           icon: Sparkles,     minRole: "admin",
-    description: "AI-rendered cover art and colour overlays for every course and pathway. Bulk regenerate topic-specific thumbnails or stamp a shared gradient treatment across a series." },
-  { label: "HQP Advisory Committee",    href: "/admin/committees/hqp",      icon: Users2,       minRole: "admin",
-    description: "HQP Advisory Committee hub — applications, open-call windows, feedback rounds, meetings, and roster. ENGAGE-pillar committee that oversees trainee perspectives + course feedback." },
-  { label: "Grad showcase",             href: "/admin/showcase",            icon: GraduationCap, minRole: "admin",
-    description: "Public submissions from program graduates (name + LinkedIn + headshot) collected via /showcase/<program>. Download the photo, mark when processed, or delete spam. No login required on the public side." },
-];
-
-// OPERATIONS — running the day-to-day platform: fulfillment + the
-// event calendar. Pulled out of ENGAGE (where they sat with the
-// learning-loop tools) so admins can find ops work without scanning
-// past enrolment + certificate management.
-const adminOperationsItems: NavItem[] = [
-  { label: "Access requests",           href: "/admin/access-requests",     icon: Inbox,        minRole: "admin",
-    description: "Submissions from the public /for-employers and /for-trainees pages. Approve to mint an invite, or reject if it's not a fit. Surfaced previously through /admin/inbox + /admin/insights — now also a direct nav entry." },
-  { label: "Merch fulfillment",         href: "/admin/merch",               icon: Gift,         minRole: "admin",
-    description: "Reward bundles claimed by trainees. Pack pickups for the office; review mailing requests." },
-  { label: "Events",                    href: "/admin/events",              icon: Calendar,     minRole: "admin",
-    description: "BHN Annual Symposium & Training Week editions. Edit basics, manage registrations, run check-in. Workshops / sessions / speakers / sponsors are seeded for now." },
-];
-
-// EXPERIENCE — the matching marketplace: skill ontology that wires
-// trainees to employers, plus everything employer-facing.
-const adminExperienceItems: NavItem[] = [
-  { label: "Skill ontology",      href: "/admin/skills",              icon: GitBranch,    minRole: "admin",
-    description: "The skill graph wiring postings to candidates. Add aliases, merge duplicates, edit hierarchy." },
-  { label: "AI matching engine",  href: "/admin/matching-config",     icon: Sliders,      minRole: "admin",
-    description: "Tune the subscore weights, band thresholds, and cosine cutoffs that drive the fit scorer. Includes a live tester to preview impact on a real (trainee × posting) pair before saving." },
-  { label: "Employer invites",    href: "/admin/employer-invites",    icon: Building2,    minRole: "admin",
-    description: "Invite codes for new employer accounts. Generate, track open rate, revoke." },
-  { label: "Demo workspaces",     href: "/admin/demo-workspaces",     icon: FlaskConical, minRole: "admin",
-    description: "Time-limited demo workspaces for prospective partners. Auto-cleanup after expiry." },
-  { label: "Showcase Trainee",    href: "/admin/showcases",           icon: Sparkles,     minRole: "admin",
-    description: "Single global advanced-trainee demo account — completed coursework, both merch tiers earned, full profile, scheduled interviews. For sales calls and training-team demos." },
-  { label: "Platform Demo Hub",  href: "/admin/demo",                icon: Drama,        minRole: "admin",
-    description: "Interactive 3-persona walkthrough for senior management, investors, and board presentations. Rex (Trainee), Vera (Employer), and Max (Admin) each navigate ENGAGE · EXPERIENCE · EQUIP." },
-  { label: "Sim requests",        href: "/admin/simulator-requests",  icon: Theater,      minRole: "admin",
-    description: "User-submitted requests for role-play simulations. Review each JD, run the AI generator, hand-author a payload, or reject with a note." },
-  { label: "Talent pool",         href: "/talent-pool",               icon: Users,        minRole: "admin",
-    description: "Approved talent-application members — same surface employers see, with full submission data + comment threads. Use this to coordinate with employer reviewers." },
-  { label: "Employer intake",     href: "/admin/experience/employer-intake", icon: Inbox, minRole: "admin",
-    badgeKey: "employer-intake-new",
-    description: "“Hire an intern” leads captured from the public form on biohubnet.ca (via /api/public/employer-intake) plus the imported Experience registry. Newest first, with CSV export." },
-  // Visible to instructors + industrial mentors as well as admins —
-  // reviewing trainee resumes is core mentor work, not an admin
-  // privilege. The route itself re-checks isStaffReviewer(role).
-  { label: "Trainee resumes",     href: "/mentor/trainees",           icon: FileText,     minRole: "instructor",
-    description: "Open a trainee's structured resume, pin comments to specific bullets, and watch them adopt the suggestions. Read-only — the trainee owns what to apply." },
-];
-
-// INSIGHTS — was DESIGN & RESEARCH. Expanded with the analytics
-// surfaces that previously lived in Platform (Analytics,
-// Pipeline analytics, AutoPipette). The unifying lens: anything
-// that *measures* the platform — UX charter outcomes, product
-// engagement metrics, AI-assist effectiveness, generated
-// reports. Design system is here too because picking it is a
-// UX-research decision, not platform plumbing.
-const adminInsightsItems: NavItem[] = [
-  { label: "Design system",       href: "/admin/design-system",       icon: Palette,    minRole: "admin",
-    description: "Pick the platform-wide layout vocabulary (Classic / Cinematic / Studio) — admin-only, applies to every user. Plus the live tokens reference: surfaces, type scale, radius scale, motion primitives, component patterns, accessibility checklist. Canonical doc at docs/design-system.md." },
-  { label: "Design archive",      href: "/admin/design-archive",      icon: Layers,     minRole: "admin",
-    description: "Working sketches and visual-language explorations — admin dashboard mockups (60 visual languages), per-language layout studies (Vintage IBM × 10, Y2K Aero × 50), and any future archives. Each is a static HTML file under public/design-archive/. Reference material when picking a direction for a new surface." },
-  { label: "V3 account pages",    href: "/admin/v3-account-pages",    icon: PanelsTopLeft, minRole: "admin",
-    description: "Design-review mockups of the V3 course marketplace account pages — three-step registration, forgot password, and the reset-password confirmation — on the approved BioHubNet pre-login design. Every state is simulated with synthetic data; nothing submits or sends email." },
-  { label: "Login floaters",     href: "/admin/login-floaters",      icon: FlaskConical, minRole: "admin",
-    description: "Manage the ambient process-glyph animations that sit on the dark periphery of the public /login screen. Adds + fine-tunes are driven from an interactive editorial gallery of the curated library; each card is the real React floater at thumbnail scale, so admins see exactly what will land on /login." },
-  { label: "Insights",            href: "/admin/insights",            icon: Lightbulb,  minRole: "admin",
-    description: "Per-period 'what users told us' synthesis. Read the signal feeds (theme votes, exit-survey responses, access requests, pending-queue heat), write the synthesis note, publish to /changelog so the loop closes back to users." },
-  { label: "Experience metrics",  href: "/admin/experience-metrics",  icon: Gauge,      minRole: "admin",
-    description: "UX-charter KPI dashboard. Tracks the three named user outcomes — trainee arrival latency, admin queue depth, transparency cadence — against the targets named in docs/ux/charter.md." },
-  { label: "Analytics",           href: "/admin/analytics",           icon: LineChart,  minRole: "admin",
-    description: "Engagement, learning, and conversion metrics across the platform." },
-  { label: "AI metrics",          href: "/admin/ai-metrics",          icon: Activity,   minRole: "admin",
-    description: "AI reliability + cost observability from the AIInteraction telemetry log — call volume, error rate, p50/p95 latency, cost, acceptance rate, and valid-output (schema-validation) rate, per day and per feature." },
-  { label: "AI review queue",     href: "/admin/ai-review",           icon: ShieldCheck, minRole: "admin",
-    description: "AI answers flagged for a human — thumbs-down from a learner or low-confidence (poorly grounded) answers, plus the triage agent's proposals. Resolve or escalate each." },
-  { label: "AI triage agent",     href: "/admin/ai-agent",            icon: Sparkles,   minRole: "admin",
-    description: "The autonomous agent that triages the AI review queue (category + severity + a proposed action for a human). Kill switch, run-now, before/after throughput vs manual triage, and run history. Orchestrated by Inngest." },
-  { label: "Pipeline analytics",  href: "/admin/pipeline-analytics",  icon: Activity,   minRole: "admin",
-    description: "Hiring-pipeline health — stage distribution, median time-in-stage, stalled (≥14d) applications, conversion-to-offer rate across the platform." },
-  { label: "AutoPipette",         href: "/admin/assist",              icon: Pipette,    minRole: "admin",
-    description: "Health, helpfulness, and findings for AutoPipette — BHN's AI lab partner that dispenses precise, single-dose help when learners look stuck. Per-card helpful rate, top stuck surfaces, latest weekly journey summaries, operator actions (run rollup / weekly summary / ad-hoc AI inference)." },
-  { label: "Reports",             href: "/admin/reports",             icon: FileText,   minRole: "admin",
-    description: "Generated reports for compliance, billing, and exec views." },
-];
-
-// SECURITY & COMPLIANCE — pulled out of Platform into its own
-// dedicated group. The four items here all answer "is the
-// platform safe + auditable + compliant?" — audit log for
-// per-action history, Security for MFA + lockouts + e-sig
-// config, Security policies for the governance docs, Compliance
-// for the management overview against PIPEDA / AODA / etc.
-const adminSecurityItems: NavItem[] = [
-  { label: "Compliance",          href: "/admin/compliance",          icon: ShieldCheck, minRole: "admin",
-    description: "Management overview — every framework BHN follows (PIPEDA, AODA, CASL, encryption, MFA, audit, RBAC, backups), what we actually do for each, and honest status. Five-minute readable." },
-  { label: "Audit Log",           href: "/admin/audit",               icon: ShieldCheck, minRole: "admin",
-    description: "Append-only log of admin actions. Required for SOC 2 and 21 CFR Part 11 attestation." },
-  { label: "Security",            href: "/admin/security",            icon: ShieldCheck, minRole: "admin",
-    description: "MFA enrollment, password policy, lockouts, e-signature configuration." },
-  { label: "Security policies",   href: "/admin/security/policies",   icon: FileText,    minRole: "admin",
-    description: "Every governance doc in one place — encryption posture, incident response, breach notification, sub-processors, ROPA, AUP, retention, pentest playbook. Reads from docs/security/ markdown so source-of-truth + rendered page can't drift." },
-];
-
-// SYSTEM — superadmin-only surfaces. Was bottom-of-Platform;
-// pulled out so the gate is visually clear (these are the
-// "tighten the screws on the whole platform" items, not
-// day-to-day operations).
-const adminSystemItems: NavItem[] = [
-  { label: "LTI Config",          href: "/admin/lti",                 icon: Link2,       minRole: "superadmin",
-    description: "LTI 1.3 launch configuration for external LMS integrations." },
-  { label: "System status",       href: "/admin/system-status",       icon: Activity,    minRole: "superadmin",
-    description: "Live system health — DB latency, queue depth, third-party API status." },
-  { label: "Settings",            href: "/admin/settings",            icon: Settings,    minRole: "superadmin",
-    description: "Platform-wide settings only superadmins can change." },
-];
-
-// PLATFORM — operating the platform itself: people, the inbox
-// queue, comms / content, and feedback loops. Trimmed from the
-// previous 24-item dumping ground. EQUIP / INSIGHTS / SECURITY /
-// SYSTEM live in their own groups (above + below).
-//
-// Order intent — most-frequent first:
-//   1. Inbox (catch-all queue, top of every admin shift)
-//   2. People (Users, Role requests, Committees)
-//   3. Comms / content (Announcements, Newsletter exports,
-//      Editable copy)
-//   4. Feedback loops (Theme proposals, Feedback)
-//   5. Operations (Launch Readiness, Phantom users)
-const adminPlatformItems: NavItem[] = [
-  { label: "Roadmap",             href: "/roadmap",                   icon: Compass,     minRole: "superadmin",
-    description: "Internal planning surface — Now / Next / Later horizons for the platform. Moved here from the user-side nav per request; the public-facing 'what shipped' view is /changelog." },
-  { label: "Inbox",               href: "/admin/inbox",               icon: Inbox,       minRole: "admin",
-    description: "Every pending admin request in one queue — credit apps, role changes, employer invites, mailing requests.",
-    badgeKey: "inbox-total" },
-  { label: "Users",               href: "/admin/users",               icon: Users,       minRole: "admin",
-    description: "Every user on the platform. Search, filter, edit role / credits, deactivate." },
-  { label: "Role requests",       href: "/admin/role-requests",       icon: UserCog,     minRole: "admin",
-    description: "Trainees asking to upgrade their role (e.g. evaluating → trainee). Review and approve.",
-    badgeKey: "role-requests" },
-  // "Committees" used to live here as a single Platform entry that
-  // mixed HQP + EQUIP Review management. Split out into pillar-
-  // specific entries on user request — "HQP Advisory committee"
-  // now sits under ENGAGE admin, "EQUIP Review committee" sits
-  // under EQUIP admin, and the combined surface is gone.
-  { label: "Announcements",       href: "/admin/announcements",       icon: Megaphone,   minRole: "admin",
-    description: "Banner announcements shown across the platform. Schedule, target by role, set expiry." },
-  { label: "Dashboard promos",    href: "/admin/dashboard-promos",    icon: Sparkles,    minRole: "admin",
-    description: "The events, workshops and announcements in the “What's on” band at the top of everyone's home page." },
-  { label: "Pages",               href: "/admin/pages",               icon: FileText,    minRole: "admin",
-    description: "Lightweight CMS — publish announcements, policy pages, and standalone content to /p/[slug] without a code deploy. Markdown body, draft / publish status, audience gating." },
-  { label: "Newsletter exports",  href: "/admin/newsletter",          icon: Mail,        minRole: "admin",
-    description: "New newsletter opt-ins ready to export to BioHubNet's mailing list." },
-  { label: "Editable copy",       href: "/admin/copy",                icon: FileText,    minRole: "admin",
-    description: "Every editable page string in one place — change headlines, subtitles, hero copy. Live pages also have inline pencils." },
-  { label: "Theme proposals",     href: "/admin/theme-proposals",     icon: Palette,     minRole: "admin",
-    description: "Trainee-submitted theme ideas + aggregated vote totals. Review queue with one-click actions for review / build / ship / decline. Ship+bounty issues a tier-3 MerchReward.",
-    badgeKey: "theme-proposals" },
-  { label: "Feedback",            href: "/admin/feedback",            icon: MessageSquare, minRole: "admin",
-    description: "Aggregated exit-survey responses from trainees leaving the talent pool — NPS, per-dimension ratings, reason breakdown, individual responses. Plus mint feedback-invitation links to send out of band." },
-  { label: "Launch Readiness",    href: "/admin/launch-readiness",    icon: Rocket,      minRole: "admin",
-    description: "Executive dashboard tracking go-live status — % ready, days to launch, decisions needed, top risks, detailed checklist by phase. Auto-detects what's done." },
-  { label: "Phantom users",       href: "/admin/phantom-users",       icon: Ghost,       minRole: "admin",
-    description: "Spawn throwaway test accounts for a day. Enroll them in courses, register them for events, exercise admin queues — they auto-delete when their TTL expires (hourly sweep)." },
-];
-
 /** Nav badgeKeys that should flip to the urgent rose chip the moment
  *  there's ≥1 pending — used for trainee-facing "someone's waiting on
  *  you" items where even one item shouldn't sit quietly in a brand-
  *  tone informational chip. */
-/** Icon-name → component map for committee sidebar items. The
- *  registry stores icon names as plain strings so the registry
- *  itself stays tree-shakable; the actual lucide imports happen
- *  here in the Sidebar where they're already in the bundle. */
-const COMMITTEE_ICONS: Record<CommitteeSidebarItem["icon"], typeof Rocket> = {
-  Rocket,
-  Users,
-  Award,
-  ClipboardList,
-  Sparkles,
-};
-
 const URGENT_FROM_ONE = new Set<string>([
   "interview-requests",
   "offer-requests",
@@ -521,38 +125,13 @@ const URGENT_FROM_ONE = new Set<string>([
   "employer-intake-new",
 ]);
 
-const ROLE_RANK: Record<string, number> = {
-  user: 0,
-  trainee: 0,
-  evaluating: 0,
-  // Industrial mentors are non-instructor staff who comment on
-  // trainee work (resumes, interviews, STAR stories). Granted
-  // instructor-tier rank so the staff-only nav items they need
-  // (Trainee resumes, etc.) are visible. Per-page permission gates
-  // are still the source of truth for what they can actually do.
-  industrial_mentor: 1,
-  instructor: 1,
-  admin: 2,
-  superadmin: 3,
-};
-
 interface SidebarProps {
-  role: string;
-  realRole?: string;
-  actingAs?: string | null;
   user: { name?: string | null; email?: string | null; image?: string | null };
   credits?: number;
-  /** Employer-only flag — when false (default), employers see only their portal. */
-  allowPlatformContent?: boolean;
   /** Per-queue pending counts. Admin-side nav items with a matching
    *  `badgeKey` render a small count chip. Absent / 0 → no badge.
    *  See src/lib/admin/queue-counts.ts for the canonical key set. */
   queueCounts?: Record<string, number>;
-  /** Active committee slugs the signed-in user belongs to. Resolved
-   *  server-side in (dashboard)/layout.tsx so the sidebar can render
-   *  a COMMITTEES section without an additional fetch. Empty array →
-   *  no section rendered. */
-  committees?: string[];
   /** Set of featureIds the viewing user has hidden via the
    *  /profile/preferences switchboard. Items in this set are filtered
    *  out of the sidebar before render. */
@@ -896,127 +475,6 @@ function SectionGroup({
   );
 }
 
-/** Tone for an admin sub-group — paired colours for the accent bar
- *  and the section heading text. Heading colour is the bar colour
- *  pushed two ramp-steps darker for better contrast on cream/white
- *  surfaces; the bar stays at signal-palette brightness so it reads
- *  as a coloured anchor.
- *
- *  Pillars map to the canonical platform signal palette: Engage =
- *  emerald, Experience = amber, Equip = sky, Insights = violet,
- *  Platform = cyan, Security = rose, System = slate. */
-const ADMIN_SUBGROUP_TONES = {
-  engage:     { bar: "#10b981", text: "#065f46" }, // emerald-500 / 800
-  operations: { bar: "#14b8a6", text: "#115e59" }, // teal-500 / 800
-  experience: { bar: "#f59e0b", text: "#92400e" }, // amber-500 / 800
-  equip:      { bar: "#0ea5e9", text: "#075985" }, // sky-500 / 800
-  insights:   { bar: "#8b5cf6", text: "#5b21b6" }, // violet-500 / 800
-  platform:   { bar: "#0891b2", text: "#155e75" }, // cyan-600 / 800
-  security:   { bar: "#f43f5e", text: "#9f1239" }, // rose-500 / 800
-  system:     { bar: "#6b7280", text: "#374151" }, // slate-500 / 700
-} as const;
-
-type AdminSubgroupTone = (typeof ADMIN_SUBGROUP_TONES)[keyof typeof ADMIN_SUBGROUP_TONES];
-
-/** Wrapper around an admin sub-group's heading + items. Renders a
- *  bolder, tone-coloured subheading on top followed by a thin
- *  coloured accent bar in the LEFT GUTTER of the sidebar (alongside
- *  the menu items — never alongside the heading).
- *
- *  Geometry (rev 2026-05-17d — multiline-safe):
- *    • Heading: 12 px / bold / 0.18 em tracking / tone-coloured.
- *    • Heading + bar are SIBLINGS inside the wrapper. The bar lives
- *      inside an inner `<div class="relative">` that starts AFTER
- *      the heading's box, so the bar's `top: 0` naturally lands at
- *      the first NavLink's top edge regardless of whether the
- *      heading wrapped onto one line ("Engage") or two lines
- *      ("Security & compliance"). Previous implementation used a
- *      fixed `top-[34px]` tuned for single-line headings — two-line
- *      headings shifted the items down but the bar stayed at 34 px
- *      and ended up alongside the heading text.
- *    • Bar sits at `left-0` of the inner container, which has no
- *      padding — so the bar lands at sidebar-x = 12 px, right in
- *      the middle of the visual gutter between the sidebar wall and
- *      the NavLink icons.
- *    • `z-10` keeps the bar above NavLink hover / active backgrounds.
- *    • Bar is `w-0.5` (2 px) to hold its weight against the bolder
- *      heading without feeling fussy. */
-function AdminSubgroup({
-  tone,
-  label,
-  children,
-}: {
-  tone: AdminSubgroupTone;
-  label: string;
-  children: React.ReactNode;
-}) {
-  // Collapse state — shares the same localStorage bucket as the top-
-  // level sections so admins who collapse "Engage" once get a stable
-  // sidebar across sessions. We prefix the key with "admin:" so the
-  // top-level "Engage" pillar and the admin-side "Engage" subgroup
-  // don't collide.
-  const storageKey = `admin:${label}`;
-  const [collapsed, setCollapsed] = useState(false);
-  useEffect(() => {
-    setCollapsed(readCollapsed().has(storageKey));
-  }, [storageKey]);
-  function toggleCollapsed() {
-    setCollapsed((prev) => {
-      const next = !prev;
-      const all = readCollapsed();
-      if (next) all.add(storageKey); else all.delete(storageKey);
-      writeCollapsed(all);
-      return next;
-    });
-  }
-  return (
-    <div className="mt-1 first:mt-0">
-      <button
-        type="button"
-        onClick={toggleCollapsed}
-        aria-label={collapsed ? `Expand ${label}` : `Collapse ${label}`}
-        aria-expanded={!collapsed}
-        // text-left needed because <button> defaults to text-align:
-        // center — wrapped labels (e.g. "SECURITY & COMPLIANCE")
-        // were centring instead of staying flush-left with the
-        // chevron.
-        className="group w-full flex items-center gap-1.5 px-3 pt-3 pb-1.5 text-left text-[12px] uppercase tracking-[0.18em] font-bold select-none cursor-pointer hover:bg-fg/5 rounded transition-colors"
-        style={{ color: tone.text }}
-      >
-        <span className="flex-1">{label}</span>
-        <ChevronDown
-          size={11}
-          aria-hidden
-          className={cn(
-            "transition-transform duration-300 ease-out shrink-0 opacity-60 group-hover:opacity-100",
-            collapsed && "-rotate-90",
-          )}
-        />
-      </button>
-      {/* Same grid-rows collapse trick as SectionGroup. */}
-      <div
-        className={cn(
-          "grid transition-[grid-template-rows,opacity] duration-300 ease-out",
-          collapsed ? "grid-rows-[0fr] opacity-0" : "grid-rows-[1fr] opacity-100",
-        )}
-        aria-hidden={collapsed}
-        {...(collapsed ? { inert: "" as unknown as boolean } : {})}
-      >
-        <div className="overflow-hidden min-h-0">
-          <div className="relative">
-            <span
-              aria-hidden
-              className="absolute left-0 top-0 bottom-1 w-0.5 rounded-full z-10 pointer-events-none"
-              style={{ background: tone.bar }}
-            />
-            {children}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 /** A menu entry with no destination yet: shaped like a nav row but plain
  *  text with a "Coming soon" caption, so it can never be clicked into a
  *  404. The caption sits under the label, not beside it: beside it, a
@@ -1240,9 +698,8 @@ function NavLink({ item, pathname, onNavigate, queueCounts }: {
 }
 
 export function Sidebar({
-  role, realRole, actingAs, user, credits, allowPlatformContent = false,
+  user, credits,
   queueCounts,
-  committees = [],
   hiddenFeatures,
   initialUnreadCount = 0,
 }: SidebarProps) {
@@ -1257,26 +714,10 @@ export function Sidebar({
       : items;
   const pathname = usePathname();
   const t = useT();
-  // Effective role for visibility gating. When a superadmin is acting
-  // as another role via RoleSwitcher (`actingAs`), the sidebar should
-  // only show what the acted-as role can see — otherwise "act as
-  // trainee" still surfaces all the admin links and the simulation is
-  // meaningless. ImpersonationBanner stays visible so the user knows
-  // they can switch back.
-  const effectiveRole = actingAs ?? role;
-  const userRank = ROLE_RANK[effectiveRole] ?? 0;
-  const isAdmin = userRank >= ROLE_RANK["admin"];
-  const isStaff = userRank >= ROLE_RANK["instructor"];
-  const isEmployer = effectiveRole === "employer";
-  // Employer accounts only see ENGAGE / EXPERIENCE / Buddies if an
-  // admin has flipped allowPlatformContent on for them.
-  // Trainees see ENGAGE / EXPERIENCE / EQUIP, matching the pillar nav
-  // on the current platform (app.biohubnet.ca). `traineeOnly` no longer
-  // suppresses the learner sections — it survives only for the surfaces
-  // that stay hidden regardless of pillar access: the product tour and
-  // the first-login mini-game.
-  const traineeOnly = isTraineeOnlyView(effectiveRole);
-  const showLearnerNav = !isEmployer || allowPlatformContent;
+  // Everyone is signed in as a trainee (see getSession in lib/auth.ts), so
+  // this is the trainee menu only, matching staging (17 Nov 2026): Dashboard,
+  // ENGAGE, EXPERIENCE, 1:1 MENTORSHIP. No role switcher, no staff or admin
+  // sections.
 
   // Mobile off-canvas drawer. The shell renders on every viewport;
   // <md the desktop shell collapses behind a hamburger. State lives
@@ -1305,75 +746,6 @@ export function Sidebar({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [mobileOpen]);
-
-  const filterByRole = (item: NavItem) => {
-    const required = ROLE_RANK[item.minRole ?? "admin"] ?? ROLE_RANK.admin;
-    return userRank >= required;
-  };
-  const visibleEngageAdmin     = adminEngageItems.filter(filterByRole);
-  const visibleOperationsAdmin = adminOperationsItems.filter(filterByRole);
-  const visibleExperienceAdmin = adminExperienceItems.filter(filterByRole);
-  const visibleInsightsAdmin   = adminInsightsItems.filter(filterByRole);
-  const visiblePlatformAdmin   = adminPlatformItems.filter(filterByRole);
-  const visibleSecurityAdmin   = adminSecurityItems.filter(filterByRole);
-  const visibleSystemAdmin     = adminSystemItems.filter(filterByRole);
-  // Committee memberships → registry meta. Drops slugs the registry
-  // no longer knows about (e.g. a column value left over from a
-  // retired committee). Empty list → no COMMITTEES section rendered.
-  // EQUIP is retired from the menu, so its review committee's shortcuts go too.
-  const rawVisibleCommittees = COMMITTEES.filter((c) => committees.includes(c.slug) && c.slug !== "equip_review");
-
-  // COMMITTEES sidebar items pointing at admin routes should never
-  // render in this section, regardless of who's viewing:
-  //   • Admins already see those routes under Administration,
-  //     so showing them again under COMMITTEES is a duplicate.
-  //   • Non-admins can't access admin routes anyway — surfacing a
-  //     link they'll 403 on is worse than hiding it.
-  // We build the deduplication set from EVERY admin item (not just
-  // the ones the current user can see), so the filter applies
-  // identically to admins and non-admins.
-  const allAdminHrefs = new Set<string>([
-    adminOverview.href,
-    ...adminEngageItems.map((i) => i.href),
-    ...adminOperationsItems.map((i) => i.href),
-    ...adminExperienceItems.map((i) => i.href),
-    ...adminInsightsItems.map((i) => i.href),
-    ...adminPlatformItems.map((i) => i.href),
-    ...adminSecurityItems.map((i) => i.href),
-    ...adminSystemItems.map((i) => i.href),
-  ]);
-  const visibleCommittees = rawVisibleCommittees
-    .map((c) => ({
-      ...c,
-      sidebarItems: c.sidebarItems.filter((s) => !allAdminHrefs.has(s.href)),
-    }))
-    .filter((c) => c.sidebarItems.length > 0);
-
-  // Role-based inline pillar links. The `engage_hqp_advisor` role
-  // (rank-1 reviewer seat) gets an "ENGAGE HQP advisory" shortcut
-  // rendered inline at the bottom of the ENGAGE pillar section
-  // below, instead of in the standalone COMMITTEES block. Role-
-  // based rather than committee-based because the committee entry
-  // was collapsed into a first-class role on user request.
-  const isEngageHqpAdvisor =
-    role === "engage_hqp_advisor" || realRole === "engage_hqp_advisor";
-  // HR-view preview — surfaces the exact employer-portal nav (same
-  // routes the EMPLOYER PORTAL section would render at the top of
-  // the sidebar for a real employer) inside the Administration
-  // section so superadmins can peek at the HR mental model without
-  // role-switching first.
-  //
-  // Gating:
-  //   • realRole === "superadmin"  — only actual superadmins.
-  //     Admins see less than full HR, so they shouldn't claim the
-  //     preview either.
-  //   • !actingAs                  — when the superadmin uses the
-  //     RoleSwitcher to "view as" a lower role, the whole point is
-  //     to see what that role sees. The HR PREVIEW block isn't part
-  //     of any lower role's sidebar, so it must hide too — otherwise
-  //     a superadmin acting-as-trainee sees an HR menu the actual
-  //     trainee never would.
-  const showHrViewPreview = realRole === "superadmin" && !actingAs;
 
   return (
     <>
@@ -1427,20 +799,8 @@ export function Sidebar({
         {/* Logo */}
         <div className="px-4 py-4 border-b border-line flex items-center gap-2">
           <Link href="/dashboard" className="flex flex-1 min-w-0 hover:bg-elevated/50 rounded-lg px-2 py-1.5 transition-colors">
-            {/* The official BioHubNet lockup, used as-is. It replaces the
-                hand-reconstructed LogoMark plus a typed "BHN Training"
-                wordmark — neither was the brand asset.
-
-                No plate and no border: it sits straight on the sidebar
-                surface, which is what the transparent PNG is for. The
-                trade-off is that the lockup's ink is teal (#006c7b)
-                through green with no reversed variant in the repo, so on
-                the plate is not missed: measured over 34k opaque wordmark
-                pixels, contrast is a median 4.46:1 on the darkest theme
-                and 4.19:1 on Greenwood night, against 4.14:1 on the white
-                plate. The plate had forced every theme to the light-theme
-                number; removing it slightly HELPS the dark ones and leaves
-                the light ones unchanged. */}
+            {/* The official BioHubNet lockup, used as-is, straight on the
+                sidebar surface (the transparent PNG is made for that). */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/biohubnet-logo.png"
@@ -1453,327 +813,53 @@ export function Sidebar({
           <NotificationBell initialUnreadCount={initialUnreadCount} />
         </div>
 
-        {/* Global admin search — lives here (not on a single page) so
-            it's reachable from anywhere in the app, not just the Admin
-            Dashboard. Gated to admin/superadmin since the API route
-            itself requires that role. */}
-        {isAdmin && (
-          <div className="px-3 pt-3 pb-3 border-b border-line">
-            <AdminGlobalSearch />
-          </div>
-        )}
-
       <nav data-sidebar-nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-        {/* Dashboard is the standard learner home. Employers don't
-            have a separate "Dashboard" surface anymore — their
-            canonical entry is the EMPLOYER PORTAL → Overview
-            below, which carries the brand-stage wavy banner +
-            identity row + action queue. Hiding the Dashboard link
-            for employers keeps the sidebar honest (no link → a
-            page that just redirects them back out). */}
-        {!isEmployer && (
-          <NavLink item={{ ...dashboardItem, label: t(dashboardItem.labelKey) }} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
-        )}
+        <NavLink item={{ ...dashboardItem, label: t(dashboardItem.labelKey) }} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
 
-        {isEmployer && (
-          <SectionGroup
-            title="EMPLOYER PORTAL"
-            description="Hiring side: company profile, postings you've published, and the candidates who applied."
-          >
-            {employerItems.map((item) => (
-              <NavLink key={item.href} item={{ ...item, label: t(item.labelKey) }} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
-            ))}
-          </SectionGroup>
-        )}
+        <SectionGroup
+          title="ENGAGE"
+          tone="engage"
+          description="Industry-led training, workshops, and mentorship."
+          programs={[
+            {
+              title: "Medical Affairs Learning Pathway",
+              body: "MSL Accelerator with Agilis Health — 2-day intensive in Toronto. Cohort runs in spring; next group in Fall.",
+            },
+            {
+              title: "Entrepreneurship Learning Pathway",
+              body: "Programme for life-sciences founders and aspiring founders.",
+            },
+          ]}
+        >
+          {visibleByPrefs(engageItems).map((item) => {
+            const labeled = { ...item, label: t(item.labelKey) };
+            return <NavLink key={item.href} item={labeled} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />;
+          })}
+        </SectionGroup>
 
-        {showLearnerNav && (
-          <SectionGroup
-            title="ENGAGE"
-            tone="engage"
-            description="Industry-led training, workshops, and mentorship."
-            programs={[
-              {
-                title: "Medical Affairs Learning Pathway",
-                body: "MSL Accelerator with Agilis Health — 2-day intensive in Toronto. Cohort runs in spring; next group in Fall.",
-              },
-              {
-                title: "Entrepreneurship Learning Pathway",
-                body: "Programme for life-sciences founders and aspiring founders.",
-              },
-            ]}
-          >
-            {visibleByPrefs(engageItems).map((item) => {
-              const labeled = { ...item, label: t(item.labelKey) };
-              return <NavLink key={item.href} item={labeled} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />;
-            })}
-            {/* ENGAGE HQP Advisory shortcut — renders inline under
-                the ENGAGE pillar section instead of in a standalone
-                COMMITTEES block, per user request. Visible only for
-                users in the `engage_hqp_advisor` role seat. */}
-            {isEngageHqpAdvisor && (
-              <NavLink
-                item={{
-                  label: "ENGAGE HQP advisory",
-                  href: "/committee/hqp",
-                  icon: Award,
-                  description: "ENGAGE-pillar HQP advisory dashboard — training-side perspectives, course quality, learner feedback.",
-                }}
-                pathname={pathname}
-                onNavigate={() => setMobileOpen(false)}
-                queueCounts={queueCounts}
-              />
-            )}
-          </SectionGroup>
-        )}
+        {/* Experience above 1:1 Mentorship, as on staging. */}
+        <SectionGroup
+          title="EXPERIENCE"
+          tone="experience"
+          description="Bridging theory and practice through experiential learning."
+        >
+          {experienceItems.map(learnerRow)}
+        </SectionGroup>
 
-        {showLearnerNav && mentorshipItems.length > 0 && (
-          <SectionGroup
-            title="1:1 MENTORSHIP"
-            tone="electric"
-            description="A sustained pairing with someone already working in the part of the sector you're moving toward."
-          >
-            {mentorshipItems.map(learnerRow)}
-          </SectionGroup>
-        )}
-
-        {showLearnerNav && experienceItems.length > 0 && (
-          <SectionGroup
-            title="EXPERIENCE"
-            tone="experience"
-            description="Bridging theory and practice through experiential learning."
-          >
-            {experienceItems.map(learnerRow)}
-          </SectionGroup>
-        )}
-
-        {/* COMMITTEES — only rendered when the user belongs to ≥1
-            committee. Listed under their own section so committee
-            members spot the shortcut immediately on first paint;
-            primary roles still see ENGAGE / EXPERIENCE / EQUIP /
-            ADMINISTRATION as before. */}
-        {visibleCommittees.length > 0 && (
-          <SectionGroup
-            title="COMMITTEES"
-            description="Your committee surfaces. HQP members coordinate via the HQP dashboard."
-          >
-            {visibleCommittees.flatMap((c) =>
-              c.sidebarItems.map((s: CommitteeSidebarItem) => {
-                const Icon = COMMITTEE_ICONS[s.icon] ?? Sparkles;
-                // No minRole — visibility is gated by the
-                // visibleCommittees filter above (only renders when
-                // the user belongs to ≥1 committee), so the per-
-                // link role check would be redundant.
-                const item: NavItem = {
-                  label: s.label,
-                  href: s.href,
-                  icon: Icon,
-                  description: c.description,
-                };
-                return (
-                  <NavLink
-                    key={`${c.slug}-${s.href}`}
-                    item={item}
-                    pathname={pathname}
-                    onNavigate={() => setMobileOpen(false)}
-                    queueCounts={queueCounts}
-                  />
-                );
-              }),
-            )}
-          </SectionGroup>
-        )}
-
-        {showHrViewPreview && !isEmployer && (
-          <SectionGroup
-            title="HR PREVIEW"
-            description="What an HR account sees in their menu. Click any link to preview the route; use the xx keyboard shortcut to view-as HR with the act-as cookie set."
-            tone="hr-preview"
-          >
-            {/* Lifted out of the Admin section so the HR surface
-                reads as a peer of ENGAGE / EXPERIENCE rather than
-                buried under Administration. Gated on superadmin
-                (showHrViewPreview) AND not currently acting as
-                employer — the top-of-nav EMPLOYER PORTAL block
-                already covers that case and we don't want to
-                render the same six links twice.
-
-                Visual treatment: violet "hr-preview" tone — distinctly
-                brighter than the surrounding sections so a superadmin
-                spots it instantly when scanning the sidebar. Pairs
-                with the Eye glyph + violet-tinted explainer below. */}
-            <p className="px-3 -mt-0.5 pb-1.5 text-[11px] text-violet-800 leading-snug inline-flex items-start gap-1.5">
-              <Eye size={11} className="text-violet-700 mt-0.5 shrink-0" />
-              <span>
-                Preview only · use{" "}
-                <code className="font-mono text-violet-900 bg-violet-50 ring-1 ring-inset ring-violet-200 px-1 rounded">xx</code>{" "}
-                to view-as HR
-              </span>
-            </p>
-            {employerItems.map((item) => (
-              <NavLink
-                key={item.href}
-                item={{ ...item, label: t(item.labelKey) }}
-                pathname={pathname}
-                onNavigate={() => setMobileOpen(false)}
-                queueCounts={queueCounts}
-              />
-            ))}
-          </SectionGroup>
-        )}
-
-        {showLearnerNav && (
-          <>
-            <div className="pt-2" />
-            {visibleByPrefs(miscItems)
-              // miscItems default to trainee-visible unless an explicit
-              // `minRole` is set (e.g. roadmap is superadmin-only). The
-              // shared filterByRole helper assumes admin-default for
-              // admin-zone items, which is the wrong default here.
-              .filter((item) => {
-                const required = ROLE_RANK[item.minRole ?? "trainee"] ?? 0;
-                return userRank >= required;
-              })
-              .map((item) => {
-                // No per-role relabelling here any more: the changelog is
-                // gated at minRole "instructor", which IS the isStaff
-                // threshold, so the old "What's new" trainee label could
-                // never render.
-                const labeled = { ...item, label: t(item.labelKey) };
-                return <NavLink key={item.href} item={labeled} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />;
-              })}
-          </>
-        )}
-
-        {/* MY PROFILE retired — the avatar at the bottom-left of
-            the sidebar already routes to /profile, so this section
-            was duplicated affordance. The /profile route still
-            works. */}
-
-        {isAdmin && (
-          <SectionGroup
-            title="WORKSPACE"
-            tone="neutral"
-            description="Internal team tooling. Marketing → Video Production: plan promo videos and draft their scripts, with shareable links for collaborative editing (no login needed)."
-          >
-            <AdminSubgroup tone={ADMIN_SUBGROUP_TONES.insights} label="Marketing">
-              <NavLink item={workspaceVideoItem} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
-              <NavLink item={workspaceSymposiumItem} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
-              <NavLink item={workspaceSponsorshipItem} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
-              <NavLink item={workspaceNewsletterItem} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
-            </AdminSubgroup>
-            <AdminSubgroup tone={ADMIN_SUBGROUP_TONES.engage} label="Website">
-              <NavLink item={workspaceWebsiteReviewItem} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
-            </AdminSubgroup>
-            <AdminSubgroup tone={ADMIN_SUBGROUP_TONES.experience} label="Outreach">
-              <NavLink item={workspaceOutreachContactsItem} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
-              <NavLink item={workspaceOutreachCampaignsItem} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
-            </AdminSubgroup>
-          </SectionGroup>
-        )}
-
-        {isAdmin && (
-          <SectionGroup
-            title={t("nav.administration").toUpperCase()}
-            tone="electric"
-            description="Privileged territory — manage learners, employers, the platform itself, and security. Sub-grouped into ENGAGE / EXPERIENCE / Operations / Insights / Platform / Security & compliance / System so each list stays scannable."
-          >
-            {/* Overview sits at the top, ungrouped — single canonical link. */}
-            <NavLink item={adminOverview} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
-
-            {visibleEngageAdmin.length > 0 && (
-              <AdminSubgroup tone={ADMIN_SUBGROUP_TONES.engage} label="Engage">
-                {visibleEngageAdmin.map((item) => (
-                  <NavLink key={item.href} item={item} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
-                ))}
-              </AdminSubgroup>
-            )}
-
-            {visibleExperienceAdmin.length > 0 && (
-              <AdminSubgroup tone={ADMIN_SUBGROUP_TONES.experience} label="Experience">
-                {visibleExperienceAdmin.map((item) => (
-                  <NavLink key={item.href} item={item} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
-                ))}
-              </AdminSubgroup>
-            )}
-
-            {/*
-              Operations sits between Experience and Insights — the
-              pillars (Engage / Experience) are pipeline-shaped
-              work that happens IN the platform, then Operations is the
-              cross-pillar mechanics that keep the platform running,
-              and Insights is what you look at after the work is done.
-            */}
-            {visibleOperationsAdmin.length > 0 && (
-              <AdminSubgroup tone={ADMIN_SUBGROUP_TONES.operations} label="Operations">
-                {visibleOperationsAdmin.map((item) => (
-                  <NavLink key={item.href} item={item} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
-                ))}
-              </AdminSubgroup>
-            )}
-
-            {visibleInsightsAdmin.length > 0 && (
-              <AdminSubgroup tone={ADMIN_SUBGROUP_TONES.insights} label="Design & Insight">
-                {visibleInsightsAdmin.map((item) => (
-                  <NavLink key={item.href} item={item} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
-                ))}
-              </AdminSubgroup>
-            )}
-
-            {/* HR-view preview was here; moved out of Admin into
-                its own top-level SectionGroup placed before the
-                misc items (Learning buddies, Change log) so it
-                reads as a peer surface, not buried under
-                Administration. */}
-
-            {visiblePlatformAdmin.length > 0 && (
-              <AdminSubgroup tone={ADMIN_SUBGROUP_TONES.platform} label="Platform">
-                {/* Platform is 11 items (was 24) — flat list
-                    like Engage / Experience. The collapsible UI
-                    that gated 24 items behind a click is removed
-                    in favour of consistent visual treatment
-                    across the sub-groups. */}
-                {visiblePlatformAdmin.map((item) => (
-                  <NavLink key={item.href} item={item} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
-                ))}
-              </AdminSubgroup>
-            )}
-
-            {visibleSecurityAdmin.length > 0 && (
-              <AdminSubgroup tone={ADMIN_SUBGROUP_TONES.security} label="Security & compliance">
-                {visibleSecurityAdmin.map((item) => (
-                  <NavLink key={item.href} item={item} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
-                ))}
-              </AdminSubgroup>
-            )}
-
-            {visibleSystemAdmin.length > 0 && (
-              <AdminSubgroup tone={ADMIN_SUBGROUP_TONES.system} label="System (superadmin)">
-                {visibleSystemAdmin.map((item) => (
-                  <NavLink key={item.href} item={item} pathname={pathname} onNavigate={() => setMobileOpen(false)} queueCounts={queueCounts} />
-                ))}
-              </AdminSubgroup>
-            )}
-          </SectionGroup>
-        )}
+        <SectionGroup
+          title="1:1 MENTORSHIP"
+          tone="electric"
+          description="A sustained pairing with someone already working in the part of the sector you're moving toward."
+        >
+          {mentorshipItems.map(learnerRow)}
+        </SectionGroup>
       </nav>
 
-      {/*
-       * Compact footer stack. Each block is a thin row instead of the
-       * earlier card-with-padding layout — saves ~140 px of vertical
-       * space on a typical sidebar without losing any control.
-       *
-       *   • Credits chip — single inline pill, no surrounding card.
-       *   • Role switcher — same height as a nav link.
-       *   • Take the tour + Theme picker share one row to halve the
-       *     vertical footprint of "help / personalisation".
-       *   • Build SHA folds into the user pill's right edge for staff,
-       *     so it doesn't take its own row.
-       *   • User block: avatar-sized pill (32 px) + sign-out icon
-       *     button on the same row, no double-stacked layout.
-       */}
+      {/* Compact footer: credits chip, theme picker, then the user pill
+          with sign-out as an icon button. */}
 
       {/* Credits chip */}
-      {!isStaff && credits !== undefined && (
+      {credits !== undefined && (
         <div className="px-3 py-1.5 border-t border-line">
           <div className="flex items-center gap-1.5 bg-amber-50 rounded-md px-2 py-1">
             <Coins size={11} className="text-amber-500 shrink-0" />
@@ -1784,46 +870,8 @@ export function Sidebar({
         </div>
       )}
 
-      {/* Superadmin-only role switcher — single thin row */}
-      {realRole === "superadmin" && (
-        <div className="px-3 py-1.5 border-t border-line">
-          <RoleSwitcher actingAs={actingAs ?? null} />
-        </div>
-      )}
-
-      {/* Take-the-tour + Theme picker + Build SHA share one compact row.
-          Tour icon is Compass (orientation / guided exploration) rather
-          than the generic ?-help glyph it used to be. Build SHA folds
-          in here — staff-only — so the user pill row below stays a
-          clean two-line identity card without the chip eating space. */}
       <div className="px-2 py-1 border-t border-line flex items-center gap-1">
-        {/* "Take the tour" relaunches the product tour, so it is hidden
-            from trainees alongside the tour itself — leaving it would
-            be a button that starts the thing we just suppressed. */}
-        {!traineeOnly && (
-          <button
-            type="button"
-            onClick={() => {
-              if (typeof window !== "undefined") {
-                window.dispatchEvent(new CustomEvent("bhn:start-tour"));
-              }
-            }}
-            className="flex-1 min-w-0 flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-medium text-muted hover:bg-raised hover:text-fg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/60"
-            title={t("nav.tour")}
-          >
-            <Compass size={13} className="shrink-0" />
-            <span className="truncate">{t("nav.tour")}</span>
-          </button>
-        )}
         <ThemePicker compact />
-        {isStaff && process.env.NEXT_PUBLIC_COMMIT_SHA && (
-          <code
-            className="font-mono text-[11px] font-semibold text-brand-700 bg-brand-50 ring-1 ring-inset ring-brand-200 px-1.5 py-1 rounded select-all leading-none shrink-0"
-            title={`Build ${process.env.NEXT_PUBLIC_COMMIT_SHA}`}
-          >
-            {process.env.NEXT_PUBLIC_COMMIT_SHA}
-          </code>
-        )}
       </div>
 
       {/* User pill — single 36 px row with sign-out as an icon button. */}

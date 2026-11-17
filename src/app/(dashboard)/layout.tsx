@@ -14,7 +14,6 @@ import { prisma } from "@/lib/prisma";
 import { getAdminQueueCounts, type QueueCounts } from "@/lib/admin/queue-counts";
 import { getTraineeQueueCounts } from "@/lib/trainee/queue-counts";
 import { getEmployerQueueCounts } from "@/lib/employer/queue-counts";
-import { getCommitteesForUser } from "@/lib/committees/membership";
 import {
   LayoutBannerProvider,
   type LayoutBannerData,
@@ -65,7 +64,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   // awaiting it separately cost a whole extra round trip on every
   // authenticated navigation — and round trips, not query time, are what
   // this layout actually spends (the DB executes all of this in ~0.2ms).
-  const [userRow, adminCounts, traineeCounts, employerCounts, committeeSlugs, translationSetting, unreadCount] = await Promise.all([
+  const [userRow, adminCounts, traineeCounts, employerCounts, translationSetting, unreadCount] = await Promise.all([
     userRowPromise,
     canSeeAdminQueues ? getAdminQueueCounts() : Promise.resolve(undefined),
     userId ? getTraineeQueueCounts(userId) : Promise.resolve(undefined),
@@ -75,7 +74,6 @@ export default async function DashboardLayout({ children }: { children: React.Re
     (isEmployer || canSeeAdminQueues) && userId
       ? getEmployerQueueCounts(userId)
       : Promise.resolve(undefined),
-    userId ? getCommitteesForUser(userId) : Promise.resolve([]),
     prisma.platformSetting.findUnique({ where: { key: "translationEnabled" }, select: { value: true } }).catch(() => null),
     // Notification unread count — only for signed-in users. Shown as a
     // badge on the bell icon in the sidebar header.
@@ -109,14 +107,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
   return (
     <div className="dashboard-layout flex h-screen bg-page">
       <Sidebar
-        role={role}
-        realRole={realRole}
-        actingAs={actingAs ?? null}
         user={session.user ?? {}}
         credits={userRow?.credits ?? undefined}
-        allowPlatformContent={userRow?.allowPlatformContent ?? false}
         queueCounts={queueCounts}
-        committees={committeeSlugs}
         hiddenFeatures={resolveSidebarHiddenSet(
           // realRole is the user's true role even when they're acting
           // as another. Staff (admin + superadmin) always see every
