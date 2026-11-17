@@ -125,8 +125,8 @@ async function main() {
         // 4. Upload to R2 at a timestamped key. Old URLs keep working
         //    until the best-effort cleanup below; in-flight page
         //    views never 404 mid-regen.
-        const key = `thumbnails/courses/${c.id}/${Date.now()}.png`;
-        await putR2Object(key, Buffer.from(png), "image/png");
+        const key = `thumbnails/courses/${c.id}/${Date.now()}.jpg`;
+        await putR2Object(key, Buffer.from(png), "image/jpeg");
         const url = r2PublicUrl(key);
         const previousUrl = c.thumbnail;
         await prisma.course.update({ where: { id: c.id }, data: { thumbnail: url } });

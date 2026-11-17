@@ -89,8 +89,8 @@ export async function POST(
   }
 
   // 4. Upload + persist
-  const key = `thumbnails/courses/${course.id}/${Date.now()}.png`;
-  await putR2Object(key, Buffer.from(png), "image/png");
+  const key = `thumbnails/courses/${course.id}/${Date.now()}.jpg`;
+  await putR2Object(key, Buffer.from(png), "image/jpeg");
   const url = r2PublicUrl(key);
   const previousUrl = course.thumbnail;
   await prisma.course.update({ where: { id: course.id }, data: { thumbnail: url } });

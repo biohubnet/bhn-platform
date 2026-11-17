@@ -45,8 +45,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const png = await generateImage(prompt, { feature: "thumbnail_course", userId });
   if (!png) return NextResponse.json({ error: "Image generation failed." }, { status: 502 });
 
-  const key = `thumbnails/courses/${course.id}/${Date.now()}.png`;
-  await putR2Object(key, Buffer.from(png), "image/png");
+  const key = `thumbnails/courses/${course.id}/${Date.now()}.jpg`;
+  await putR2Object(key, Buffer.from(png), "image/jpeg");
   const url = r2PublicUrl(key);
 
   await prisma.course.update({ where: { id }, data: { thumbnail: url } });

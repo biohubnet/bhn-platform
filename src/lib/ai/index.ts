@@ -352,7 +352,7 @@ export async function runFlux(o: { prompt: string; width: number; height: number
 }
 
 /**
- * Generate an image from a text prompt. Returns PNG bytes (Uint8Array)
+ * Generate an image from a text prompt. Returns JPEG bytes (Uint8Array)
  * suitable for streaming straight into R2, or null on failure.
  */
 export async function generateImage(prompt: string, opts: ImageOpts = {}): Promise<Uint8Array | null> {
@@ -365,9 +365,7 @@ export async function generateImage(prompt: string, opts: ImageOpts = {}): Promi
       height: opts.height ?? 1024,
       steps: opts.steps,
     });
-    // Callers store .png in R2; keep that contract.
-    const { default: sharp } = await import("sharp");
-    const buf = new Uint8Array(await sharp(jpeg).png().toBuffer());
+    const buf = new Uint8Array(jpeg);
     await logInteraction({
       userId: opts.userId,
       kind: opts.feature ?? "image",
